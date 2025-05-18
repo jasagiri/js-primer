@@ -1,0 +1,1875 @@
+
+<!DOCTYPE HTML>
+<html lang="" >
+    <head>
+        <meta charset="UTF-8">
+        <title>ECMAScript · JavaScript Primer #jsprimer</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="description" content="JavaScriptの仕様であるECMAScriptについてを紹介します。ECMAScriptの歴史や仕様策定がどのようなプロセスで行われているかを紹介します。">
+        <meta name="generator" content="HonKit 6.0.2">
+        
+        
+        
+    
+    <link rel="stylesheet" href="../../gitbook/style.css">
+
+    
+            
+                
+                <link rel="stylesheet" href="../../gitbook/gitbook-plugin-page-toc-button/plugin.css">
+                
+            
+                
+                <link rel="stylesheet" href="../../gitbook/gitbook-plugin-anchors/plugin.css">
+                
+            
+                
+                <link rel="stylesheet" href="../../gitbook/@honkit/honkit-plugin-highlight/website.css">
+                
+            
+                
+                <link rel="stylesheet" href="../../gitbook/@honkit/honkit-plugin-fontsettings/website.css">
+                
+            
+        
+
+    
+
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+         
+    
+    
+    
+    <meta name="HandheldFriendly" content="true"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../gitbook/images/apple-touch-icon-precomposed-152.png">
+    <link rel="shortcut icon" href="../../gitbook/images/favicon.ico" type="image/x-icon">
+
+    
+    <link rel="next" href="../other-parts/" />
+    
+    
+    <link rel="prev" href="../module/" />
+    
+
+    <link rel="canonical" href="https://jsprimer.net/basic/ecmascript/">
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-DWY0DLHWB6"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+
+    gtag("js", new Date());
+
+    gtag("config", "G-DWY0DLHWB6");
+</script>
+<script type="module">
+    // コンソールUIでコード実行したらイベントとして送信する
+    const onExecuteCode = (scriptType) => {
+        gtag("event", "execute_code", {
+            "event_category": "console",
+            "event_label": "execute_code",
+            "script_type": scriptType || "unknown"
+        });
+    };
+    let observer;
+    const observeEvalEvent = () => {
+        if (observer) {
+            observer.disconnect();
+        }
+        const callback = function(mutationsList) {
+            for (const mutation of mutationsList) {
+                const mirrorConsole = Array.from(mutation.addedNodes).find(node => Boolean(node.dataset.mirrorConsole));
+                if (mirrorConsole) {
+                    return onExecuteCode(mirrorConsole.dataset.mirrorConsole);
+                }
+            }
+        };
+        observer = new MutationObserver(callback);
+        observer.observe(document.body, { childList: true });
+    };
+    const eventMap = new WeakMap();
+    // 問題を報告ボタンを押したらイベントとして送信する
+    const onClickIssueReport = () => {
+        console.log("click_issue_report");
+        gtag("event", "click_issue_report", {
+            "event_category": "contribution",
+            "event_label": "click_issue_report"
+        });
+    };
+    const observeIssueReport = () => {
+        const targetButton = document.querySelector(".gitbook-plugin-github-issue-feedback");
+        // すでにイベントが登録されていたら何もしない
+        if (eventMap.has(targetButton)) {
+            return;
+        }
+        if (targetButton) {
+            targetButton.addEventListener("click", onClickIssueReport);
+            eventMap.set(targetButton, onClickIssueReport);
+        }
+    };
+    window.addEventListener("DOMContentLoaded", function() {
+        gitbook.events.on("page.change", function() {
+            observeEvalEvent();
+            observeIssueReport();
+        });
+    });
+
+</script>
+<meta name="google-site-verification" content="bMotEbgYwkzA3k4PkuyK_NUdz0bKh-Phz0oUwNmRSVo"/>
+<style>
+    /*
+     * Disable antialias
+     */
+    * {
+        -webkit-font-smoothing: initial !important
+    }
+
+    body {
+        text-rendering: initial !important;
+        font-smoothing: initial !important;
+    }
+
+    /* deny access chapter */
+    .summary li.chapter > span {
+        cursor: not-allowed;
+        opacity: .3;
+    }
+
+    /* console ui */
+
+    .mirror-console-attach-button-wrapper {
+        margin-top: -1.275em;
+        margin-bottom: 1.275em
+    }
+
+    .mirror-console-wrapper {
+        margin-top: 1.275em;
+        margin-bottom: 1.275em
+    }
+
+    /* file name for codeblock */
+    .code-filename {
+        background-color: #eee;
+        display: inline-block;
+        padding: 2px 8px;
+        line-height: inherit;
+        margin-bottom: 0px !important;
+    }
+
+    /* Markdown */
+    /* Support horizon scroll */
+    /* https://stackoverflow.com/questions/17770257/scrolling-tables-horizontally-without-wrapping-them-in-div */
+    .markdown-section table {
+        max-width: 100%;
+        overflow-x: auto;
+        display: block;
+    }
+    .markdown-section sup,
+    .markdown-section sub {
+        font-size: 75%;
+    }
+
+    .book_footer {
+        text-align: center;
+        color: #000000;
+        background: #ddd;
+        font-size: 16px;
+        margin-top: 16px;
+        padding: 16px;
+    }
+
+    /* github-issue-feedback */
+    .gitbook-plugin-github-issue-feedback {
+        background-color: #333;
+        color: #fff;
+        opacity: 0.8;
+        padding: 4px;
+        margin-right: 24px;
+        margin-bottom: 4px;
+        border-radius: 6px;
+    }
+
+    .gitbook-plugin-github-issue-feedback:hover {
+        opacity: 1;
+    }
+
+    /* Hide footer on mobile */
+    /* Use navigation width */
+    @media (max-width: 1240px) {
+        .book_footer {
+            display: none;
+        }
+    }
+
+    .navigation {
+        min-width: 50px;
+    }
+
+    @media (min-width: 1240px) {
+        .honkit-plugin-sandpack {
+            width: calc(100% + 180px);
+            margin: 0 0 1em -90px;
+        }
+    }
+
+    .honkit-plugin-sandpack, .honkit-plugin-sandpack--buttonContainer {
+        margin-bottom: 1em;
+    }
+
+</style>
+<meta name="theme-color" content="#ffffff">
+<link rel="manifest" href="../../manifest.json">
+<script defer async>
+    // unregister old service worker(remove workbox)
+    // https://github.com/asciidwango/js-primer/pull/1701
+    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for (const registration of registrations) {
+            registration.unregister();
+        }
+    }).catch(function(err) {
+        console.error(new Error("Can not getRegistrations", {
+            cause: err
+        }));
+    });
+</script>
+
+    </head>
+    <body>
+        
+<div class="book honkit-cloak">
+    <div class="book-summary">
+        
+            
+            
+                <nav role="navigation">
+                
+
+
+<ul class="summary">
+    
+    
+
+    
+
+    
+        
+        
+    
+        <li class="chapter " data-level="1.1" data-path="../../">
+            
+                <a href="../../">
+            
+                    
+                    この書籍について
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2" data-path="../../intro/">
+            
+                <a href="../../intro/">
+            
+                    
+                    はじめに
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.2.1" data-path="../../intro/authors/">
+            
+                <a href="../../intro/authors/">
+            
+                    
+                    著者紹介
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.2" data-path="../../intro/sponsors/">
+            
+                <a href="../../intro/sponsors/">
+            
+                    
+                    JavaScript Primerスポンサー
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.3" data-path="../../intro/preparation/">
+            
+                <a href="../../intro/preparation/">
+            
+                    
+                    読みはじめる前の事前準備
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.4" data-path="../../intro/feedback/">
+            
+                <a href="../../intro/feedback/">
+            
+                    
+                    文章の間違いに気づいたら
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3" data-path="../">
+            
+                <a href="../">
+            
+                    
+                    第一部: 基本文法
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.3.1" data-path="../introduction/">
+            
+                <a href="../introduction/">
+            
+                    
+                    JavaScriptとは
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.2" data-path="../comments/">
+            
+                <a href="../comments/">
+            
+                    
+                    コメント
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.3" data-path="../variables/">
+            
+                <a href="../variables/">
+            
+                    
+                    変数と宣言
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.4" data-path="../read-eval-print/">
+            
+                <a href="../read-eval-print/">
+            
+                    
+                    値の評価と表示
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.5" data-path="../data-type/">
+            
+                <a href="../data-type/">
+            
+                    
+                    データ型とリテラル
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.6" data-path="../operator/">
+            
+                <a href="../operator/">
+            
+                    
+                    演算子
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.7" data-path="../implicit-coercion/">
+            
+                <a href="../implicit-coercion/">
+            
+                    
+                    暗黙的な型変換
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.8" data-path="../function-declaration/">
+            
+                <a href="../function-declaration/">
+            
+                    
+                    関数と宣言
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.9" data-path="../statement-expression/">
+            
+                <a href="../statement-expression/">
+            
+                    
+                    文と式
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.10" data-path="../condition/">
+            
+                <a href="../condition/">
+            
+                    
+                    条件分岐
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.11" data-path="../loop/">
+            
+                <a href="../loop/">
+            
+                    
+                    ループと反復処理
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.12" data-path="../object/">
+            
+                <a href="../object/">
+            
+                    
+                    オブジェクト
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.13" data-path="../prototype-object/">
+            
+                <a href="../prototype-object/">
+            
+                    
+                    プロトタイプオブジェクト
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.14" data-path="../array/">
+            
+                <a href="../array/">
+            
+                    
+                    配列
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.15" data-path="../string/">
+            
+                <a href="../string/">
+            
+                    
+                    文字列
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.16" data-path="../string-unicode/">
+            
+                <a href="../string-unicode/">
+            
+                    
+                    文字列とUnicode
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.17" data-path="../wrapper-object/">
+            
+                <a href="../wrapper-object/">
+            
+                    
+                    ラッパーオブジェクト
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.18" data-path="../function-scope/">
+            
+                <a href="../function-scope/">
+            
+                    
+                    関数とスコープ
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.19" data-path="../function-this/">
+            
+                <a href="../function-this/">
+            
+                    
+                    関数とthis
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.20" data-path="../class/">
+            
+                <a href="../class/">
+            
+                    
+                    クラス
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.21" data-path="../error-try-catch/">
+            
+                <a href="../error-try-catch/">
+            
+                    
+                    例外処理
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.22" data-path="../async/">
+            
+                <a href="../async/">
+            
+                    
+                    非同期処理:Promise/Async Function
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.23" data-path="../map-and-set/">
+            
+                <a href="../map-and-set/">
+            
+                    
+                    Map/Set
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.24" data-path="../json/">
+            
+                <a href="../json/">
+            
+                    
+                    JSON
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.25" data-path="../date/">
+            
+                <a href="../date/">
+            
+                    
+                    Date
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.26" data-path="../math/">
+            
+                <a href="../math/">
+            
+                    
+                    Math
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.27" data-path="../module/">
+            
+                <a href="../module/">
+            
+                    
+                    ECMAScriptモジュール
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter active" data-level="1.3.28" data-path="./">
+            
+                <a href="./">
+            
+                    
+                    ECMAScript
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.29" data-path="../other-parts/">
+            
+                <a href="../other-parts/">
+            
+                    
+                    第一部: おわりに
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4" data-path="../../use-case/">
+            
+                <a href="../../use-case/">
+            
+                    
+                    第二部: 応用編（ユースケース）
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.4.1" data-path="../../use-case/setup-local-env/">
+            
+                <a href="../../use-case/setup-local-env/">
+            
+                    
+                    アプリケーション開発の準備
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.2" data-path="../../use-case/ajaxapp/">
+            
+                <a href="../../use-case/ajaxapp/">
+            
+                    
+                    Ajax通信
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.4.2.1" data-path="../../use-case/ajaxapp/entrypoint/">
+            
+                <a href="../../use-case/ajaxapp/entrypoint/">
+            
+                    
+                    エントリーポイント
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.2.2" data-path="../../use-case/ajaxapp/http/">
+            
+                <a href="../../use-case/ajaxapp/http/">
+            
+                    
+                    HTTP通信
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.2.3" data-path="../../use-case/ajaxapp/display/">
+            
+                <a href="../../use-case/ajaxapp/display/">
+            
+                    
+                    データを表示する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.2.4" data-path="../../use-case/ajaxapp/promise/">
+            
+                <a href="../../use-case/ajaxapp/promise/">
+            
+                    
+                    Promiseを活用する
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3" data-path="../../use-case/nodecli/">
+            
+                <a href="../../use-case/nodecli/">
+            
+                    
+                    Node.jsでCLIアプリ
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.4.3.1" data-path="../../use-case/nodecli/helloworld/">
+            
+                <a href="../../use-case/nodecli/helloworld/">
+            
+                    
+                    Node.jsでHello World
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3.2" data-path="../../use-case/nodecli/argument-parse/">
+            
+                <a href="../../use-case/nodecli/argument-parse/">
+            
+                    
+                    コマンドライン引数を処理する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3.3" data-path="../../use-case/nodecli/read-file/">
+            
+                <a href="../../use-case/nodecli/read-file/">
+            
+                    
+                    ファイルを読み込む
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3.4" data-path="../../use-case/nodecli/md-to-html/">
+            
+                <a href="../../use-case/nodecli/md-to-html/">
+            
+                    
+                    MarkdownをHTMLに変換する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3.5" data-path="../../use-case/nodecli/refactor-and-unittest/">
+            
+                <a href="../../use-case/nodecli/refactor-and-unittest/">
+            
+                    
+                    ユニットテストを記述する
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4" data-path="../../use-case/todoapp/">
+            
+                <a href="../../use-case/todoapp/">
+            
+                    
+                    Todoアプリ
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.4.4.1" data-path="../../use-case/todoapp/entrypoint/">
+            
+                <a href="../../use-case/todoapp/entrypoint/">
+            
+                    
+                    エントリーポイント
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.2" data-path="../../use-case/todoapp/app-structure/">
+            
+                <a href="../../use-case/todoapp/app-structure/">
+            
+                    
+                    アプリの構成要素
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.3" data-path="../../use-case/todoapp/form-event/">
+            
+                <a href="../../use-case/todoapp/form-event/">
+            
+                    
+                    Todoアイテムの追加を実装する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.4" data-path="../../use-case/todoapp/event-model/">
+            
+                <a href="../../use-case/todoapp/event-model/">
+            
+                    
+                    イベントとモデル
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.5" data-path="../../use-case/todoapp/update-delete/">
+            
+                <a href="../../use-case/todoapp/update-delete/">
+            
+                    
+                    Todoアイテムの更新と削除を実装する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.6" data-path="../../use-case/todoapp/final/">
+            
+                <a href="../../use-case/todoapp/final/">
+            
+                    
+                    Todoアプリのリファクタリング
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5" data-path="../../appendix/links/">
+            
+                <a href="../../appendix/links/">
+            
+                    
+                    付録: 参考リンク集
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.6" data-path="../../cheatsheet/">
+            
+                <a href="../../cheatsheet/">
+            
+                    
+                    付録: JavaScriptチートシート
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.7" data-path="../../outro/">
+            
+                <a href="../../outro/">
+            
+                    
+                    おわりに
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+    
+
+    <li class="divider"></li>
+
+    <li>
+        <a href="https://github.com/honkit/honkit" target="blank" class="gitbook-link">
+            Published with HonKit
+        </a>
+    </li>
+</ul>
+
+
+                </nav>
+            
+        
+    </div>
+
+    <div class="book-body">
+        
+            <div class="body-inner">
+                
+                    
+
+<!-- Header -->
+<meta name="keywords" content="JavaScript,ECMAScript,JS,入門,チュートリアル,書籍,本,無料,Node.js,ブラウザ"/>
+<link rel="author" href="https://www.hatena.ne.jp/efcl/"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsearch.js@2/dist/cdn/docsearch.min.css"/>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/docsearch.js@2/dist/cdn/docsearch.min.js"></script>
+<!-- OGP -->
+<meta property="og:title" content="JavaScript Primer - 迷わないための入門書"/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://jsprimer.net/"/>
+<meta property="og:image" content="https://jsprimer.net/landing/img/cover-optimized.jpg"/>
+<meta property="og:site_name" content="JavaScript Primer"/>
+<meta property="og:description" content="JavaScript Primerは、JavaScriptの基礎から応用までを一貫して学べる入門書です。"/>
+<style>
+    .book-header {
+        display: flex;
+        flex-direction: row;
+        background-color: #333;
+    }
+
+    /* link color */
+    .book-header a {
+        color: #fff;
+    }
+
+    /* hover color */
+    .book-header .btn:hover, .book-header .btn:focus, .book-header a:focus, .book-header a:hover {
+        color: hsla(0, 0%, 100%, 0.75) !important;
+    }
+
+    /* Mobile header fixed */
+    @media (max-width: 768px) {
+        /* Headerを固定する */
+        .book-header {
+            position: fixed;
+            width: 100%;
+        }
+
+        /* Icon only */
+        .book-header-title-img {
+            margin: auto 18px auto 0 !important;
+        }
+
+        .book-header-title-h {
+            display: none;
+        }
+
+        /* Header分のズレを入れる */
+        .page-wrapper {
+            padding-top: 60px;
+        }
+
+        /* github-issue-feedbackを非表示にする */
+        .gitbook-plugin-github-issue-feedback {
+            display: none;
+        }
+    }
+
+    /* Dynamic created by GitBook*/
+    .btn.pull-left.js-toolbar-action {
+        order: 1;
+    }
+
+    .book-header-title {
+        order: 2;
+        display: inline-flex;
+        flex-direction: row;
+        color: #fff;
+    }
+
+    .book-header-title:hover {
+        color: hsla(0, 0%, 100%, 0.75);
+    }
+
+    .book-header-title-img {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        margin: auto 10px auto 0;
+    }
+
+    .book-header-title-h {
+        font-size: 20px;
+        margin: auto;
+        padding: 0;
+    }
+
+    .header-center {
+        order: 3;
+        display: inline-flex;
+        flex-direction: column;
+        justify-content: center;
+        /* self */
+        flex-grow: 1;
+        flex-shrink: 0;
+        flex-basis: auto;
+    }
+
+    .header-right {
+        order: 4;
+        display: inline-flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        /* icon size */
+        font-size: 24px;
+    }
+
+    .amazon-link, .github-link {
+        color: #fff;
+        /* Padding and make Vertical */
+        display: inline-flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding-left: 4px;
+        padding-right: 4px;
+    }
+
+    /* Desktop */
+    @media (min-width: 768px) {
+        .header-center {
+            align-items: center;
+        }
+
+        .header-right {
+            margin-right: 24px;
+        }
+    }
+
+    /* DocSearch */
+    @media (max-width: 768px) {
+        .algolia-autocomplete .ds-dropdown-menu {
+            max-width: calc(100vw - 32px) !important;
+            min-width: calc(100vw - 32px) !important;
+            width: calc(100vw - 32px) !important;
+            /* negative margin
+              This is absolute element
+              */
+            margin-left: -32px !important;
+        }
+
+        .algolia-autocomplete .algolia-docsearch-suggestion--content {
+            width: 100% !important;
+            padding-left: 0 !important;
+        }
+
+        .algolia-autocomplete .algolia-docsearch-suggestion--content:before {
+            display: none !important;
+        }
+
+        .algolia-autocomplete .algolia-docsearch-suggestion--subcategory-column {
+            display: none !important;
+        }
+
+        .algolia-autocomplete.algolia-autocomplete-right .ds-dropdown-menu {
+            right: inherit !important
+        }
+
+        .algolia-autocomplete.algolia-autocomplete-right .ds-dropdown-menu::before {
+            right: 50%;
+        }
+
+        .sbx-custom {
+            width: 92px !important;
+            padding: initial !important;
+        }
+
+        .amazon-link {
+            display: none;
+        }
+    }
+
+    /* SearchBox */
+    .searchbarWrapper {
+        height: 50px;
+    }
+
+
+    .sbx-custom {
+        display: inline-block;
+        position: relative;
+        min-width: 150px;
+        width: 300px;
+        max-width: 300px;
+        height: 33px;
+        white-space: nowrap;
+        box-sizing: border-box;
+        font-size: 14px;
+    }
+
+    .sbx-custom__wrapper {
+        width: 100%;
+        height: 100%;
+    }
+
+    .sbx-custom__input {
+        display: inline-block;
+        -webkit-transition: box-shadow .4s ease, background .4s ease;
+        transition: box-shadow .4s ease, background .4s ease;
+        border: 0;
+        border-radius: 5px;
+        box-shadow: inset 0 0 0 2px #CCCCCC;
+        background: #FFFFFF;
+        padding: 0 27px 0 33px;
+        width: 100%;
+        height: 100%;
+        vertical-align: middle;
+        white-space: normal;
+        font-size: inherit;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+    }
+
+    .sbx-custom__input::-webkit-search-decoration, .sbx-custom__input::-webkit-search-cancel-button, .sbx-custom__input::-webkit-search-results-button, .sbx-custom__input::-webkit-search-results-decoration {
+        display: none;
+    }
+
+    .sbx-custom__input:hover {
+        box-shadow: inset 0 0 0 2px #b3b3b3;
+    }
+
+    .sbx-custom__input:focus, .sbx-custom__input:active {
+        outline: 0;
+        box-shadow: inset 0 0 0 2px #4B54DE;
+        background: #FFFFFF;
+    }
+
+    .sbx-custom__input::-webkit-input-placeholder {
+        color: #BBBBBB;
+    }
+
+    .sbx-custom__input::-moz-placeholder {
+        color: #BBBBBB;
+    }
+
+    .sbx-custom__input:-ms-input-placeholder {
+        color: #BBBBBB;
+    }
+
+    .sbx-custom__input::placeholder {
+        color: #BBBBBB;
+    }
+
+    .sbx-custom__submit {
+        position: absolute;
+        top: 0;
+        right: inherit;
+        left: 0;
+        margin: 0;
+        border: 0;
+        border-radius: 4px 0 0 4px;
+        background-color: rgba(255, 255, 255, 0);
+        padding: 0;
+        width: 33px;
+        height: 100%;
+        vertical-align: middle;
+        text-align: center;
+        font-size: inherit;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+    .sbx-custom__submit::before {
+        display: inline-block;
+        margin-right: -4px;
+        height: 100%;
+        vertical-align: middle;
+        content: '';
+    }
+
+    .sbx-custom__submit:hover, .sbx-custom__submit:active {
+        cursor: pointer;
+    }
+
+    .sbx-custom__submit:focus {
+        outline: 0;
+    }
+
+    .sbx-custom__submit svg {
+        width: 17px;
+        height: 17px;
+        vertical-align: middle;
+        fill: #3A33D1;
+    }
+
+    .sbx-custom__reset {
+        display: none;
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        margin: 0;
+        border: 0;
+        background: none;
+        cursor: pointer;
+        padding: 0;
+        font-size: inherit;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        fill: rgba(0, 0, 0, 0.5);
+    }
+
+    .sbx-custom__reset:focus {
+        outline: 0;
+    }
+
+    .sbx-custom__reset svg {
+        display: block;
+        margin: 4px;
+        width: 17px;
+        height: 17px;
+    }
+
+    .sbx-custom__input:valid ~ .sbx-custom__reset {
+        display: block;
+        -webkit-animation-name: sbx-reset-in;
+        animation-name: sbx-reset-in;
+        -webkit-animation-duration: .15s;
+        animation-duration: .15s;
+    }
+
+    @-webkit-keyframes sbx-reset-in {
+        0% {
+            -webkit-transform: translate3d(-20%, 0, 0);
+            transform: translate3d(-20%, 0, 0);
+            opacity: 0;
+        }
+        100% {
+            -webkit-transform: none;
+            transform: none;
+            opacity: 1;
+        }
+    }
+
+    @keyframes sbx-reset-in {
+        0% {
+            -webkit-transform: translate3d(-20%, 0, 0);
+            transform: translate3d(-20%, 0, 0);
+            opacity: 0;
+        }
+        100% {
+            -webkit-transform: none;
+            transform: none;
+            opacity: 1;
+        }
+    }
+</style>
+<div class="book-header" role="navigation">
+    
+    <a class="book-header-title" href="../..">
+        <img class="book-header-title-img" alt="JavaScript Primer"
+             src="../../gitbook/icons/icon-128x128.png"/>
+        <h2 class="book-header-title-h" title="JavaScript Primer - 迷わないための入門書">JavaScript Primer</h2>
+    </a>
+    <div class="searchbarWrapper header-center">
+        <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+            <symbol xmlns="http://www.w3.org/2000/svg" id="sbx-icon-search-8" viewBox="0 0 40 40">
+                <path d="M16 32c8.835 0 16-7.165 16-16 0-8.837-7.165-16-16-16C7.162 0 0 7.163 0 16c0 8.835 7.163 16 16 16zm0-5.76c5.654 0 10.24-4.586 10.24-10.24 0-5.656-4.586-10.24-10.24-10.24-5.656 0-10.24 4.584-10.24 10.24 0 5.654 4.584 10.24 10.24 10.24zM28.156 32.8c-1.282-1.282-1.278-3.363.002-4.643 1.282-1.284 3.365-1.28 4.642-.003l6.238 6.238c1.282 1.282 1.278 3.363-.002 4.643-1.283 1.283-3.366 1.28-4.643.002l-6.238-6.238z"
+                      fill-rule="evenodd"></path>
+            </symbol>
+            <symbol xmlns="http://www.w3.org/2000/svg" id="sbx-icon-clear-5" viewBox="0 0 20 20">
+                <path d="M10 20c5.523 0 10-4.477 10-10S15.523 0 10 0 0 4.477 0 10s4.477 10 10 10zm1.35-10.123l3.567 3.568-1.225 1.226-3.57-3.568-3.567 3.57-1.226-1.227 3.568-3.568-3.57-3.57 1.227-1.224 3.568 3.568 3.57-3.567 1.224 1.225-3.568 3.57zM10 18.272c4.568 0 8.272-3.704 8.272-8.272S14.568 1.728 10 1.728 1.728 5.432 1.728 10 5.432 18.272 10 18.272z"
+                      fill-rule="evenodd"></path>
+            </symbol>
+        </svg>
+
+        <form novalidate="novalidate" onsubmit="return false;" class="searchbox sbx-custom">
+            <div role="search" class="sbx-custom__wrapper">
+                <input name="search" placeholder="Search words" autocomplete="off" required="required"
+                       class="sbx-custom__input" type="search">
+                <button type="submit" title="Submit your search query." class="sbx-custom__submit">
+                    <svg role="img" aria-label="Search">
+                        <use xlink:href="#sbx-icon-search-8"></use>
+                    </svg>
+                </button>
+                <button type="reset" title="Clear the search query." class="sbx-custom__reset">
+                    <svg role="img" aria-label="Reset">
+                        <use xlink:href="#sbx-icon-clear-5"></use>
+                    </svg>
+                </button>
+            </div>
+        </form>
+    </div>
+    <div class="header-right">
+        <!-- Icon: https://www.iconfinder.com/iconsets/circle-payment -->
+        <a class="amazon-link" title="Amazon: JavaScript Primer 改訂2版 迷わないための入門書"
+           href="https://www.amazon.co.jp/dp/4048931105/" target="_blank"><img
+                width="22"
+                height="22"
+                style="margin: 1px;"
+                src="../../gitbook/icons/amazon-icon.png" alt=""></a>
+        <a class="github-link" title="GitHub: asciidwango/js-primer" href="https://github.com/asciidwango/js-primer"
+           target="_blank"><i
+                class="fa fa-github fa-fw"></i></a>
+    </div>
+</div>
+
+<script defer>
+    // focus on search box
+    document.querySelector(".searchbox [type=\"reset\"]").addEventListener("click", function() {
+        this.parentNode.querySelector("input").focus();
+    });
+    // init DocSearch
+    var search = docsearch({
+        apiKey: "fd28ebaba94be0c39fb9fa1b2fed4f23", // use a SEARCH-ONLY api key here
+        indexName: "asciidwango",
+        inputSelector: ".sbx-custom__input",
+        debug: false // set to `true` if you want to inspect the dropdown menu's CSS
+    });
+</script>
+<script>
+    window.addEventListener("DOMContentLoaded", function() {
+        gitbook.events.on("page.change", function() {
+            setTimeout(() => console.clear(), 1000);
+        });
+    });
+</script>
+
+
+
+
+
+                    <div class="page-wrapper" tabindex="-1" role="main">
+                        <div class="page-inner">
+                            
+                                <section class="normal markdown-section">
+                                
+<style>
+    .page-sponsors {
+        background: #fafafa;
+    }
+    .page-sponsors .page-sponsors-list {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 0;
+        padding: 1em 0;
+        list-style: none;
+        gap: 8px;
+    }
+    .page-sponsors-footer {
+        text-align: center;
+        padding: 0;
+        margin: 0;
+    }
+</style>
+<div class="page-sponsors">
+
+    <div class="page-sponsors-footer">
+        JavaScript Primerの<a href="https://jsprimer.net/intro/sponsors/">スポンサーを募集中</a>
+    </div>
+
+</div>
+
+                                <html><head></head><body><h1 id="ecmascript"><a name="ecmascript" class="plugin-anchor" href="#ecmascript"><i class="fa fa-link" aria-hidden="true"></i></a>ECMAScript </h1>
+<p>ここまでJavaScriptの基本文法について見てきましたが、その文法を定めるECMAScriptという仕様自体がどのように変化していくのかを見ていきましょう。</p>
+<p>ECMAScriptは<a href="https://www.ecma-international.org/" title="Ecma International" target="_blank">Ecma International</a>という団体によって標準化されている仕様です。
+Ecma InternationalはECMAScript以外にもC#やDartなどの標準化作業をしています。
+Ecma Internationalの中のTechnical Committee 39（TC39）という技術委員会が中心となって、ECMAScript仕様について議論しています。
+この技術委員会はMicrosoft、Mozilla、Google、AppleといったブラウザベンダーやECMAScriptに関心のある企業などによって構成されます。</p>
+<h2 id="history"><a name="history" class="plugin-anchor" href="#history"><i class="fa fa-link" aria-hidden="true"></i></a>ECMAScriptのバージョンの歴史 </h2>
+<p>ここで、簡単にECMAScriptのバージョンの歴史を振り返ってみましょう。</p>
+<table>
+<thead>
+<tr>
+<th>バージョン</th>
+<th>リリース時期</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>1997年6月</td>
+</tr>
+<tr>
+<td>2</td>
+<td>1998年6月</td>
+</tr>
+<tr>
+<td>3</td>
+<td>1999年12月</td>
+</tr>
+<tr>
+<td>4</td>
+<td>破棄<sup><a href="#fn_1" id="reffn_1">1</a></sup></td>
+</tr>
+<tr>
+<td>5</td>
+<td>2009年12月</td>
+</tr>
+<tr>
+<td>5.1</td>
+<td>2011年6月</td>
+</tr>
+<tr>
+<td>2015</td>
+<td>2015年6月</td>
+</tr>
+<tr>
+<td>2016</td>
+<td>2016年6月</td>
+</tr>
+<tr>
+<td>2017</td>
+<td>2017年6月</td>
+</tr>
+<tr>
+<td>以降毎年リリース</td>
+</tr>
+</tbody>
+</table>
+<!-- textlint-disable -->
+<p>ES5.1からES2015がでるまで4年もの歳月がかかっているのに対して、ES2015以降は毎年リリースされています。
+毎年安定したリリースを行えるようになったのは、ES2015以降に仕様策定プロセスの変更が行われたためです。</p>
+<!-- textlint-enable -->
+<h2 id="living-standard"><a name="living-standard" class="plugin-anchor" href="#living-standard"><i class="fa fa-link" aria-hidden="true"></i></a>Living StandardとなるECMAScript </h2>
+<p>現在、ECMAScriptの仕様書のドラフトはGitHub上の<a href="https://github.com/tc39/ecma262" title="tc39/ecma262: Status, process, and documents for ECMA262" target="_blank">tc39/ecma262</a>で管理されており、日々更新されています。
+そのため、本当の意味での最新のECMAScript仕様は<a href="https://tc39.es/ecma262/" target="_blank">https://tc39.es/ecma262/</a>となります。
+このように更新ごとにバージョン番号をつけずに、常に最新版を公開する仕様のことを<strong>Living Standard</strong>と呼びます。</p>
+<p>ECMAScriptはLiving Standardですが、これに加えてECMAScript 2017のようにバージョン番号をつけたものも公開されています。
+このバージョンつきECMAScriptは、毎年決まった時期のドラフトを元にしたスナップショットのようなものです。</p>
+<p>ブラウザなどに実際にJavaScriptとして実装される際には、Living StandardのECMAScriptを参照しています。
+これは、ブラウザ自体も日々更新されるものであり、決まった時期にしかリリースされないバージョンつきよりもLiving Standardのほうが適切であるためです。</p>
+<h2 id="specification-process"><a name="specification-process" class="plugin-anchor" href="#specification-process"><i class="fa fa-link" aria-hidden="true"></i></a>仕様策定のプロセス </h2>
+<p>ES2015以前はすべての仕様の合意が取れるまで延々と議論を続け、すべてが決まってからリリースされていました。
+そのため、ES2015がリリースされるまでには長い時間がかかり、言語の進化が停滞していました。
+この問題を解消するために、TC39は毎年リリースする形へとECMAScriptの策定プロセスを変更しました。</p>
+<p>この策定プロセスはES2015のリリース後に適用され、このプロセスで初めてリリースされたのがES2016となります。
+ES2016以降では、次のような仕様策定のプロセスで議論を進めて仕様が決定されています。<sup><a href="#fn_2" id="reffn_2">2</a></sup></p>
+<p>仕様に追加する機能（API、構文など）をそれぞれ個別の<strong>プロポーザル</strong>（提案書）として進めていきます。
+現在策定中のプロポーザルはGitHub上の<a href="https://github.com/tc39/proposals" title="tc39/proposals: Tracking ECMAScript Proposals" target="_blank">tc39/proposals</a>に一覧が公開されています。
+それぞれのプロポーザルは責任者である<strong>チャンピオン</strong>と<strong>ステージ</strong>（Stage）と呼ばれる<code>0</code>から<code>4</code>の6段階の状態を持ちます。</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">ステージ</th>
+<th>ステージの概要</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">0</td>
+<td>アイデアの段階</td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td>機能提案の段階</td>
+</tr>
+<tr>
+<td style="text-align:center">2</td>
+<td>機能の仕様書ドラフトを作成した段階</td>
+</tr>
+<tr>
+<td style="text-align:center">2.7</td>
+<td>仕様としては完成しており、テストやプロトタイプ開発をして検証する段階</td>
+</tr>
+<tr>
+<td style="text-align:center">3</td>
+<td>ブラウザが実装をはじめて、フィードバックを求める段階</td>
+</tr>
+<tr>
+<td style="text-align:center">4</td>
+<td>仕様策定が完了し、2つ以上の実装が存在している<br></br>正式にECMAScriptにマージできる段階</td>
+</tr>
+</tbody>
+</table>
+<p>元々は、<code>0</code>/<code>1</code>/<code>2</code>/<code>3</code>/<code>4</code>の5段階でしたが、2023年に<code>2.7</code>が追加されています。
+これは、ブラウザが実装しはじめて見つかる問題などによりステージ2と3を行き来してしまうことがあったためです。
+そのため、実装の前のテストと検証のためのステージとして<code>2.7</code>が追加されました。</p>
+<p>2ヶ月に一度行われるTC39のミーティングにおいて、プロポーザルごとにステージを進めるかどうかを議論します。
+このミーティングの議事録もGitHub上の<a href="https://github.com/tc39/notes" title="tc39/tc39-notes: TC39 Meeting Notes" target="_blank">tc39/tc39-notes</a>にて公開されています。
+ステージ4となったプロポーザルはドラフト版である<a href="https://github.com/tc39/ecma262" title="tc39/ecma262: Status, process, and documents for ECMA262" target="_blank">tc39/ecma262</a>へマージされます。
+そして毎年の決まった時期にドラフト版を元にして<code>ECMAScript 20XX</code>としてリリースします。</p>
+<p>この仕様策定プロセスの変更は、ECMAScriptに含まれる機能の形にも影響しています。</p>
+<p>たとえば、<code>class</code>構文の策定は<strong>最大限に最小のクラス</strong>（maximally minimal classes）と呼ばれる形で提案されています。
+これによりES2015で<code>class</code>構文が導入されましたが、クラスとして合意が取れる最低限の機能だけの状態で入りました。
+その他のクラスの機能は別のプロポーザルとして提案され、ES2015以降に持ち越された形で議論が進められています。</p>
+<p>このような合意が取れる最低限の形でプロポーザルを進めていくのには、ES4の苦い失敗が背景にあります。
+ES4ではECMAScriptに多くの変更を入れることを試みましたが、TC39内でも意見が分かれ、最終的に合意できませんでした。
+これによりES4の策定に割いた数年分のリソースが無駄になってしまったという経緯があります。<sup><a href="#fn_3" id="reffn_3">3</a></sup></p>
+<p>ES2016以降の策定プロセスでも、すべてのプロポーザルが仕様に入るわけではありません。<sup><a href="#fn_4" id="reffn_4">4</a></sup>
+別の代替プロポーザルが出た場合や後方互換性を保てない場合などにプロポーザルの策定を中断する場合があります。
+しかし、この場合でもプロポーザルという単位であるため策定作業の無駄は最小限で済みます。
+このようにモジュール化されたプロポーザルは入れ替えがしやすいという性質もあります。</p>
+<h2 id="try-proposal"><a name="try-proposal" class="plugin-anchor" href="#try-proposal"><i class="fa fa-link" aria-hidden="true"></i></a>プロポーザルの機能を試す </h2>
+<p>ECMAScriptの策定プロセスのステージ4に「2つ以上の実装が存在している」という項目があります。
+そのためブラウザのJavaScriptエンジンには、策定中のプロポーザルが実装されている場合があります。
+多くの場合は試験的なフラグつきで実装されておりフラグを有効化することで、試すことができるようになっています。</p>
+<p>またTranspilerやPolyfillといった手段で、プロポーザルの機能をエミュレートできる場合があります。</p>
+<p>Transpilerとは、新しい構文を既存の機能で再現できるようにソースコードを変換するツールのことです。
+たとえば、ES2015で<code>class</code>構文が導入されましたが、ES5では<code>class</code>は予約語であるため構文エラーとなり実行できません。
+Transpilerでは、<code>class</code>構文を含むソースコードを<code>function</code>キーワードを使って疑似的に再現するコードへ変換します。
+Transpilerとしては<a href="https://babeljs.io/" title="Babel · The compiler for writing next generation JavaScript" target="_blank">Babel</a>や<a href="https://www.typescriptlang.org/" title="TypeScript - JavaScript that scales." target="_blank">TypeScript</a>などが有名です。</p>
+<p>Polyfillとは、新しい関数やメソッドなどの仕様を満たすような実装を提供するライブラリのことです。
+たとえば、ES2016ではArrayに<code>includes</code>というメソッドが追加されました。
+構文とは異なり<code>includes</code>のようなメソッドはビルトインオブジェクトを書き換えることで実装できます。
+Polyfillを提供するものとしては<a href="https://github.com/zloirock/core-js" title="zloirock/core-js: Standard Library" target="_blank">core-js</a>などが有名です。</p>
+<p>注意点としてはTranspilerやPolyfillは、あくまで既存の機能を用いて新しい機能の再現を試みているだけにすぎません。
+そのため、既存の機能で再現ができないプロポーザル（機能）はTranspilerやPolyfillでは再現できません。
+また、完全な再現はできていないことがあるためTranspilerやPolyfillを新しい機能を学ぶために使うべきではありません。</p>
+<!-- Notes: バージョンが西暦となった理由
+
+実際に各ブラウザなどはECMAScriptを実装していますが、このときに参照するのは基本的にLiving StandardであるECMAScriptです。
+また、PolyfillやTranspilerといった手段で、タグづけされたECMAScript 20XXがリリースされる前にその機能が利用できることも多いです。
+ECMAScriptのバージョンとしてES6ではなくES2015のように西暦をバージョンとして使うようになったのも、Living Standardを意識しての試みです。
+
+-->
+<h2 id="meaning-specification-process"><a name="meaning-specification-process" class="plugin-anchor" href="#meaning-specification-process"><i class="fa fa-link" aria-hidden="true"></i></a>仕様や策定プロセスを知る意味 </h2>
+<p>こうしたECMAScriptという仕様や策定プロセスを知る意味は何があるのでしょうか？　主に次のような理由で知る意味があると考えています。</p>
+<ul>
+<li>言語を学ぶため</li>
+<li>言語が進化しているため</li>
+<li>情報の正しい状態を調べるため</li>
+</ul>
+<h3 id="to-learn"><a name="to-learn" class="plugin-anchor" href="#to-learn"><i class="fa fa-link" aria-hidden="true"></i></a>言語を学ぶため </h3>
+<p>もっとも単純な理由はJavaScriptという言語そのものを学ぶためです。
+言語の詳細を知りたい場合にはECMAScriptという仕様を参照できます。</p>
+<p>しかしながら、JavaScriptの言語機能に関しては<a href="https://developer.mozilla.org/ja/" title="MDN Web Docs" target="_blank">MDN Web Docs</a>という優れたリファレンスサイトなどがあります。
+そのため、使い方を覚えたいなどの範囲ではECMAScriptの仕様そのものを参照する機会は少ないでしょう。</p>
+<h3 id="to-progress"><a name="to-progress" class="plugin-anchor" href="#to-progress"><i class="fa fa-link" aria-hidden="true"></i></a>言語が進化しているため </h3>
+<p>ECMAScriptはLiving Standardであり、日々更新されています。
+これは、言語仕様に新しい機能や修正などが常に行われていることを表しています。</p>
+<p>ECMAScriptは後方互換性を尊重するため、今学んでいることが無駄になるわけではありません。
+しかしながら言語自体も進化していることは意識しておくとよいでしょう。</p>
+<p>ECMAScriptのプロポーザル（機能）は問題を解決するために提案されます。
+そのプロポーザルがECMAScriptにマージされ利用できる場合、その機能が何を解決するために導入されたのかを知ることが大切です。
+その際には、ECMAScriptの策定プロセスを知っておくことが役立ちます。</p>
+<p>この仕様はなぜこうなったのかということを知りたいと思ったときに、その機能がどのような経緯で入ったのかを調べる手段を持つことは大切です。
+特にES2015以降は策定プロセスもGitHubを利用したオープンなものとなり、過去の記録なども探しやすくなっています。</p>
+<h3 id="to-search"><a name="to-search" class="plugin-anchor" href="#to-search"><i class="fa fa-link" aria-hidden="true"></i></a>情報の正しい状態を調べるため </h3>
+<p>JavaScriptは幅広く使われている言語であるため、世の中には膨大な情報があります。
+そして、検索して見つかる情報には正しいものや間違ったものが混在しています。</p>
+<p>その中においてECMAScriptの仕様やその策定中のプロポーザルに関する情報は状態が明確です。
+基本的にECMAScriptの仕様に入るものは、後方互換性を維持するために破壊的変更はほとんど行えません。
+プロポーザルはステージという明示された状態があり、ステージ4未満の場合はまだ安定していないことがわかります。</p>
+<p>そのため、問題を見つけた際に該当する仕様やプロポーザルを確認してみることが重要です。</p>
+<p>これはECMAScriptに限らず、ウェブやブラウザに関する情報については同じことが言えます。
+ブラウザに関してはHTML、DOM API、CSSなどのオープンな仕様とそれぞれの策定プロセスが存在しています。</p>
+<h3 id="ecmascript-summary"><a name="ecmascript-summary" class="plugin-anchor" href="#ecmascript-summary"><i class="fa fa-link" aria-hidden="true"></i></a>まとめ </h3>
+<p>JavaScriptと一言に言ってもECMAScript、ウェブブラウザ、Node.js、WebAssembly、WebGL、WebRTCなど幅広い分野があります。
+すべてのことを知っている必要はありませんし、知っている人もおそらくいないでしょう。
+このような状況下においては知識そのものよりも、それについて知りたいと思ったときに調べる方法を持っていることが大切です。</p>
+<p>何ごとも突然まったく新しい概念が増えるわけではなく、ものごとには過程が存在します。
+ECMAScriptにおいては策定プロセスという形でどのような段階であるかが公開されています。
+つまり、仕様にいきなり新しい機能が増えるのではなくプロポーザルという段階を踏んでいます。</p>
+<p>日々変化しているソフトウェアにおいては、自身に適切な調べ方を持つことが大切です。</p>
+<blockquote id="fn_1">
+<sup>1</sup>. ECMAScript 4は複雑で大きな変更が含まれており、合意を得ることができずに仕様が破棄されました。<a href="#reffn_1" title="Jump back to footnote [1] in the text."> ↩</a>
+</blockquote>
+<blockquote id="fn_2">
+<sup>2</sup>. この策定プロセスは<a href="https://tc39.es/process-document/" target="_blank">https://tc39.es/process-document/</a>に詳細が書かれています。<a href="#reffn_2" title="Jump back to footnote [2] in the text."> ↩</a>
+</blockquote>
+<blockquote id="fn_3">
+<sup>3</sup>. ES2015の仕様編集者であるAllen Wirfs-Brock氏の書いた<a href="http://wirfs-brock.com/allen/files/papers/standpats-asianplop2016.pdf" target="_blank">Programming Language Standardization</a>に詳細が書かれています。<a href="#reffn_3" title="Jump back to footnote [3] in the text."> ↩</a>
+</blockquote>
+<blockquote id="fn_4">
+<sup>4</sup>. <a href="https://github.com/tc39/proposals/blob/main/inactive-proposals.md" target="_blank">Inactive Proposals</a>に策定を中止したプロポーザルの一覧が公開されています。<a href="#reffn_4" title="Jump back to footnote [4] in the text."> ↩</a>
+</blockquote>
+</body></html>
+                                
+
+                                </section>
+                            
+                        </div>
+                    </div>
+                
+<footer class="book_footer">
+    <p>Copyright (c) 2016-present <a href="https://github.com/asciidwango/js-primer" target="_blank">jsprimer project</a></p>
+</footer>
+
+            </div>
+
+            
+                
+                <a href="../module/" class="navigation navigation-prev " aria-label="Previous page: ECMAScriptモジュール">
+                    <i class="fa fa-angle-left"></i>
+                </a>
+                
+                
+                <a href="../other-parts/" class="navigation navigation-next " aria-label="Next page: 第一部: おわりに">
+                    <i class="fa fa-angle-right"></i>
+                </a>
+                
+            
+        
+    </div>
+
+    <script>
+        var gitbook = gitbook || [];
+        gitbook.push(function() {
+            gitbook.page.hasChanged({"page":{"author":"azu","description":"JavaScriptの仕様であるECMAScriptについてを紹介します。ECMAScriptの歴史や仕様策定がどのようなプロセスで行われているかを紹介します。","sponsors":[],"title":"ECMAScript","level":"1.3.28","depth":2,"next":{"title":"第一部: おわりに","level":"1.3.29","depth":2,"path":"basic/other-parts/README.md","ref":"./basic/other-parts/README.md","articles":[]},"previous":{"title":"ECMAScriptモジュール","level":"1.3.27","depth":2,"path":"basic/module/README.md","ref":"./basic/module/README.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-search","-lunr","page-toc-button","include-codeblock","anchors","canonical-link","js-console","github-issue-feedback","sandpack"],"root":"./source/","styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"docSearch":{"index":"83I8JIFICQ","apiKey":"9169ce4cd84fcf2376f29d9585c89254"},"github-issue-feedback":{"repo":"asciidwango/js-primer","label":"問題を報告する"},"fontsettings":{"theme":"white","family":"sans","size":2},"js-console":{},"canonical-link":{"baseURL":"https://jsprimer.net"},"highlight":{},"page-toc-button":{"maxTocDepth":2,"minTocSize":2},"include-codeblock":{"check":false,"edit":false,"lang":"","fixlang":false,"template":"./resources/gitbook-plugin-include-codeblock.hbs","theme":"chrome","unindent":false},"sandpack":{},"edit-link":{"base":"https://github.com/asciidwango/js-primer/edit/master/source/","label":"Edit"},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false},"anchors":{}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"IPAexMincho","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"index.md","glossary":"GLOSSARY.md","summary":"README.md"},"variables":{"esversion":"2024","nodeversion":"22.7.0","npmversion":"10.8.2","triplebackticks":"```","console":"<a class=\"gitbook-plugin-js-console\" aria-hidden=\"true\"></a>"},"title":"JavaScript Primer #jsprimer","gitbook":">=3.0.0","description":"JavaScriptの基本的な書き方からアプリケーションの作成などのユースケースを学ぶための入門書です"},"file":{"path":"basic/ecmascript/README.md","mtime":"2025-05-18T21:58:17.821Z","type":"markdown"},"gitbook":{"version":"6.0.2","time":"2025-05-18T21:58:35.597Z"},"basePath":"../..","book":{"language":""}});
+        });
+    </script>
+</div>
+
+        
+    <noscript>
+        <style>
+            .honkit-cloak {
+                display: block !important;
+            }
+        </style>
+    </noscript>
+    <script>
+        // Restore sidebar state as critical path for prevent layout shift
+        function __init__getSidebarState(defaultValue){
+            var baseKey = "";
+            var key = baseKey + ":sidebar";
+            try {
+                var value = localStorage[key];
+                if (value === undefined) {
+                    return defaultValue;
+                }
+                var parsed = JSON.parse(value);
+                return parsed == null ? defaultValue : parsed;
+            } catch (e) {
+                return defaultValue;
+            }
+        }
+        function __init__restoreLastSidebarState() {
+            var isMobile = window.matchMedia("(max-width: 600px)").matches;
+            if (isMobile) {
+                // Init last state if not mobile
+                return;
+            }
+            var sidebarState = __init__getSidebarState(true);
+            var book = document.querySelector(".book");
+            // Show sidebar if it enabled
+            if (sidebarState && book) {
+                book.classList.add("without-animation", "with-summary");
+            }
+        }
+
+        try {
+            __init__restoreLastSidebarState();
+        } finally {
+            var book = document.querySelector(".book");
+            book.classList.remove("honkit-cloak");
+        }
+    </script>
+    <script src="../../gitbook/gitbook.js"></script>
+    <script src="../../gitbook/theme.js"></script>
+    
+        
+        <script src="../../gitbook/gitbook-plugin-page-toc-button/plugin.js"></script>
+        
+    
+        
+        <script src="../../gitbook/gitbook-plugin-js-console/console-ui.js"></script>
+        
+    
+        
+        <script src="../../gitbook/gitbook-plugin-github-issue-feedback/plugin.js"></script>
+        
+    
+        
+        <script src="../../gitbook/honkit-plugin-sandpack/honkit-plugin-sandpack.js"></script>
+        
+    
+        
+        <script src="../../gitbook/@honkit/honkit-plugin-fontsettings/fontsettings.js"></script>
+        
+    
+
+    </body>
+</html>
+

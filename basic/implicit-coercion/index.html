@@ -1,0 +1,2080 @@
+
+<!DOCTYPE HTML>
+<html lang="" >
+    <head>
+        <meta charset="UTF-8">
+        <title>暗黙的な型変換 · JavaScript Primer #jsprimer</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="description" content="JavaScriptの暗黙的な型変換は意図しない挙動を発生する原因の1つです。暗黙的な型変換が発生する具体的なコード例や予測が難しいことについてを紹介します。逆に明示的に変換する方法についても紹介します。">
+        <meta name="generator" content="HonKit 6.0.2">
+        
+        
+        
+    
+    <link rel="stylesheet" href="../../gitbook/style.css">
+
+    
+            
+                
+                <link rel="stylesheet" href="../../gitbook/gitbook-plugin-page-toc-button/plugin.css">
+                
+            
+                
+                <link rel="stylesheet" href="../../gitbook/gitbook-plugin-anchors/plugin.css">
+                
+            
+                
+                <link rel="stylesheet" href="../../gitbook/@honkit/honkit-plugin-highlight/website.css">
+                
+            
+                
+                <link rel="stylesheet" href="../../gitbook/@honkit/honkit-plugin-fontsettings/website.css">
+                
+            
+        
+
+    
+
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+         
+    
+    
+    
+    <meta name="HandheldFriendly" content="true"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../gitbook/images/apple-touch-icon-precomposed-152.png">
+    <link rel="shortcut icon" href="../../gitbook/images/favicon.ico" type="image/x-icon">
+
+    
+    <link rel="next" href="../function-declaration/" />
+    
+    
+    <link rel="prev" href="../operator/" />
+    
+
+    <link rel="canonical" href="https://jsprimer.net/basic/implicit-coercion/">
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-DWY0DLHWB6"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+
+    gtag("js", new Date());
+
+    gtag("config", "G-DWY0DLHWB6");
+</script>
+<script type="module">
+    // コンソールUIでコード実行したらイベントとして送信する
+    const onExecuteCode = (scriptType) => {
+        gtag("event", "execute_code", {
+            "event_category": "console",
+            "event_label": "execute_code",
+            "script_type": scriptType || "unknown"
+        });
+    };
+    let observer;
+    const observeEvalEvent = () => {
+        if (observer) {
+            observer.disconnect();
+        }
+        const callback = function(mutationsList) {
+            for (const mutation of mutationsList) {
+                const mirrorConsole = Array.from(mutation.addedNodes).find(node => Boolean(node.dataset.mirrorConsole));
+                if (mirrorConsole) {
+                    return onExecuteCode(mirrorConsole.dataset.mirrorConsole);
+                }
+            }
+        };
+        observer = new MutationObserver(callback);
+        observer.observe(document.body, { childList: true });
+    };
+    const eventMap = new WeakMap();
+    // 問題を報告ボタンを押したらイベントとして送信する
+    const onClickIssueReport = () => {
+        console.log("click_issue_report");
+        gtag("event", "click_issue_report", {
+            "event_category": "contribution",
+            "event_label": "click_issue_report"
+        });
+    };
+    const observeIssueReport = () => {
+        const targetButton = document.querySelector(".gitbook-plugin-github-issue-feedback");
+        // すでにイベントが登録されていたら何もしない
+        if (eventMap.has(targetButton)) {
+            return;
+        }
+        if (targetButton) {
+            targetButton.addEventListener("click", onClickIssueReport);
+            eventMap.set(targetButton, onClickIssueReport);
+        }
+    };
+    window.addEventListener("DOMContentLoaded", function() {
+        gitbook.events.on("page.change", function() {
+            observeEvalEvent();
+            observeIssueReport();
+        });
+    });
+
+</script>
+<meta name="google-site-verification" content="bMotEbgYwkzA3k4PkuyK_NUdz0bKh-Phz0oUwNmRSVo"/>
+<style>
+    /*
+     * Disable antialias
+     */
+    * {
+        -webkit-font-smoothing: initial !important
+    }
+
+    body {
+        text-rendering: initial !important;
+        font-smoothing: initial !important;
+    }
+
+    /* deny access chapter */
+    .summary li.chapter > span {
+        cursor: not-allowed;
+        opacity: .3;
+    }
+
+    /* console ui */
+
+    .mirror-console-attach-button-wrapper {
+        margin-top: -1.275em;
+        margin-bottom: 1.275em
+    }
+
+    .mirror-console-wrapper {
+        margin-top: 1.275em;
+        margin-bottom: 1.275em
+    }
+
+    /* file name for codeblock */
+    .code-filename {
+        background-color: #eee;
+        display: inline-block;
+        padding: 2px 8px;
+        line-height: inherit;
+        margin-bottom: 0px !important;
+    }
+
+    /* Markdown */
+    /* Support horizon scroll */
+    /* https://stackoverflow.com/questions/17770257/scrolling-tables-horizontally-without-wrapping-them-in-div */
+    .markdown-section table {
+        max-width: 100%;
+        overflow-x: auto;
+        display: block;
+    }
+    .markdown-section sup,
+    .markdown-section sub {
+        font-size: 75%;
+    }
+
+    .book_footer {
+        text-align: center;
+        color: #000000;
+        background: #ddd;
+        font-size: 16px;
+        margin-top: 16px;
+        padding: 16px;
+    }
+
+    /* github-issue-feedback */
+    .gitbook-plugin-github-issue-feedback {
+        background-color: #333;
+        color: #fff;
+        opacity: 0.8;
+        padding: 4px;
+        margin-right: 24px;
+        margin-bottom: 4px;
+        border-radius: 6px;
+    }
+
+    .gitbook-plugin-github-issue-feedback:hover {
+        opacity: 1;
+    }
+
+    /* Hide footer on mobile */
+    /* Use navigation width */
+    @media (max-width: 1240px) {
+        .book_footer {
+            display: none;
+        }
+    }
+
+    .navigation {
+        min-width: 50px;
+    }
+
+    @media (min-width: 1240px) {
+        .honkit-plugin-sandpack {
+            width: calc(100% + 180px);
+            margin: 0 0 1em -90px;
+        }
+    }
+
+    .honkit-plugin-sandpack, .honkit-plugin-sandpack--buttonContainer {
+        margin-bottom: 1em;
+    }
+
+</style>
+<meta name="theme-color" content="#ffffff">
+<link rel="manifest" href="../../manifest.json">
+<script defer async>
+    // unregister old service worker(remove workbox)
+    // https://github.com/asciidwango/js-primer/pull/1701
+    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for (const registration of registrations) {
+            registration.unregister();
+        }
+    }).catch(function(err) {
+        console.error(new Error("Can not getRegistrations", {
+            cause: err
+        }));
+    });
+</script>
+
+    </head>
+    <body>
+        
+<div class="book honkit-cloak">
+    <div class="book-summary">
+        
+            
+            
+                <nav role="navigation">
+                
+
+
+<ul class="summary">
+    
+    
+
+    
+
+    
+        
+        
+    
+        <li class="chapter " data-level="1.1" data-path="../../">
+            
+                <a href="../../">
+            
+                    
+                    この書籍について
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2" data-path="../../intro/">
+            
+                <a href="../../intro/">
+            
+                    
+                    はじめに
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.2.1" data-path="../../intro/authors/">
+            
+                <a href="../../intro/authors/">
+            
+                    
+                    著者紹介
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.2" data-path="../../intro/sponsors/">
+            
+                <a href="../../intro/sponsors/">
+            
+                    
+                    JavaScript Primerスポンサー
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.3" data-path="../../intro/preparation/">
+            
+                <a href="../../intro/preparation/">
+            
+                    
+                    読みはじめる前の事前準備
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.4" data-path="../../intro/feedback/">
+            
+                <a href="../../intro/feedback/">
+            
+                    
+                    文章の間違いに気づいたら
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3" data-path="../">
+            
+                <a href="../">
+            
+                    
+                    第一部: 基本文法
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.3.1" data-path="../introduction/">
+            
+                <a href="../introduction/">
+            
+                    
+                    JavaScriptとは
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.2" data-path="../comments/">
+            
+                <a href="../comments/">
+            
+                    
+                    コメント
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.3" data-path="../variables/">
+            
+                <a href="../variables/">
+            
+                    
+                    変数と宣言
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.4" data-path="../read-eval-print/">
+            
+                <a href="../read-eval-print/">
+            
+                    
+                    値の評価と表示
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.5" data-path="../data-type/">
+            
+                <a href="../data-type/">
+            
+                    
+                    データ型とリテラル
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.6" data-path="../operator/">
+            
+                <a href="../operator/">
+            
+                    
+                    演算子
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter active" data-level="1.3.7" data-path="./">
+            
+                <a href="./">
+            
+                    
+                    暗黙的な型変換
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.8" data-path="../function-declaration/">
+            
+                <a href="../function-declaration/">
+            
+                    
+                    関数と宣言
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.9" data-path="../statement-expression/">
+            
+                <a href="../statement-expression/">
+            
+                    
+                    文と式
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.10" data-path="../condition/">
+            
+                <a href="../condition/">
+            
+                    
+                    条件分岐
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.11" data-path="../loop/">
+            
+                <a href="../loop/">
+            
+                    
+                    ループと反復処理
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.12" data-path="../object/">
+            
+                <a href="../object/">
+            
+                    
+                    オブジェクト
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.13" data-path="../prototype-object/">
+            
+                <a href="../prototype-object/">
+            
+                    
+                    プロトタイプオブジェクト
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.14" data-path="../array/">
+            
+                <a href="../array/">
+            
+                    
+                    配列
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.15" data-path="../string/">
+            
+                <a href="../string/">
+            
+                    
+                    文字列
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.16" data-path="../string-unicode/">
+            
+                <a href="../string-unicode/">
+            
+                    
+                    文字列とUnicode
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.17" data-path="../wrapper-object/">
+            
+                <a href="../wrapper-object/">
+            
+                    
+                    ラッパーオブジェクト
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.18" data-path="../function-scope/">
+            
+                <a href="../function-scope/">
+            
+                    
+                    関数とスコープ
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.19" data-path="../function-this/">
+            
+                <a href="../function-this/">
+            
+                    
+                    関数とthis
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.20" data-path="../class/">
+            
+                <a href="../class/">
+            
+                    
+                    クラス
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.21" data-path="../error-try-catch/">
+            
+                <a href="../error-try-catch/">
+            
+                    
+                    例外処理
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.22" data-path="../async/">
+            
+                <a href="../async/">
+            
+                    
+                    非同期処理:Promise/Async Function
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.23" data-path="../map-and-set/">
+            
+                <a href="../map-and-set/">
+            
+                    
+                    Map/Set
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.24" data-path="../json/">
+            
+                <a href="../json/">
+            
+                    
+                    JSON
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.25" data-path="../date/">
+            
+                <a href="../date/">
+            
+                    
+                    Date
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.26" data-path="../math/">
+            
+                <a href="../math/">
+            
+                    
+                    Math
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.27" data-path="../module/">
+            
+                <a href="../module/">
+            
+                    
+                    ECMAScriptモジュール
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.28" data-path="../ecmascript/">
+            
+                <a href="../ecmascript/">
+            
+                    
+                    ECMAScript
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.29" data-path="../other-parts/">
+            
+                <a href="../other-parts/">
+            
+                    
+                    第一部: おわりに
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4" data-path="../../use-case/">
+            
+                <a href="../../use-case/">
+            
+                    
+                    第二部: 応用編（ユースケース）
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.4.1" data-path="../../use-case/setup-local-env/">
+            
+                <a href="../../use-case/setup-local-env/">
+            
+                    
+                    アプリケーション開発の準備
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.2" data-path="../../use-case/ajaxapp/">
+            
+                <a href="../../use-case/ajaxapp/">
+            
+                    
+                    Ajax通信
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.4.2.1" data-path="../../use-case/ajaxapp/entrypoint/">
+            
+                <a href="../../use-case/ajaxapp/entrypoint/">
+            
+                    
+                    エントリーポイント
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.2.2" data-path="../../use-case/ajaxapp/http/">
+            
+                <a href="../../use-case/ajaxapp/http/">
+            
+                    
+                    HTTP通信
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.2.3" data-path="../../use-case/ajaxapp/display/">
+            
+                <a href="../../use-case/ajaxapp/display/">
+            
+                    
+                    データを表示する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.2.4" data-path="../../use-case/ajaxapp/promise/">
+            
+                <a href="../../use-case/ajaxapp/promise/">
+            
+                    
+                    Promiseを活用する
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3" data-path="../../use-case/nodecli/">
+            
+                <a href="../../use-case/nodecli/">
+            
+                    
+                    Node.jsでCLIアプリ
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.4.3.1" data-path="../../use-case/nodecli/helloworld/">
+            
+                <a href="../../use-case/nodecli/helloworld/">
+            
+                    
+                    Node.jsでHello World
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3.2" data-path="../../use-case/nodecli/argument-parse/">
+            
+                <a href="../../use-case/nodecli/argument-parse/">
+            
+                    
+                    コマンドライン引数を処理する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3.3" data-path="../../use-case/nodecli/read-file/">
+            
+                <a href="../../use-case/nodecli/read-file/">
+            
+                    
+                    ファイルを読み込む
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3.4" data-path="../../use-case/nodecli/md-to-html/">
+            
+                <a href="../../use-case/nodecli/md-to-html/">
+            
+                    
+                    MarkdownをHTMLに変換する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3.5" data-path="../../use-case/nodecli/refactor-and-unittest/">
+            
+                <a href="../../use-case/nodecli/refactor-and-unittest/">
+            
+                    
+                    ユニットテストを記述する
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4" data-path="../../use-case/todoapp/">
+            
+                <a href="../../use-case/todoapp/">
+            
+                    
+                    Todoアプリ
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.4.4.1" data-path="../../use-case/todoapp/entrypoint/">
+            
+                <a href="../../use-case/todoapp/entrypoint/">
+            
+                    
+                    エントリーポイント
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.2" data-path="../../use-case/todoapp/app-structure/">
+            
+                <a href="../../use-case/todoapp/app-structure/">
+            
+                    
+                    アプリの構成要素
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.3" data-path="../../use-case/todoapp/form-event/">
+            
+                <a href="../../use-case/todoapp/form-event/">
+            
+                    
+                    Todoアイテムの追加を実装する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.4" data-path="../../use-case/todoapp/event-model/">
+            
+                <a href="../../use-case/todoapp/event-model/">
+            
+                    
+                    イベントとモデル
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.5" data-path="../../use-case/todoapp/update-delete/">
+            
+                <a href="../../use-case/todoapp/update-delete/">
+            
+                    
+                    Todoアイテムの更新と削除を実装する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.6" data-path="../../use-case/todoapp/final/">
+            
+                <a href="../../use-case/todoapp/final/">
+            
+                    
+                    Todoアプリのリファクタリング
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5" data-path="../../appendix/links/">
+            
+                <a href="../../appendix/links/">
+            
+                    
+                    付録: 参考リンク集
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.6" data-path="../../cheatsheet/">
+            
+                <a href="../../cheatsheet/">
+            
+                    
+                    付録: JavaScriptチートシート
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.7" data-path="../../outro/">
+            
+                <a href="../../outro/">
+            
+                    
+                    おわりに
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+    
+
+    <li class="divider"></li>
+
+    <li>
+        <a href="https://github.com/honkit/honkit" target="blank" class="gitbook-link">
+            Published with HonKit
+        </a>
+    </li>
+</ul>
+
+
+                </nav>
+            
+        
+    </div>
+
+    <div class="book-body">
+        
+            <div class="body-inner">
+                
+                    
+
+<!-- Header -->
+<meta name="keywords" content="JavaScript,ECMAScript,JS,入門,チュートリアル,書籍,本,無料,Node.js,ブラウザ"/>
+<link rel="author" href="https://www.hatena.ne.jp/efcl/"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsearch.js@2/dist/cdn/docsearch.min.css"/>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/docsearch.js@2/dist/cdn/docsearch.min.js"></script>
+<!-- OGP -->
+<meta property="og:title" content="JavaScript Primer - 迷わないための入門書"/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://jsprimer.net/"/>
+<meta property="og:image" content="https://jsprimer.net/landing/img/cover-optimized.jpg"/>
+<meta property="og:site_name" content="JavaScript Primer"/>
+<meta property="og:description" content="JavaScript Primerは、JavaScriptの基礎から応用までを一貫して学べる入門書です。"/>
+<style>
+    .book-header {
+        display: flex;
+        flex-direction: row;
+        background-color: #333;
+    }
+
+    /* link color */
+    .book-header a {
+        color: #fff;
+    }
+
+    /* hover color */
+    .book-header .btn:hover, .book-header .btn:focus, .book-header a:focus, .book-header a:hover {
+        color: hsla(0, 0%, 100%, 0.75) !important;
+    }
+
+    /* Mobile header fixed */
+    @media (max-width: 768px) {
+        /* Headerを固定する */
+        .book-header {
+            position: fixed;
+            width: 100%;
+        }
+
+        /* Icon only */
+        .book-header-title-img {
+            margin: auto 18px auto 0 !important;
+        }
+
+        .book-header-title-h {
+            display: none;
+        }
+
+        /* Header分のズレを入れる */
+        .page-wrapper {
+            padding-top: 60px;
+        }
+
+        /* github-issue-feedbackを非表示にする */
+        .gitbook-plugin-github-issue-feedback {
+            display: none;
+        }
+    }
+
+    /* Dynamic created by GitBook*/
+    .btn.pull-left.js-toolbar-action {
+        order: 1;
+    }
+
+    .book-header-title {
+        order: 2;
+        display: inline-flex;
+        flex-direction: row;
+        color: #fff;
+    }
+
+    .book-header-title:hover {
+        color: hsla(0, 0%, 100%, 0.75);
+    }
+
+    .book-header-title-img {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        margin: auto 10px auto 0;
+    }
+
+    .book-header-title-h {
+        font-size: 20px;
+        margin: auto;
+        padding: 0;
+    }
+
+    .header-center {
+        order: 3;
+        display: inline-flex;
+        flex-direction: column;
+        justify-content: center;
+        /* self */
+        flex-grow: 1;
+        flex-shrink: 0;
+        flex-basis: auto;
+    }
+
+    .header-right {
+        order: 4;
+        display: inline-flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        /* icon size */
+        font-size: 24px;
+    }
+
+    .amazon-link, .github-link {
+        color: #fff;
+        /* Padding and make Vertical */
+        display: inline-flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding-left: 4px;
+        padding-right: 4px;
+    }
+
+    /* Desktop */
+    @media (min-width: 768px) {
+        .header-center {
+            align-items: center;
+        }
+
+        .header-right {
+            margin-right: 24px;
+        }
+    }
+
+    /* DocSearch */
+    @media (max-width: 768px) {
+        .algolia-autocomplete .ds-dropdown-menu {
+            max-width: calc(100vw - 32px) !important;
+            min-width: calc(100vw - 32px) !important;
+            width: calc(100vw - 32px) !important;
+            /* negative margin
+              This is absolute element
+              */
+            margin-left: -32px !important;
+        }
+
+        .algolia-autocomplete .algolia-docsearch-suggestion--content {
+            width: 100% !important;
+            padding-left: 0 !important;
+        }
+
+        .algolia-autocomplete .algolia-docsearch-suggestion--content:before {
+            display: none !important;
+        }
+
+        .algolia-autocomplete .algolia-docsearch-suggestion--subcategory-column {
+            display: none !important;
+        }
+
+        .algolia-autocomplete.algolia-autocomplete-right .ds-dropdown-menu {
+            right: inherit !important
+        }
+
+        .algolia-autocomplete.algolia-autocomplete-right .ds-dropdown-menu::before {
+            right: 50%;
+        }
+
+        .sbx-custom {
+            width: 92px !important;
+            padding: initial !important;
+        }
+
+        .amazon-link {
+            display: none;
+        }
+    }
+
+    /* SearchBox */
+    .searchbarWrapper {
+        height: 50px;
+    }
+
+
+    .sbx-custom {
+        display: inline-block;
+        position: relative;
+        min-width: 150px;
+        width: 300px;
+        max-width: 300px;
+        height: 33px;
+        white-space: nowrap;
+        box-sizing: border-box;
+        font-size: 14px;
+    }
+
+    .sbx-custom__wrapper {
+        width: 100%;
+        height: 100%;
+    }
+
+    .sbx-custom__input {
+        display: inline-block;
+        -webkit-transition: box-shadow .4s ease, background .4s ease;
+        transition: box-shadow .4s ease, background .4s ease;
+        border: 0;
+        border-radius: 5px;
+        box-shadow: inset 0 0 0 2px #CCCCCC;
+        background: #FFFFFF;
+        padding: 0 27px 0 33px;
+        width: 100%;
+        height: 100%;
+        vertical-align: middle;
+        white-space: normal;
+        font-size: inherit;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+    }
+
+    .sbx-custom__input::-webkit-search-decoration, .sbx-custom__input::-webkit-search-cancel-button, .sbx-custom__input::-webkit-search-results-button, .sbx-custom__input::-webkit-search-results-decoration {
+        display: none;
+    }
+
+    .sbx-custom__input:hover {
+        box-shadow: inset 0 0 0 2px #b3b3b3;
+    }
+
+    .sbx-custom__input:focus, .sbx-custom__input:active {
+        outline: 0;
+        box-shadow: inset 0 0 0 2px #4B54DE;
+        background: #FFFFFF;
+    }
+
+    .sbx-custom__input::-webkit-input-placeholder {
+        color: #BBBBBB;
+    }
+
+    .sbx-custom__input::-moz-placeholder {
+        color: #BBBBBB;
+    }
+
+    .sbx-custom__input:-ms-input-placeholder {
+        color: #BBBBBB;
+    }
+
+    .sbx-custom__input::placeholder {
+        color: #BBBBBB;
+    }
+
+    .sbx-custom__submit {
+        position: absolute;
+        top: 0;
+        right: inherit;
+        left: 0;
+        margin: 0;
+        border: 0;
+        border-radius: 4px 0 0 4px;
+        background-color: rgba(255, 255, 255, 0);
+        padding: 0;
+        width: 33px;
+        height: 100%;
+        vertical-align: middle;
+        text-align: center;
+        font-size: inherit;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+    .sbx-custom__submit::before {
+        display: inline-block;
+        margin-right: -4px;
+        height: 100%;
+        vertical-align: middle;
+        content: '';
+    }
+
+    .sbx-custom__submit:hover, .sbx-custom__submit:active {
+        cursor: pointer;
+    }
+
+    .sbx-custom__submit:focus {
+        outline: 0;
+    }
+
+    .sbx-custom__submit svg {
+        width: 17px;
+        height: 17px;
+        vertical-align: middle;
+        fill: #3A33D1;
+    }
+
+    .sbx-custom__reset {
+        display: none;
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        margin: 0;
+        border: 0;
+        background: none;
+        cursor: pointer;
+        padding: 0;
+        font-size: inherit;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        fill: rgba(0, 0, 0, 0.5);
+    }
+
+    .sbx-custom__reset:focus {
+        outline: 0;
+    }
+
+    .sbx-custom__reset svg {
+        display: block;
+        margin: 4px;
+        width: 17px;
+        height: 17px;
+    }
+
+    .sbx-custom__input:valid ~ .sbx-custom__reset {
+        display: block;
+        -webkit-animation-name: sbx-reset-in;
+        animation-name: sbx-reset-in;
+        -webkit-animation-duration: .15s;
+        animation-duration: .15s;
+    }
+
+    @-webkit-keyframes sbx-reset-in {
+        0% {
+            -webkit-transform: translate3d(-20%, 0, 0);
+            transform: translate3d(-20%, 0, 0);
+            opacity: 0;
+        }
+        100% {
+            -webkit-transform: none;
+            transform: none;
+            opacity: 1;
+        }
+    }
+
+    @keyframes sbx-reset-in {
+        0% {
+            -webkit-transform: translate3d(-20%, 0, 0);
+            transform: translate3d(-20%, 0, 0);
+            opacity: 0;
+        }
+        100% {
+            -webkit-transform: none;
+            transform: none;
+            opacity: 1;
+        }
+    }
+</style>
+<div class="book-header" role="navigation">
+    
+    <a class="book-header-title" href="../..">
+        <img class="book-header-title-img" alt="JavaScript Primer"
+             src="../../gitbook/icons/icon-128x128.png"/>
+        <h2 class="book-header-title-h" title="JavaScript Primer - 迷わないための入門書">JavaScript Primer</h2>
+    </a>
+    <div class="searchbarWrapper header-center">
+        <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+            <symbol xmlns="http://www.w3.org/2000/svg" id="sbx-icon-search-8" viewBox="0 0 40 40">
+                <path d="M16 32c8.835 0 16-7.165 16-16 0-8.837-7.165-16-16-16C7.162 0 0 7.163 0 16c0 8.835 7.163 16 16 16zm0-5.76c5.654 0 10.24-4.586 10.24-10.24 0-5.656-4.586-10.24-10.24-10.24-5.656 0-10.24 4.584-10.24 10.24 0 5.654 4.584 10.24 10.24 10.24zM28.156 32.8c-1.282-1.282-1.278-3.363.002-4.643 1.282-1.284 3.365-1.28 4.642-.003l6.238 6.238c1.282 1.282 1.278 3.363-.002 4.643-1.283 1.283-3.366 1.28-4.643.002l-6.238-6.238z"
+                      fill-rule="evenodd"></path>
+            </symbol>
+            <symbol xmlns="http://www.w3.org/2000/svg" id="sbx-icon-clear-5" viewBox="0 0 20 20">
+                <path d="M10 20c5.523 0 10-4.477 10-10S15.523 0 10 0 0 4.477 0 10s4.477 10 10 10zm1.35-10.123l3.567 3.568-1.225 1.226-3.57-3.568-3.567 3.57-1.226-1.227 3.568-3.568-3.57-3.57 1.227-1.224 3.568 3.568 3.57-3.567 1.224 1.225-3.568 3.57zM10 18.272c4.568 0 8.272-3.704 8.272-8.272S14.568 1.728 10 1.728 1.728 5.432 1.728 10 5.432 18.272 10 18.272z"
+                      fill-rule="evenodd"></path>
+            </symbol>
+        </svg>
+
+        <form novalidate="novalidate" onsubmit="return false;" class="searchbox sbx-custom">
+            <div role="search" class="sbx-custom__wrapper">
+                <input name="search" placeholder="Search words" autocomplete="off" required="required"
+                       class="sbx-custom__input" type="search">
+                <button type="submit" title="Submit your search query." class="sbx-custom__submit">
+                    <svg role="img" aria-label="Search">
+                        <use xlink:href="#sbx-icon-search-8"></use>
+                    </svg>
+                </button>
+                <button type="reset" title="Clear the search query." class="sbx-custom__reset">
+                    <svg role="img" aria-label="Reset">
+                        <use xlink:href="#sbx-icon-clear-5"></use>
+                    </svg>
+                </button>
+            </div>
+        </form>
+    </div>
+    <div class="header-right">
+        <!-- Icon: https://www.iconfinder.com/iconsets/circle-payment -->
+        <a class="amazon-link" title="Amazon: JavaScript Primer 改訂2版 迷わないための入門書"
+           href="https://www.amazon.co.jp/dp/4048931105/" target="_blank"><img
+                width="22"
+                height="22"
+                style="margin: 1px;"
+                src="../../gitbook/icons/amazon-icon.png" alt=""></a>
+        <a class="github-link" title="GitHub: asciidwango/js-primer" href="https://github.com/asciidwango/js-primer"
+           target="_blank"><i
+                class="fa fa-github fa-fw"></i></a>
+    </div>
+</div>
+
+<script defer>
+    // focus on search box
+    document.querySelector(".searchbox [type=\"reset\"]").addEventListener("click", function() {
+        this.parentNode.querySelector("input").focus();
+    });
+    // init DocSearch
+    var search = docsearch({
+        apiKey: "fd28ebaba94be0c39fb9fa1b2fed4f23", // use a SEARCH-ONLY api key here
+        indexName: "asciidwango",
+        inputSelector: ".sbx-custom__input",
+        debug: false // set to `true` if you want to inspect the dropdown menu's CSS
+    });
+</script>
+<script>
+    window.addEventListener("DOMContentLoaded", function() {
+        gitbook.events.on("page.change", function() {
+            setTimeout(() => console.clear(), 1000);
+        });
+    });
+</script>
+
+
+
+
+
+                    <div class="page-wrapper" tabindex="-1" role="main">
+                        <div class="page-inner">
+                            
+                                <section class="normal markdown-section">
+                                
+<style>
+    .page-sponsors {
+        background: #fafafa;
+    }
+    .page-sponsors .page-sponsors-list {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 0;
+        padding: 1em 0;
+        list-style: none;
+        gap: 8px;
+    }
+    .page-sponsors-footer {
+        text-align: center;
+        padding: 0;
+        margin: 0;
+    }
+</style>
+<div class="page-sponsors">
+
+    <div class="page-sponsors-footer">
+        JavaScript Primerの<a href="https://jsprimer.net/intro/sponsors/">スポンサーを募集中</a>
+    </div>
+
+</div>
+
+                                <html><head></head><body><h1 id="implicit-coercion"><a name="implicit-coercion" class="plugin-anchor" href="#implicit-coercion"><i class="fa fa-link" aria-hidden="true"></i></a>暗黙的な型変換 </h1>
+<p>この章では、明示的な型変換と暗黙的な型変換について学んでいきます。</p>
+<p>「<a href="../operator/" title="演算子について解説した章">演算子</a>」の章にて、 等価演算子（<code>==</code>）ではなく厳密等価演算子（<code>===</code>）の利用を推奨していました。
+これは厳密等価演算子（<code>===</code>）が<strong>暗黙的な型変換</strong>をせずに、値同士を比較できるためです。</p>
+<p>厳密等価演算子（<code>===</code>）では異なるデータ型を比較した場合に、その比較結果は必ず<code>false</code>となります。
+次のコードは、数値の<code>1</code>と文字列の<code>"1"</code>という異なるデータ型を比較しているので、結果は<code>false</code>となります。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// `===`では、異なるデータ型の比較結果はfalse</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-number">1</span> === <span class="hljs-string">"1"</span>); <span class="hljs-comment">// =&gt; false</span>
+</code></pre>
+<p>しかし、等価演算子（<code>==</code>）では異なるデータ型を比較した場合に、同じ型となるように<strong>暗黙的な型変換</strong>をしてから比較します。
+次のコードでは、数値の<code>1</code>と文字列の<code>"1"</code>の比較結果が<code>true</code>となっています。
+これは、等価演算子（<code>==</code>）は右辺の文字列<code>"1"</code>を数値の<code>1</code>へと暗黙的な型変換をしてから、比較するためです。</p>
+<!--
+
+- Number == String は Number == ToNumber(String) される
+- Step 4: https://tc39.es/ecma262/#sec-abstract-equality-comparison
+
+-->
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// `==`では、異なるデータ型は暗黙的な型変換をしてから比較される</span>
+<span class="hljs-comment">// 暗黙的な型変換によって 1 == 1 のように変換されてから比較される</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-number">1</span> == <span class="hljs-string">"1"</span>); <span class="hljs-comment">// =&gt; true</span>
+</code></pre>
+<p>このように、暗黙的な型変換によって意図しない結果となるため、比較には厳密等価演算子（<code>===</code>）を使うべきです。</p>
+<p>別の暗黙的な型変換の例として、数値と真偽値の加算を見てみましょう。
+多くの言語では、数値と真偽値の加算のような異なるデータ型同士の加算はエラーとなります。
+しかし、JavaScriptでは暗黙的な型変換が行われてから加算されるため、エラーなく処理されます。</p>
+<p>次のコードでは、真偽値の<code>true</code>が数値の<code>1</code>へと暗黙的に変換されてから加算処理が行われます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// 暗黙的な型変換が行われ、数値の加算として計算される</span>
+<span class="hljs-number">1</span> + <span class="hljs-literal">true</span>; <span class="hljs-comment">// =&gt; 2</span>
+<span class="hljs-comment">// 次のように暗黙的に変換されてから計算される</span>
+<span class="hljs-number">1</span> + <span class="hljs-number">1</span>; <span class="hljs-comment">// =&gt; 2</span>
+</code></pre>
+<p>JavaScriptでは、エラーが発生するのではなく、暗黙的な型変換が行われてしまうケースが多くあります。
+暗黙的に変換が行われた場合、プログラムは例外を投げずに処理が進むため、バグの発見が難しくなります。
+このように、暗黙的な型変換はできる限り避けるべき挙動です。</p>
+<p>この章では、次のことについて学んでいきます。</p>
+<ul>
+<li>暗黙的な型変換とはどのようなものなのか</li>
+<li>暗黙的ではない明示的な型変換の方法</li>
+<li>明示的な変換だけでは解決しないこと</li>
+</ul>
+<h2 id="what-is-implicit-coercion"><a name="what-is-implicit-coercion" class="plugin-anchor" href="#what-is-implicit-coercion"><i class="fa fa-link" aria-hidden="true"></i></a>暗黙的な型変換とは </h2>
+<p>暗黙的な型変換とは次のことを言います。</p>
+<ul>
+<li>ある処理において、その処理過程で行われる明示的ではない型変換のこと</li>
+</ul>
+<p>暗黙的な型変換は、演算子による演算や関数の処理過程で行われます。
+ここでは、演算子における暗黙的な型変換を中心に見ていきます。</p>
+<h3 id="implicit-coercion-of-equal-operator"><a name="implicit-coercion-of-equal-operator" class="plugin-anchor" href="#implicit-coercion-of-equal-operator"><i class="fa fa-link" aria-hidden="true"></i></a>等価演算子の暗黙的な型変換 </h3>
+<p>もっとも有名な暗黙的な型変換は、先ほども出てきた等価演算子（<code>==</code>）です。
+等価演算子は、オペランド同士が同じ型となるように暗黙的な型変換をしてから、比較します。</p>
+<p>次のように等価演算子（<code>==</code>）による比較は、驚くような結果を作り出します。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// 異なる型である場合に暗黙的な型変換が行われる</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-number">1</span> == <span class="hljs-string">"1"</span>); <span class="hljs-comment">// =&gt; true</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-number">0</span> == <span class="hljs-literal">false</span>); <span class="hljs-comment">// =&gt; true</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-number">10</span> == [<span class="hljs-string">"10"</span>]); <span class="hljs-comment">// =&gt; true</span>
+</code></pre>
+<p>このほかにも等価演算子による予想できない結果は、比較する値と型の組み合わせの数だけあります。
+そのため、等価演算子の比較結果がどうなるかを覚えるのは現実的でありません。</p>
+<p><a href="https://dorey.github.io/JavaScript-Equality-Table/" target="_blank"><img src="img/JavaScript-Equality-Table.png" alt="等価演算子による比較結果をまとめた表。緑はtrueとなる組み合わせ"></img></a></p>
+<p>しかし、等価演算子の暗黙的な型変換を避ける簡単な方法があります。</p>
+<p>それは、常に厳密等価演算子（<code>===</code>）を使うことです。
+値を比較する際は、常に厳密等価演算子を使うことで、暗黙的な型変換をせずに値を比較できます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-number">1</span> === <span class="hljs-string">"1"</span>); <span class="hljs-comment">// =&gt; false</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-number">0</span> === <span class="hljs-literal">false</span>); <span class="hljs-comment">// =&gt; false</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-number">10</span> === [<span class="hljs-string">"10"</span>]); <span class="hljs-comment">// =&gt; false</span>
+</code></pre>
+<p>厳密等価演算子（<code>===</code>）を使うことで、意図しない比較結果を避けることができます。
+そのため、比較には等価演算子（<code>==</code>）ではなく厳密等価演算子（<code>===</code>）を使うことを推奨します。</p>
+<h3 id="various-implicit-coercion"><a name="various-implicit-coercion" class="plugin-anchor" href="#various-implicit-coercion"><i class="fa fa-link" aria-hidden="true"></i></a>さまざまな暗黙的な型変換 </h3>
+<p>他の演算子についても、具体的な例を見てみましょう。</p>
+<p>次のコードでは、数値の<code>1</code>と文字列の<code>"2"</code>をプラス演算子で処理しています。
+プラス演算子（<code>+</code>）は、数値の加算と文字列の結合を両方実行できるように多重定義されています。
+このケースでは、JavaScriptは文字列の結合を優先する仕様となっています。
+そのため、数値の<code>1</code>を文字列の<code>"1"</code>へ暗黙的に変換してから、文字列結合します。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-number">1</span> + <span class="hljs-string">"2"</span>; <span class="hljs-comment">// =&gt; "12"</span>
+<span class="hljs-comment">// 演算過程で次のように暗黙的な型変換が行われる</span>
+<span class="hljs-string">"1"</span> + <span class="hljs-string">"2"</span>; <span class="hljs-comment">// =&gt; "12"</span>
+</code></pre>
+<p>もうひとつ、数値と文字列での暗黙的な型変換を見てみましょう。
+次のコードでは、数値の<code>1</code>から文字列の<code>"2"</code>を減算しています。</p>
+<p>JavaScriptには、文字列に対するマイナス演算子（<code>-</code>）の定義はありません。
+そのため、マイナス演算子の対象となる数値への暗黙的な型変換が行われます。
+これにより、文字列の<code>"2"</code>を数値の<code>2</code>へ暗黙的に変換してから、減算します。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-number">1</span> - <span class="hljs-string">"2"</span>; <span class="hljs-comment">// =&gt; -1</span>
+<span class="hljs-comment">// 演算過程で次のように暗黙的な型変換が行われる</span>
+<span class="hljs-number">1</span> - <span class="hljs-number">2</span>; <span class="hljs-comment">// =&gt; -1</span>
+</code></pre>
+<p>2つの値までは、まだ結果の型を予想できます。
+しかし、3つ以上の値を扱う場合に結果を予測するのが難しくなります。</p>
+<p>次のように3つ以上の値を<code>+</code>演算子で演算する場合に、値の型が混ざっていると、
+演算する順番によっても結果が異なります。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> x = <span class="hljs-number">1</span>, y = <span class="hljs-string">"2"</span>, z = <span class="hljs-number">3</span>;
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(x + y + z); <span class="hljs-comment">// =&gt; "123"</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(y + x + z); <span class="hljs-comment">// =&gt; "213"</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(x + z + y); <span class="hljs-comment">// =&gt; "42"</span>
+</code></pre>
+<p>このように、処理の過程でオペランドの型によって、
+自動的に変換されることを<strong>暗黙的な型変換</strong>と呼んでいます。</p>
+<p>暗黙的な型変換では、結果の値の型はオペランドの型に依存しています。
+それを避けるには、暗黙的ではない変換 ーー つまり明示的な型変換をする必要があります。</p>
+<h2 id="explicit-coercion"><a name="explicit-coercion" class="plugin-anchor" href="#explicit-coercion"><i class="fa fa-link" aria-hidden="true"></i></a>明示的な型変換 </h2>
+<p>プリミティブ型へ明示的な型変換をする方法を見ていきます。</p>
+<h3 id="any-to-boolean"><a name="any-to-boolean" class="plugin-anchor" href="#any-to-boolean"><i class="fa fa-link" aria-hidden="true"></i></a>任意の値 → 真偽値 </h3>
+<p>JavaScriptでは<code>Boolean</code>コンストラクタ関数を使うことで、任意の値を<code>true</code>または<code>false</code>の真偽値に変換できます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-title class_">Boolean</span>(<span class="hljs-string">"string"</span>); <span class="hljs-comment">// =&gt; true</span>
+<span class="hljs-title class_">Boolean</span>(<span class="hljs-number">1</span>); <span class="hljs-comment">// =&gt; true</span>
+<span class="hljs-title class_">Boolean</span>({}); <span class="hljs-comment">// =&gt; true</span>
+<span class="hljs-title class_">Boolean</span>(<span class="hljs-number">0</span>); <span class="hljs-comment">// =&gt; false</span>
+<span class="hljs-title class_">Boolean</span>(<span class="hljs-string">""</span>); <span class="hljs-comment">// =&gt; false</span>
+<span class="hljs-title class_">Boolean</span>(<span class="hljs-literal">null</span>); <span class="hljs-comment">// =&gt; false</span>
+</code></pre>
+<p>JavaScriptでは、次の値は<code>false</code>へ変換されます。</p>
+<ul>
+<li><code>false</code></li>
+<li><code>undefined</code></li>
+<li><code>null</code></li>
+<li><code>0</code></li>
+<li><code>0n</code></li>
+<li><code>NaN</code></li>
+<li><code>""</code>（空文字列）</li>
+</ul>
+<p>暗黙的な型変換によって<code>false</code>に変換されるこれらの値をまとめて<strong>falsy</strong>な値と呼びます。
+falsyではない値は、<code>true</code>へと変換されます。</p>
+<p>この変換ルールはif文の条件式の評価と同様です。
+次のようにif文に対して、真偽値以外の値を渡したときに、真偽値へと暗黙的に変換されてから判定されます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// x は undefined</span>
+<span class="hljs-keyword">let</span> x; 
+<span class="hljs-keyword">if</span> (!x) {
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">"falsyな値なら表示"</span>, x);
+}
+</code></pre>
+<p>真偽値については、暗黙的な型変換のルールが少ないため、明示的に変換せずに扱われることも多いです。
+しかし、より正確な判定をして真偽値を得るには、次のように厳密等価演算子（<code>===</code>）を使って比較します。</p>
+<pre><code class="lang-js"><span class="hljs-comment">// x は undefined</span>
+<span class="hljs-keyword">let</span> x;
+<span class="hljs-keyword">if</span> (x === <span class="hljs-literal">undefined</span>) {
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">"xがundefinedなら表示"</span>, x);
+}
+</code></pre>
+<h3 id="number-to-string"><a name="number-to-string" class="plugin-anchor" href="#number-to-string"><i class="fa fa-link" aria-hidden="true"></i></a>数値 → 文字列 </h3>
+<p>数値から文字列へ明示的に変換する場合は、<code>String</code>コンストラクタ関数を使います。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-title class_">String</span>(<span class="hljs-number">1</span>); <span class="hljs-comment">// =&gt; "1"</span>
+</code></pre>
+<p><code>String</code>コンストラクタ関数は、数値以外にもいろいろな値を文字列へと変換できます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-title class_">String</span>(<span class="hljs-string">"str"</span>); <span class="hljs-comment">// =&gt; "str"</span>
+<span class="hljs-title class_">String</span>(<span class="hljs-literal">true</span>); <span class="hljs-comment">// =&gt; "true"</span>
+<span class="hljs-title class_">String</span>(<span class="hljs-literal">null</span>); <span class="hljs-comment">// =&gt; "null"</span>
+<span class="hljs-title class_">String</span>(<span class="hljs-literal">undefined</span>); <span class="hljs-comment">// =&gt; "undefined"</span>
+<span class="hljs-title class_">String</span>(<span class="hljs-title class_">Symbol</span>(<span class="hljs-string">"シンボルの説明文"</span>)); <span class="hljs-comment">// =&gt; "Symbol(シンボルの説明文)"</span>
+<span class="hljs-comment">// プリミティブ型ではない値の場合</span>
+<span class="hljs-title class_">String</span>([<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>]); <span class="hljs-comment">// =&gt; "1,2,3"</span>
+<span class="hljs-title class_">String</span>({ <span class="hljs-attr">key</span>: <span class="hljs-string">"value"</span> }); <span class="hljs-comment">// =&gt; "[object Object]"</span>
+<span class="hljs-title class_">String</span>(<span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) {}); <span class="hljs-comment">// "function() {}"</span>
+</code></pre>
+<!-- Note: ES2018からFunction.prototype.toStringの結果は標準化された -->
+<p>上記の結果からもわかるように<code>String</code>コンストラクタ関数での明示的な変換は、万能な方法ではありません。
+真偽値、数値、文字列、undefined、null、シンボルのプリミティブ型の値に対して変換は見た目どおりの文字列を得ることができます。</p>
+<p>一方、オブジェクトに対しては、あまり意味のある文字列を返しません。
+オブジェクトに対しては<code>String</code>コンストラクタ関数より適切な方法があるためです。
+配列には<code>join</code>メソッド、オブジェクトには<code>JSON.stringify</code>静的メソッドなど、より適切な方法があります。
+そのため、<code>String</code>コンストラクタ関数での変換は、あくまでプリミティブ型に対してのみに留めるべきです。</p>
+<h3 id="symbol-to-string"><a name="symbol-to-string" class="plugin-anchor" href="#symbol-to-string"><i class="fa fa-link" aria-hidden="true"></i></a>シンボル → 文字列 </h3>
+<p>プラス演算子を文字列に利用した場合、文字列の結合を優先します。
+「片方が文字列なら、もう片方のオペランドとは関係なく、結果は文字列となるのでは？」と考えるかもしれません。</p>
+<!-- doctest:disable -->
+<pre><code class="lang-js"><span class="hljs-string">"文字列"</span> + x; <span class="hljs-comment">// 文字列となる？</span>
+</code></pre>
+<p>しかし、ES2015で追加されたプリミティブ型であるシンボルは暗黙的に型変換できません。
+文字列結合演算子をシンボルに対して利用すると例外を投げるようになっています。
+そのため、片方が文字列であるからといってプラス演算子の結果は必ず文字列になるとは限らないことがわかります。</p>
+<p>次のコードでは、シンボルを文字列結合演算子（<code>+</code>）で文字列に変換できないという<code>TypeError</code>が発生しています。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-string">"文字列と"</span> + <span class="hljs-title class_">Symbol</span>(<span class="hljs-string">"シンボルの説明"</span>); <span class="hljs-comment">// =&gt; TypeError: can't convert symbol to string</span>
+</code></pre>
+<p>この問題も<code>String</code>コンストラクタ関数を使うことで、シンボルを明示的に文字列化することで解決できます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-string">"文字列と"</span> + <span class="hljs-title class_">String</span>(<span class="hljs-title class_">Symbol</span>(<span class="hljs-string">"シンボルの説明"</span>)); <span class="hljs-comment">// =&gt; "文字列とSymbol(シンボルの説明)"</span>
+</code></pre>
+<h3 id="string-to-number"><a name="string-to-number" class="plugin-anchor" href="#string-to-number"><i class="fa fa-link" aria-hidden="true"></i></a>文字列 → 数値 </h3>
+<p>文字列から数値に変換する典型的なケースとしては、ユーザー入力として数字を受け取ることがあげられます。
+ユーザー入力は文字列でしか受け取ることができないため、それを数値に変換してから利用する必要があります。</p>
+<p>文字列から数値へ明示的に変換するには<code>Number</code>コンストラクタ関数が利用できます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a>
+<!-- window.promptはないため -->
+<!-- doctest: ReferenceError --></p>
+<pre><code class="lang-js"><span class="hljs-comment">// ユーザー入力を文字列として受け取る</span>
+<span class="hljs-keyword">const</span> input = <span class="hljs-variable language_">window</span>.<span class="hljs-title function_">prompt</span>(<span class="hljs-string">"数字を入力してください"</span>, <span class="hljs-string">"42"</span>);
+<span class="hljs-comment">// 文字列を数値に変換する</span>
+<span class="hljs-keyword">const</span> num = <span class="hljs-title class_">Number</span>(input);
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-keyword">typeof</span> num); <span class="hljs-comment">// =&gt; "number"</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(num); <span class="hljs-comment">// 入力された文字列を数値に変換したもの</span>
+</code></pre>
+<p>また、文字列から数字を取り出して変換する関数として<code>Number.parseInt</code>、<code>Number.parseFloat</code>も利用できます。
+<code>Number.parseInt</code>は文字列から整数を取り出し、<code>Number.parseFloat</code>は文字列から浮動小数点数を取り出すことができます。
+<code>Number.parseInt(文字列, 基数)</code>の第二引数には基数を指定します。
+たとえば、文字列をパースして10進数として数値を取り出したい場合は、第二引数に基数として<code>10</code>を指定します。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// "1"をパースして10進数として取り出す</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title class_">Number</span>.<span class="hljs-built_in">parseInt</span>(<span class="hljs-string">"1"</span>, <span class="hljs-number">10</span>)); <span class="hljs-comment">// =&gt; 1</span>
+<span class="hljs-comment">// 余計な文字は無視してパースした結果を返す</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title class_">Number</span>.<span class="hljs-built_in">parseInt</span>(<span class="hljs-string">"42px"</span>, <span class="hljs-number">10</span>)); <span class="hljs-comment">// =&gt; 42</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title class_">Number</span>.<span class="hljs-built_in">parseInt</span>(<span class="hljs-string">"10.5"</span>, <span class="hljs-number">10</span>)); <span class="hljs-comment">// =&gt; 10</span>
+<span class="hljs-comment">// 文字列をパースして浮動小数点数として取り出す</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title class_">Number</span>.<span class="hljs-built_in">parseFloat</span>(<span class="hljs-string">"1"</span>)); <span class="hljs-comment">// =&gt; 1</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title class_">Number</span>.<span class="hljs-built_in">parseFloat</span>(<span class="hljs-string">"42.5px"</span>)); <span class="hljs-comment">// =&gt; 42.5</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title class_">Number</span>.<span class="hljs-built_in">parseFloat</span>(<span class="hljs-string">"10.5"</span>)); <span class="hljs-comment">// =&gt; 10.5</span>
+</code></pre>
+<p>しかし、ユーザーが数字を入力するとは限りません。
+<code>Number</code>コンストラクタ関数、<code>Number.parseInt</code>、<code>Number.parseFloat</code>は、
+数字以外の文字列を渡すと<code>NaN</code>（Not a Number）を返します。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// 数字ではないため、数値へは変換できない</span>
+<span class="hljs-title class_">Number</span>(<span class="hljs-string">"文字列"</span>); <span class="hljs-comment">// =&gt; NaN</span>
+<span class="hljs-comment">// 未定義の値はNaNになる</span>
+<span class="hljs-title class_">Number</span>(<span class="hljs-literal">undefined</span>); <span class="hljs-comment">// =&gt; NaN</span>
+</code></pre>
+<p>そのため、任意の値から数値へ変換した場合には、<code>NaN</code>になってしまった場合の処理を書く必要があります。
+変換した結果が<code>NaN</code>であるかは<code>Number.isNaN(x)</code>メソッドで判定できます。</p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> userInput = <span class="hljs-string">"任意の文字列"</span>;
+<span class="hljs-keyword">const</span> num = <span class="hljs-title class_">Number</span>.<span class="hljs-built_in">parseInt</span>(userInput, <span class="hljs-number">10</span>);
+<span class="hljs-keyword">if</span> (<span class="hljs-title class_">Number</span>.<span class="hljs-built_in">isNaN</span>(num)) {
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">"パースした結果NaNになった"</span>, num);
+}
+</code></pre>
+<h3 id="nan-is-number-type"><a name="nan-is-number-type" class="plugin-anchor" href="#nan-is-number-type"><i class="fa fa-link" aria-hidden="true"></i></a>NaNはNot a NumberだけどNumber型 </h3>
+<p>ここで、数値への型変換でたびたび現れる<code>NaN</code>という値について詳しく見ていきます。
+<code>NaN</code>はNot a Numberの略称で、特殊な性質を持つNumber型のデータです。</p>
+<p>この<code>NaN</code>というデータの性質については<a href="https://ja.wikipedia.org/wiki/IEEE_754" target="_blank">IEEE 754</a>で規定されており、
+JavaScriptだけの性質ではありません。</p>
+<p><code>NaN</code>という値を作る方法は簡単で、Number型と互換性のない性質のデータをNumber型へ変換した結果は<code>NaN</code>となります。
+たとえば、オブジェクトは数値とは互換性のないデータです。
+そのため、オブジェクトを明示的に変換したとしても結果は<code>NaN</code>になります。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-title class_">Number</span>({}); <span class="hljs-comment">// =&gt; NaN</span>
+</code></pre>
+<p>また、<code>NaN</code>は何と演算しても結果は<code>NaN</code>になる特殊な値です。
+次のように、計算の途中で値が<code>NaN</code>になると、最終的な結果も<code>NaN</code>となります。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> x = <span class="hljs-number">10</span>;
+<span class="hljs-keyword">const</span> y = x + <span class="hljs-title class_">NaN</span>;
+<span class="hljs-keyword">const</span> z = y + <span class="hljs-number">20</span>;
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(x); <span class="hljs-comment">// =&gt; 10</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(y); <span class="hljs-comment">// =&gt; NaN</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(z); <span class="hljs-comment">// =&gt; NaN</span>
+</code></pre>
+<p><code>NaN</code>はNumber型の一種であるという名前と矛盾したデータに見えます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// NaNはnumber型</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-keyword">typeof</span> <span class="hljs-title class_">NaN</span>); <span class="hljs-comment">// =&gt; "number"</span>
+</code></pre>
+<p>NaNしか持っていない特殊な性質として、自分自身と一致しないというものがあります。
+この特徴を利用することで、ある値が<code>NaN</code>であるかを判定できます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">function</span> <span class="hljs-title function_">isNaN</span>(<span class="hljs-params">x</span>) {
+    <span class="hljs-comment">// NaNは自分自身と一致しない</span>
+    <span class="hljs-keyword">return</span> x !== x;
+}
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-built_in">isNaN</span>(<span class="hljs-number">1</span>)); <span class="hljs-comment">// =&gt; false</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-built_in">isNaN</span>(<span class="hljs-string">"str"</span>)); <span class="hljs-comment">// =&gt; false</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-built_in">isNaN</span>({})); <span class="hljs-comment">// =&gt; false</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-built_in">isNaN</span>([])); <span class="hljs-comment">// =&gt; false</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-built_in">isNaN</span>(<span class="hljs-title class_">NaN</span>)); <span class="hljs-comment">// =&gt; true</span>
+</code></pre>
+<p>同様の処理をする方法として<code>Number.isNaN(x)</code>メソッドがあります。
+実際に値が<code>NaN</code>かを判定する際には、<code>Number.isNaN(x)</code>メソッドを利用するとよいでしょう。<sup><a href="#fn_1" id="reffn_1">1</a></sup></p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-title class_">Number</span>.<span class="hljs-built_in">isNaN</span>(<span class="hljs-title class_">NaN</span>); <span class="hljs-comment">// =&gt; true</span>
+</code></pre>
+<p><code>NaN</code>は暗黙的な型変換の中でももっとも避けたい値となります。
+理由として、先ほど紹介したように<code>NaN</code>は何と演算しても結果が<code>NaN</code>となってしまうためです。
+これにより、計算していた値がどこで<code>NaN</code>となったのかがわかりにくく、デバッグが難しくなります。</p>
+<p>たとえば、次の<code>sum</code>関数は可変長引数（任意の個数の引数）を受け取り、その合計値を返します。
+しかし、<code>sum(x, y, z)</code>と呼び出したときの結果が<code>NaN</code>になってしまいました。
+これは、引数の中に<code>undefined</code>（未定義の値）が含まれているためです。</p>
+<pre><code class="lang-js"><span class="hljs-comment">// 任意の個数の数値を受け取り、その合計値を返す関数</span>
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">sum</span>(<span class="hljs-params">...values</span>) {
+    <span class="hljs-keyword">return</span> values.<span class="hljs-title function_">reduce</span>(<span class="hljs-function">(<span class="hljs-params">total, value</span>) =&gt;</span> {
+        <span class="hljs-keyword">return</span> total + value;
+    }, <span class="hljs-number">0</span>);
+}
+<span class="hljs-keyword">const</span> x = <span class="hljs-number">1</span>, z = <span class="hljs-number">10</span>;
+<span class="hljs-keyword">let</span> y; <span class="hljs-comment">// `y`はundefined</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">sum</span>(x, y, z)); <span class="hljs-comment">// =&gt; NaN</span>
+</code></pre>
+<p>そのため、<code>sum(x, y, z);</code>は次のように呼ばれていたのと同じ結果になります。
+<code>undefined</code>に数値を加算すると結果は<code>NaN</code>となります。</p>
+<!-- doctest: ReferenceError -->
+<pre><code class="lang-js"><span class="hljs-title function_">sum</span>(<span class="hljs-number">1</span>, <span class="hljs-literal">undefined</span>, <span class="hljs-number">10</span>); <span class="hljs-comment">// =&gt; NaN</span>
+<span class="hljs-comment">// 計算中にNaNとなるため、最終結果もNaNになる</span>
+<span class="hljs-number">1</span> + <span class="hljs-literal">undefined</span>; <span class="hljs-comment">// =&gt; NaN</span>
+<span class="hljs-title class_">NaN</span> + <span class="hljs-number">10</span>; <span class="hljs-comment">// =&gt; NaN</span>
+</code></pre>
+<p>これは、<code>sum</code>関数において引数を明示的にNumber型へ変換したとしても回避できません。
+つまり、次のように明示的な型変換をしても解決できないことがわかります。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">function</span> <span class="hljs-title function_">sum</span>(<span class="hljs-params">...values</span>) {
+    <span class="hljs-keyword">return</span> values.<span class="hljs-title function_">reduce</span>(<span class="hljs-function">(<span class="hljs-params">total, value</span>) =&gt;</span> {
+        <span class="hljs-comment">// `value`をNumberで明示的に数値へ変換してから加算する</span>
+        <span class="hljs-keyword">return</span> total + <span class="hljs-title class_">Number</span>(value);
+    }, <span class="hljs-number">0</span>);
+}
+<span class="hljs-keyword">const</span> x = <span class="hljs-number">1</span>, z = <span class="hljs-number">10</span>;
+<span class="hljs-keyword">let</span> y; <span class="hljs-comment">// `y`はundefined</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">sum</span>(x, y, z)); <span class="hljs-comment">// =&gt; NaN</span>
+</code></pre>
+<p>この意図しない<code>NaN</code>への変換を避ける方法として、大きく分けて２つの方法があります。</p>
+<ul>
+<li><code>sum</code>関数側（呼ばれる側）で、Number型の値以外を受けつけなくする</li>
+<li><code>sum</code>関数を呼び出す側で、Number型の値のみを渡すようにする</li>
+</ul>
+<p>つまり、呼び出す側または呼び出される側で対処するということですが、
+どちらも行うことがより安全なコードにつながります。</p>
+<p>そのためには、<code>sum</code>関数が数値のみを受けつけるということを明示する必要があります。</p>
+<p>明示する方法として<code>sum</code>関数のドキュメント（コメント）として記述したり、
+引数に数値以外の値がある場合は例外を投げるという処理を追加するといった形です。</p>
+<p>JavaScriptではコメントで引数の型を記述する書式として<a href="https://jsdoc.app/" target="_blank">JSDoc</a>が有名です。
+また、実行時に値がNumber型であるかをチェックし<code>throw</code>文で例外を投げることで、<code>sum</code>関数の利用者に使い方を明示できます
+（<code>throw</code>文については「<a href="../error-try-catch/">例外処理</a>」の章で解説します）。</p>
+<p>この２つを利用して<code>sum</code>関数の前提条件を詳細に実装したものは次のようになります。</p>
+<pre><code class="lang-js"><span class="hljs-comment">/**
+ * 数値を合計した値を返します。
+ * 1つ以上の数値と共に呼び出す必要があります。
+ * <span class="hljs-doctag">@param</span> {<span class="hljs-type">...number</span>} <span class="hljs-variable">values</span>
+ * <span class="hljs-doctag">@returns</span> {<span class="hljs-type">number</span>}
+ **/</span>
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">sum</span>(<span class="hljs-params">...values</span>) {
+    <span class="hljs-keyword">return</span> values.<span class="hljs-title function_">reduce</span>(<span class="hljs-function">(<span class="hljs-params">total, value</span>) =&gt;</span> {
+        <span class="hljs-comment">// 値がNumber型ではない場合に、例外を投げる</span>
+        <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> value !== <span class="hljs-string">"number"</span>) {
+            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Error</span>(<span class="hljs-string">`<span class="hljs-subst">${value}</span>はNumber型ではありません`</span>);
+        }
+        <span class="hljs-keyword">return</span> total + <span class="hljs-title class_">Number</span>(value);
+    }, <span class="hljs-number">0</span>);
+}
+<span class="hljs-keyword">const</span> x = <span class="hljs-number">1</span>, z = <span class="hljs-number">10</span>;
+<span class="hljs-keyword">let</span> y; <span class="hljs-comment">// `y`はundefined</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(x, y, z);
+<span class="hljs-comment">// Number型の値ではない`y`を渡しているため例外が発生する</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">sum</span>(x, y, z)); <span class="hljs-comment">// =&gt; Error</span>
+</code></pre>
+<p>このように、<code>sum</code>関数はどのように使うべきかを明示することで、
+エラーとなったときに呼ばれる側と呼び出し側でどちらに問題があるのかが明確になります。
+この場合は、<code>sum</code>関数へ<code>undefined</code>な値を渡している呼び出し側に問題があります。</p>
+<p>JavaScriptは、型エラーに対して暗黙的な型変換をしてしまうなど、驚くほど曖昧さを許容しています。
+そのため、大きなアプリケーションを書く場合は、このような検出しにくいバグを見つけられるように書くことが重要です。</p>
+<h2 id="unsolved-problem"><a name="unsolved-problem" class="plugin-anchor" href="#unsolved-problem"><i class="fa fa-link" aria-hidden="true"></i></a>明示的な変換でも解決しないこと </h2>
+<p>先ほどの例からもわかるように、あらゆるケースが明示的な変換で解決できるわけではありません。
+Number型と互換性がない値を数値にしても、<code>NaN</code>となってしまいます。
+一度、<code>NaN</code>になってしまうと<code>Number.isNaN(x)</code>で判定して処理を終えるしかありません。</p>
+<p>JavaScriptの型変換は基本的に情報が減る方向へしか変換できません。
+そのため、明示的な変換をする前に、まず変換がそもそも必要なのかを考える必要があります。</p>
+<h3 id="judge-empty-string"><a name="judge-empty-string" class="plugin-anchor" href="#judge-empty-string"><i class="fa fa-link" aria-hidden="true"></i></a>空文字列かどうかを判定する </h3>
+<p>たとえば、文字列が空文字列なのかを判定したい場合を考えてみましょう。
+<code>""</code>（空文字列）はfalsyな値であるため、明示的に<code>Boolean</code>コンストラクタ関数で真偽値へ変換できます。
+しかし、falsyな値は空文字列以外にもあるため、明示的に変換したからといって空文字列だけを判定できるわけではありません。</p>
+<p>次のコードでは、明示的な型変換をしていますが、<code>0</code>も<strong>空文字列</strong>となってしまい意図しない挙動になっています。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// 空文字列かどうかを判定</span>
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">isEmptyString</span>(<span class="hljs-params">str</span>) {
+    <span class="hljs-comment">// `str`がfalsyな値なら、`isEmptyString`関数は`true`を返す</span>
+    <span class="hljs-keyword">return</span> !<span class="hljs-title class_">Boolean</span>(str);
+}
+<span class="hljs-comment">// 空文字列列の場合は、trueを返す</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">isEmptyString</span>(<span class="hljs-string">""</span>)); <span class="hljs-comment">// =&gt; true</span>
+<span class="hljs-comment">// falsyな値の場合は、trueを返す</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">isEmptyString</span>(<span class="hljs-number">0</span>)); <span class="hljs-comment">// =&gt; true</span>
+<span class="hljs-comment">// undefinedの場合は、trueを返す</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">isEmptyString</span>()); <span class="hljs-comment">// =&gt; true</span>
+</code></pre>
+<p>ほとんどのケースにおいて、真偽値を得るには型変換ではなく別の方法が存在します。</p>
+<p>この場合、空文字列とは「String型で文字長が0の値」であると定義することで、<code>isEmptyString</code>関数をもっと正確に書くことができます。
+次のように実装することで、値が空文字列であるかを正しく判定できるようになりました。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// 空文字列かどうかを判定</span>
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">isEmptyString</span>(<span class="hljs-params">str</span>) {
+    <span class="hljs-comment">// String型でlengthが0の値の場合はtrueを返す</span>
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">typeof</span> str === <span class="hljs-string">"string"</span> &amp;&amp; str.<span class="hljs-property">length</span> === <span class="hljs-number">0</span>;
+}
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">isEmptyString</span>(<span class="hljs-string">""</span>)); <span class="hljs-comment">// =&gt; true</span>
+<span class="hljs-comment">// falsyな値でも正しく判定できる</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">isEmptyString</span>(<span class="hljs-number">0</span>)); <span class="hljs-comment">// =&gt; false</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">isEmptyString</span>()); <span class="hljs-comment">// =&gt; false</span>
+</code></pre>
+<p><code>Boolean</code>を使った型変換は、楽をするための型変換であり、正確に真偽値を得るための方法ではありません。
+そのため、型変換をする前にまず別の方法で解決できないかを考えることも大切です。</p>
+<h2 id="conclusion"><a name="conclusion" class="plugin-anchor" href="#conclusion"><i class="fa fa-link" aria-hidden="true"></i></a>まとめ </h2>
+<p>この章では暗黙的な型変換と明示的な型変換について学びました。</p>
+<ul>
+<li>暗黙的な型変換は意図しない結果となりやすいため避ける</li>
+<li>比較には等価演算子（<code>==</code>）ではなく、厳密等価演算子（<code>===</code>）を利用する</li>
+<li>演算子による暗黙的な型変換より、明示的な型変換をする関数を利用する</li>
+<li>真偽値を得るには、明示的な型変換以外の方法もある</li>
+</ul>
+<blockquote id="fn_1">
+<sup>1</sup>. <code>isNaN</code>関数というよく似た関数がありますが、<code>NaN</code>を正しく判定できないことがあるため、<code>Number.isNaN</code>静的メソッドを利用することが推奨されます。<a href="#reffn_1" title="Jump back to footnote [1] in the text."> ↩</a>
+</blockquote>
+</body></html>
+                                
+
+                                </section>
+                            
+                        </div>
+                    </div>
+                
+<footer class="book_footer">
+    <p>Copyright (c) 2016-present <a href="https://github.com/asciidwango/js-primer" target="_blank">jsprimer project</a></p>
+</footer>
+
+            </div>
+
+            
+                
+                <a href="../operator/" class="navigation navigation-prev " aria-label="Previous page: 演算子">
+                    <i class="fa fa-angle-left"></i>
+                </a>
+                
+                
+                <a href="../function-declaration/" class="navigation navigation-next " aria-label="Next page: 関数と宣言">
+                    <i class="fa fa-angle-right"></i>
+                </a>
+                
+            
+        
+    </div>
+
+    <script>
+        var gitbook = gitbook || [];
+        gitbook.push(function() {
+            gitbook.page.hasChanged({"page":{"author":"azu","description":"JavaScriptの暗黙的な型変換は意図しない挙動を発生する原因の1つです。暗黙的な型変換が発生する具体的なコード例や予測が難しいことについてを紹介します。逆に明示的に変換する方法についても紹介します。","sponsors":[],"title":"暗黙的な型変換","level":"1.3.7","depth":2,"next":{"title":"関数と宣言","level":"1.3.8","depth":2,"path":"basic/function-declaration/README.md","ref":"./basic/function-declaration/README.md","articles":[]},"previous":{"title":"演算子","level":"1.3.6","depth":2,"path":"basic/operator/README.md","ref":"./basic/operator/README.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-search","-lunr","page-toc-button","include-codeblock","anchors","canonical-link","js-console","github-issue-feedback","sandpack"],"root":"./source/","styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"docSearch":{"index":"83I8JIFICQ","apiKey":"9169ce4cd84fcf2376f29d9585c89254"},"github-issue-feedback":{"repo":"asciidwango/js-primer","label":"問題を報告する"},"fontsettings":{"theme":"white","family":"sans","size":2},"js-console":{},"canonical-link":{"baseURL":"https://jsprimer.net"},"highlight":{},"page-toc-button":{"maxTocDepth":2,"minTocSize":2},"include-codeblock":{"check":false,"edit":false,"lang":"","fixlang":false,"template":"./resources/gitbook-plugin-include-codeblock.hbs","theme":"chrome","unindent":false},"sandpack":{},"edit-link":{"base":"https://github.com/asciidwango/js-primer/edit/master/source/","label":"Edit"},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false},"anchors":{}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"IPAexMincho","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"index.md","glossary":"GLOSSARY.md","summary":"README.md"},"variables":{"esversion":"2024","nodeversion":"22.7.0","npmversion":"10.8.2","triplebackticks":"```","console":"<a class=\"gitbook-plugin-js-console\" aria-hidden=\"true\"></a>"},"title":"JavaScript Primer #jsprimer","gitbook":">=3.0.0","description":"JavaScriptの基本的な書き方からアプリケーションの作成などのユースケースを学ぶための入門書です"},"file":{"path":"basic/implicit-coercion/README.md","mtime":"2025-05-18T21:58:17.824Z","type":"markdown"},"gitbook":{"version":"6.0.2","time":"2025-05-18T21:58:35.597Z"},"basePath":"../..","book":{"language":""}});
+        });
+    </script>
+</div>
+
+        
+    <noscript>
+        <style>
+            .honkit-cloak {
+                display: block !important;
+            }
+        </style>
+    </noscript>
+    <script>
+        // Restore sidebar state as critical path for prevent layout shift
+        function __init__getSidebarState(defaultValue){
+            var baseKey = "";
+            var key = baseKey + ":sidebar";
+            try {
+                var value = localStorage[key];
+                if (value === undefined) {
+                    return defaultValue;
+                }
+                var parsed = JSON.parse(value);
+                return parsed == null ? defaultValue : parsed;
+            } catch (e) {
+                return defaultValue;
+            }
+        }
+        function __init__restoreLastSidebarState() {
+            var isMobile = window.matchMedia("(max-width: 600px)").matches;
+            if (isMobile) {
+                // Init last state if not mobile
+                return;
+            }
+            var sidebarState = __init__getSidebarState(true);
+            var book = document.querySelector(".book");
+            // Show sidebar if it enabled
+            if (sidebarState && book) {
+                book.classList.add("without-animation", "with-summary");
+            }
+        }
+
+        try {
+            __init__restoreLastSidebarState();
+        } finally {
+            var book = document.querySelector(".book");
+            book.classList.remove("honkit-cloak");
+        }
+    </script>
+    <script src="../../gitbook/gitbook.js"></script>
+    <script src="../../gitbook/theme.js"></script>
+    
+        
+        <script src="../../gitbook/gitbook-plugin-page-toc-button/plugin.js"></script>
+        
+    
+        
+        <script src="../../gitbook/gitbook-plugin-js-console/console-ui.js"></script>
+        
+    
+        
+        <script src="../../gitbook/gitbook-plugin-github-issue-feedback/plugin.js"></script>
+        
+    
+        
+        <script src="../../gitbook/honkit-plugin-sandpack/honkit-plugin-sandpack.js"></script>
+        
+    
+        
+        <script src="../../gitbook/@honkit/honkit-plugin-fontsettings/fontsettings.js"></script>
+        
+    
+
+    </body>
+</html>
+

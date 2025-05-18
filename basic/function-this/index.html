@@ -1,0 +1,2480 @@
+
+<!DOCTYPE HTML>
+<html lang="" >
+    <head>
+        <meta charset="UTF-8">
+        <title>関数とthis · JavaScript Primer #jsprimer</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="description" content="JavaScriptにおける`this`というキーワードの動作を紹介します。`this`の参照先は条件によって解決方法が異なるため、`this`の動きについてをそれぞれの条件ごとに紹介します。一見複雑な`this`の動きを予測可能にするにはどうするべきかをコード例とともに紹介します。">
+        <meta name="generator" content="HonKit 6.0.2">
+        
+        
+        
+    
+    <link rel="stylesheet" href="../../gitbook/style.css">
+
+    
+            
+                
+                <link rel="stylesheet" href="../../gitbook/gitbook-plugin-page-toc-button/plugin.css">
+                
+            
+                
+                <link rel="stylesheet" href="../../gitbook/gitbook-plugin-anchors/plugin.css">
+                
+            
+                
+                <link rel="stylesheet" href="../../gitbook/@honkit/honkit-plugin-highlight/website.css">
+                
+            
+                
+                <link rel="stylesheet" href="../../gitbook/@honkit/honkit-plugin-fontsettings/website.css">
+                
+            
+        
+
+    
+
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+         
+    
+    
+    
+    <meta name="HandheldFriendly" content="true"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../gitbook/images/apple-touch-icon-precomposed-152.png">
+    <link rel="shortcut icon" href="../../gitbook/images/favicon.ico" type="image/x-icon">
+
+    
+    <link rel="next" href="../class/" />
+    
+    
+    <link rel="prev" href="../function-scope/" />
+    
+
+    <link rel="canonical" href="https://jsprimer.net/basic/function-this/">
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-DWY0DLHWB6"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+
+    gtag("js", new Date());
+
+    gtag("config", "G-DWY0DLHWB6");
+</script>
+<script type="module">
+    // コンソールUIでコード実行したらイベントとして送信する
+    const onExecuteCode = (scriptType) => {
+        gtag("event", "execute_code", {
+            "event_category": "console",
+            "event_label": "execute_code",
+            "script_type": scriptType || "unknown"
+        });
+    };
+    let observer;
+    const observeEvalEvent = () => {
+        if (observer) {
+            observer.disconnect();
+        }
+        const callback = function(mutationsList) {
+            for (const mutation of mutationsList) {
+                const mirrorConsole = Array.from(mutation.addedNodes).find(node => Boolean(node.dataset.mirrorConsole));
+                if (mirrorConsole) {
+                    return onExecuteCode(mirrorConsole.dataset.mirrorConsole);
+                }
+            }
+        };
+        observer = new MutationObserver(callback);
+        observer.observe(document.body, { childList: true });
+    };
+    const eventMap = new WeakMap();
+    // 問題を報告ボタンを押したらイベントとして送信する
+    const onClickIssueReport = () => {
+        console.log("click_issue_report");
+        gtag("event", "click_issue_report", {
+            "event_category": "contribution",
+            "event_label": "click_issue_report"
+        });
+    };
+    const observeIssueReport = () => {
+        const targetButton = document.querySelector(".gitbook-plugin-github-issue-feedback");
+        // すでにイベントが登録されていたら何もしない
+        if (eventMap.has(targetButton)) {
+            return;
+        }
+        if (targetButton) {
+            targetButton.addEventListener("click", onClickIssueReport);
+            eventMap.set(targetButton, onClickIssueReport);
+        }
+    };
+    window.addEventListener("DOMContentLoaded", function() {
+        gitbook.events.on("page.change", function() {
+            observeEvalEvent();
+            observeIssueReport();
+        });
+    });
+
+</script>
+<meta name="google-site-verification" content="bMotEbgYwkzA3k4PkuyK_NUdz0bKh-Phz0oUwNmRSVo"/>
+<style>
+    /*
+     * Disable antialias
+     */
+    * {
+        -webkit-font-smoothing: initial !important
+    }
+
+    body {
+        text-rendering: initial !important;
+        font-smoothing: initial !important;
+    }
+
+    /* deny access chapter */
+    .summary li.chapter > span {
+        cursor: not-allowed;
+        opacity: .3;
+    }
+
+    /* console ui */
+
+    .mirror-console-attach-button-wrapper {
+        margin-top: -1.275em;
+        margin-bottom: 1.275em
+    }
+
+    .mirror-console-wrapper {
+        margin-top: 1.275em;
+        margin-bottom: 1.275em
+    }
+
+    /* file name for codeblock */
+    .code-filename {
+        background-color: #eee;
+        display: inline-block;
+        padding: 2px 8px;
+        line-height: inherit;
+        margin-bottom: 0px !important;
+    }
+
+    /* Markdown */
+    /* Support horizon scroll */
+    /* https://stackoverflow.com/questions/17770257/scrolling-tables-horizontally-without-wrapping-them-in-div */
+    .markdown-section table {
+        max-width: 100%;
+        overflow-x: auto;
+        display: block;
+    }
+    .markdown-section sup,
+    .markdown-section sub {
+        font-size: 75%;
+    }
+
+    .book_footer {
+        text-align: center;
+        color: #000000;
+        background: #ddd;
+        font-size: 16px;
+        margin-top: 16px;
+        padding: 16px;
+    }
+
+    /* github-issue-feedback */
+    .gitbook-plugin-github-issue-feedback {
+        background-color: #333;
+        color: #fff;
+        opacity: 0.8;
+        padding: 4px;
+        margin-right: 24px;
+        margin-bottom: 4px;
+        border-radius: 6px;
+    }
+
+    .gitbook-plugin-github-issue-feedback:hover {
+        opacity: 1;
+    }
+
+    /* Hide footer on mobile */
+    /* Use navigation width */
+    @media (max-width: 1240px) {
+        .book_footer {
+            display: none;
+        }
+    }
+
+    .navigation {
+        min-width: 50px;
+    }
+
+    @media (min-width: 1240px) {
+        .honkit-plugin-sandpack {
+            width: calc(100% + 180px);
+            margin: 0 0 1em -90px;
+        }
+    }
+
+    .honkit-plugin-sandpack, .honkit-plugin-sandpack--buttonContainer {
+        margin-bottom: 1em;
+    }
+
+</style>
+<meta name="theme-color" content="#ffffff">
+<link rel="manifest" href="../../manifest.json">
+<script defer async>
+    // unregister old service worker(remove workbox)
+    // https://github.com/asciidwango/js-primer/pull/1701
+    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for (const registration of registrations) {
+            registration.unregister();
+        }
+    }).catch(function(err) {
+        console.error(new Error("Can not getRegistrations", {
+            cause: err
+        }));
+    });
+</script>
+
+    </head>
+    <body>
+        
+<div class="book honkit-cloak">
+    <div class="book-summary">
+        
+            
+            
+                <nav role="navigation">
+                
+
+
+<ul class="summary">
+    
+    
+
+    
+
+    
+        
+        
+    
+        <li class="chapter " data-level="1.1" data-path="../../">
+            
+                <a href="../../">
+            
+                    
+                    この書籍について
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2" data-path="../../intro/">
+            
+                <a href="../../intro/">
+            
+                    
+                    はじめに
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.2.1" data-path="../../intro/authors/">
+            
+                <a href="../../intro/authors/">
+            
+                    
+                    著者紹介
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.2" data-path="../../intro/sponsors/">
+            
+                <a href="../../intro/sponsors/">
+            
+                    
+                    JavaScript Primerスポンサー
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.3" data-path="../../intro/preparation/">
+            
+                <a href="../../intro/preparation/">
+            
+                    
+                    読みはじめる前の事前準備
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.4" data-path="../../intro/feedback/">
+            
+                <a href="../../intro/feedback/">
+            
+                    
+                    文章の間違いに気づいたら
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3" data-path="../">
+            
+                <a href="../">
+            
+                    
+                    第一部: 基本文法
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.3.1" data-path="../introduction/">
+            
+                <a href="../introduction/">
+            
+                    
+                    JavaScriptとは
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.2" data-path="../comments/">
+            
+                <a href="../comments/">
+            
+                    
+                    コメント
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.3" data-path="../variables/">
+            
+                <a href="../variables/">
+            
+                    
+                    変数と宣言
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.4" data-path="../read-eval-print/">
+            
+                <a href="../read-eval-print/">
+            
+                    
+                    値の評価と表示
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.5" data-path="../data-type/">
+            
+                <a href="../data-type/">
+            
+                    
+                    データ型とリテラル
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.6" data-path="../operator/">
+            
+                <a href="../operator/">
+            
+                    
+                    演算子
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.7" data-path="../implicit-coercion/">
+            
+                <a href="../implicit-coercion/">
+            
+                    
+                    暗黙的な型変換
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.8" data-path="../function-declaration/">
+            
+                <a href="../function-declaration/">
+            
+                    
+                    関数と宣言
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.9" data-path="../statement-expression/">
+            
+                <a href="../statement-expression/">
+            
+                    
+                    文と式
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.10" data-path="../condition/">
+            
+                <a href="../condition/">
+            
+                    
+                    条件分岐
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.11" data-path="../loop/">
+            
+                <a href="../loop/">
+            
+                    
+                    ループと反復処理
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.12" data-path="../object/">
+            
+                <a href="../object/">
+            
+                    
+                    オブジェクト
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.13" data-path="../prototype-object/">
+            
+                <a href="../prototype-object/">
+            
+                    
+                    プロトタイプオブジェクト
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.14" data-path="../array/">
+            
+                <a href="../array/">
+            
+                    
+                    配列
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.15" data-path="../string/">
+            
+                <a href="../string/">
+            
+                    
+                    文字列
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.16" data-path="../string-unicode/">
+            
+                <a href="../string-unicode/">
+            
+                    
+                    文字列とUnicode
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.17" data-path="../wrapper-object/">
+            
+                <a href="../wrapper-object/">
+            
+                    
+                    ラッパーオブジェクト
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.18" data-path="../function-scope/">
+            
+                <a href="../function-scope/">
+            
+                    
+                    関数とスコープ
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter active" data-level="1.3.19" data-path="./">
+            
+                <a href="./">
+            
+                    
+                    関数とthis
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.20" data-path="../class/">
+            
+                <a href="../class/">
+            
+                    
+                    クラス
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.21" data-path="../error-try-catch/">
+            
+                <a href="../error-try-catch/">
+            
+                    
+                    例外処理
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.22" data-path="../async/">
+            
+                <a href="../async/">
+            
+                    
+                    非同期処理:Promise/Async Function
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.23" data-path="../map-and-set/">
+            
+                <a href="../map-and-set/">
+            
+                    
+                    Map/Set
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.24" data-path="../json/">
+            
+                <a href="../json/">
+            
+                    
+                    JSON
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.25" data-path="../date/">
+            
+                <a href="../date/">
+            
+                    
+                    Date
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.26" data-path="../math/">
+            
+                <a href="../math/">
+            
+                    
+                    Math
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.27" data-path="../module/">
+            
+                <a href="../module/">
+            
+                    
+                    ECMAScriptモジュール
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.28" data-path="../ecmascript/">
+            
+                <a href="../ecmascript/">
+            
+                    
+                    ECMAScript
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.29" data-path="../other-parts/">
+            
+                <a href="../other-parts/">
+            
+                    
+                    第一部: おわりに
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4" data-path="../../use-case/">
+            
+                <a href="../../use-case/">
+            
+                    
+                    第二部: 応用編（ユースケース）
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.4.1" data-path="../../use-case/setup-local-env/">
+            
+                <a href="../../use-case/setup-local-env/">
+            
+                    
+                    アプリケーション開発の準備
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.2" data-path="../../use-case/ajaxapp/">
+            
+                <a href="../../use-case/ajaxapp/">
+            
+                    
+                    Ajax通信
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.4.2.1" data-path="../../use-case/ajaxapp/entrypoint/">
+            
+                <a href="../../use-case/ajaxapp/entrypoint/">
+            
+                    
+                    エントリーポイント
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.2.2" data-path="../../use-case/ajaxapp/http/">
+            
+                <a href="../../use-case/ajaxapp/http/">
+            
+                    
+                    HTTP通信
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.2.3" data-path="../../use-case/ajaxapp/display/">
+            
+                <a href="../../use-case/ajaxapp/display/">
+            
+                    
+                    データを表示する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.2.4" data-path="../../use-case/ajaxapp/promise/">
+            
+                <a href="../../use-case/ajaxapp/promise/">
+            
+                    
+                    Promiseを活用する
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3" data-path="../../use-case/nodecli/">
+            
+                <a href="../../use-case/nodecli/">
+            
+                    
+                    Node.jsでCLIアプリ
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.4.3.1" data-path="../../use-case/nodecli/helloworld/">
+            
+                <a href="../../use-case/nodecli/helloworld/">
+            
+                    
+                    Node.jsでHello World
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3.2" data-path="../../use-case/nodecli/argument-parse/">
+            
+                <a href="../../use-case/nodecli/argument-parse/">
+            
+                    
+                    コマンドライン引数を処理する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3.3" data-path="../../use-case/nodecli/read-file/">
+            
+                <a href="../../use-case/nodecli/read-file/">
+            
+                    
+                    ファイルを読み込む
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3.4" data-path="../../use-case/nodecli/md-to-html/">
+            
+                <a href="../../use-case/nodecli/md-to-html/">
+            
+                    
+                    MarkdownをHTMLに変換する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3.5" data-path="../../use-case/nodecli/refactor-and-unittest/">
+            
+                <a href="../../use-case/nodecli/refactor-and-unittest/">
+            
+                    
+                    ユニットテストを記述する
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4" data-path="../../use-case/todoapp/">
+            
+                <a href="../../use-case/todoapp/">
+            
+                    
+                    Todoアプリ
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.4.4.1" data-path="../../use-case/todoapp/entrypoint/">
+            
+                <a href="../../use-case/todoapp/entrypoint/">
+            
+                    
+                    エントリーポイント
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.2" data-path="../../use-case/todoapp/app-structure/">
+            
+                <a href="../../use-case/todoapp/app-structure/">
+            
+                    
+                    アプリの構成要素
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.3" data-path="../../use-case/todoapp/form-event/">
+            
+                <a href="../../use-case/todoapp/form-event/">
+            
+                    
+                    Todoアイテムの追加を実装する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.4" data-path="../../use-case/todoapp/event-model/">
+            
+                <a href="../../use-case/todoapp/event-model/">
+            
+                    
+                    イベントとモデル
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.5" data-path="../../use-case/todoapp/update-delete/">
+            
+                <a href="../../use-case/todoapp/update-delete/">
+            
+                    
+                    Todoアイテムの更新と削除を実装する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.6" data-path="../../use-case/todoapp/final/">
+            
+                <a href="../../use-case/todoapp/final/">
+            
+                    
+                    Todoアプリのリファクタリング
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5" data-path="../../appendix/links/">
+            
+                <a href="../../appendix/links/">
+            
+                    
+                    付録: 参考リンク集
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.6" data-path="../../cheatsheet/">
+            
+                <a href="../../cheatsheet/">
+            
+                    
+                    付録: JavaScriptチートシート
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.7" data-path="../../outro/">
+            
+                <a href="../../outro/">
+            
+                    
+                    おわりに
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+    
+
+    <li class="divider"></li>
+
+    <li>
+        <a href="https://github.com/honkit/honkit" target="blank" class="gitbook-link">
+            Published with HonKit
+        </a>
+    </li>
+</ul>
+
+
+                </nav>
+            
+        
+    </div>
+
+    <div class="book-body">
+        
+            <div class="body-inner">
+                
+                    
+
+<!-- Header -->
+<meta name="keywords" content="JavaScript,ECMAScript,JS,入門,チュートリアル,書籍,本,無料,Node.js,ブラウザ"/>
+<link rel="author" href="https://www.hatena.ne.jp/efcl/"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsearch.js@2/dist/cdn/docsearch.min.css"/>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/docsearch.js@2/dist/cdn/docsearch.min.js"></script>
+<!-- OGP -->
+<meta property="og:title" content="JavaScript Primer - 迷わないための入門書"/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://jsprimer.net/"/>
+<meta property="og:image" content="https://jsprimer.net/landing/img/cover-optimized.jpg"/>
+<meta property="og:site_name" content="JavaScript Primer"/>
+<meta property="og:description" content="JavaScript Primerは、JavaScriptの基礎から応用までを一貫して学べる入門書です。"/>
+<style>
+    .book-header {
+        display: flex;
+        flex-direction: row;
+        background-color: #333;
+    }
+
+    /* link color */
+    .book-header a {
+        color: #fff;
+    }
+
+    /* hover color */
+    .book-header .btn:hover, .book-header .btn:focus, .book-header a:focus, .book-header a:hover {
+        color: hsla(0, 0%, 100%, 0.75) !important;
+    }
+
+    /* Mobile header fixed */
+    @media (max-width: 768px) {
+        /* Headerを固定する */
+        .book-header {
+            position: fixed;
+            width: 100%;
+        }
+
+        /* Icon only */
+        .book-header-title-img {
+            margin: auto 18px auto 0 !important;
+        }
+
+        .book-header-title-h {
+            display: none;
+        }
+
+        /* Header分のズレを入れる */
+        .page-wrapper {
+            padding-top: 60px;
+        }
+
+        /* github-issue-feedbackを非表示にする */
+        .gitbook-plugin-github-issue-feedback {
+            display: none;
+        }
+    }
+
+    /* Dynamic created by GitBook*/
+    .btn.pull-left.js-toolbar-action {
+        order: 1;
+    }
+
+    .book-header-title {
+        order: 2;
+        display: inline-flex;
+        flex-direction: row;
+        color: #fff;
+    }
+
+    .book-header-title:hover {
+        color: hsla(0, 0%, 100%, 0.75);
+    }
+
+    .book-header-title-img {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        margin: auto 10px auto 0;
+    }
+
+    .book-header-title-h {
+        font-size: 20px;
+        margin: auto;
+        padding: 0;
+    }
+
+    .header-center {
+        order: 3;
+        display: inline-flex;
+        flex-direction: column;
+        justify-content: center;
+        /* self */
+        flex-grow: 1;
+        flex-shrink: 0;
+        flex-basis: auto;
+    }
+
+    .header-right {
+        order: 4;
+        display: inline-flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        /* icon size */
+        font-size: 24px;
+    }
+
+    .amazon-link, .github-link {
+        color: #fff;
+        /* Padding and make Vertical */
+        display: inline-flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding-left: 4px;
+        padding-right: 4px;
+    }
+
+    /* Desktop */
+    @media (min-width: 768px) {
+        .header-center {
+            align-items: center;
+        }
+
+        .header-right {
+            margin-right: 24px;
+        }
+    }
+
+    /* DocSearch */
+    @media (max-width: 768px) {
+        .algolia-autocomplete .ds-dropdown-menu {
+            max-width: calc(100vw - 32px) !important;
+            min-width: calc(100vw - 32px) !important;
+            width: calc(100vw - 32px) !important;
+            /* negative margin
+              This is absolute element
+              */
+            margin-left: -32px !important;
+        }
+
+        .algolia-autocomplete .algolia-docsearch-suggestion--content {
+            width: 100% !important;
+            padding-left: 0 !important;
+        }
+
+        .algolia-autocomplete .algolia-docsearch-suggestion--content:before {
+            display: none !important;
+        }
+
+        .algolia-autocomplete .algolia-docsearch-suggestion--subcategory-column {
+            display: none !important;
+        }
+
+        .algolia-autocomplete.algolia-autocomplete-right .ds-dropdown-menu {
+            right: inherit !important
+        }
+
+        .algolia-autocomplete.algolia-autocomplete-right .ds-dropdown-menu::before {
+            right: 50%;
+        }
+
+        .sbx-custom {
+            width: 92px !important;
+            padding: initial !important;
+        }
+
+        .amazon-link {
+            display: none;
+        }
+    }
+
+    /* SearchBox */
+    .searchbarWrapper {
+        height: 50px;
+    }
+
+
+    .sbx-custom {
+        display: inline-block;
+        position: relative;
+        min-width: 150px;
+        width: 300px;
+        max-width: 300px;
+        height: 33px;
+        white-space: nowrap;
+        box-sizing: border-box;
+        font-size: 14px;
+    }
+
+    .sbx-custom__wrapper {
+        width: 100%;
+        height: 100%;
+    }
+
+    .sbx-custom__input {
+        display: inline-block;
+        -webkit-transition: box-shadow .4s ease, background .4s ease;
+        transition: box-shadow .4s ease, background .4s ease;
+        border: 0;
+        border-radius: 5px;
+        box-shadow: inset 0 0 0 2px #CCCCCC;
+        background: #FFFFFF;
+        padding: 0 27px 0 33px;
+        width: 100%;
+        height: 100%;
+        vertical-align: middle;
+        white-space: normal;
+        font-size: inherit;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+    }
+
+    .sbx-custom__input::-webkit-search-decoration, .sbx-custom__input::-webkit-search-cancel-button, .sbx-custom__input::-webkit-search-results-button, .sbx-custom__input::-webkit-search-results-decoration {
+        display: none;
+    }
+
+    .sbx-custom__input:hover {
+        box-shadow: inset 0 0 0 2px #b3b3b3;
+    }
+
+    .sbx-custom__input:focus, .sbx-custom__input:active {
+        outline: 0;
+        box-shadow: inset 0 0 0 2px #4B54DE;
+        background: #FFFFFF;
+    }
+
+    .sbx-custom__input::-webkit-input-placeholder {
+        color: #BBBBBB;
+    }
+
+    .sbx-custom__input::-moz-placeholder {
+        color: #BBBBBB;
+    }
+
+    .sbx-custom__input:-ms-input-placeholder {
+        color: #BBBBBB;
+    }
+
+    .sbx-custom__input::placeholder {
+        color: #BBBBBB;
+    }
+
+    .sbx-custom__submit {
+        position: absolute;
+        top: 0;
+        right: inherit;
+        left: 0;
+        margin: 0;
+        border: 0;
+        border-radius: 4px 0 0 4px;
+        background-color: rgba(255, 255, 255, 0);
+        padding: 0;
+        width: 33px;
+        height: 100%;
+        vertical-align: middle;
+        text-align: center;
+        font-size: inherit;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+    .sbx-custom__submit::before {
+        display: inline-block;
+        margin-right: -4px;
+        height: 100%;
+        vertical-align: middle;
+        content: '';
+    }
+
+    .sbx-custom__submit:hover, .sbx-custom__submit:active {
+        cursor: pointer;
+    }
+
+    .sbx-custom__submit:focus {
+        outline: 0;
+    }
+
+    .sbx-custom__submit svg {
+        width: 17px;
+        height: 17px;
+        vertical-align: middle;
+        fill: #3A33D1;
+    }
+
+    .sbx-custom__reset {
+        display: none;
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        margin: 0;
+        border: 0;
+        background: none;
+        cursor: pointer;
+        padding: 0;
+        font-size: inherit;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        fill: rgba(0, 0, 0, 0.5);
+    }
+
+    .sbx-custom__reset:focus {
+        outline: 0;
+    }
+
+    .sbx-custom__reset svg {
+        display: block;
+        margin: 4px;
+        width: 17px;
+        height: 17px;
+    }
+
+    .sbx-custom__input:valid ~ .sbx-custom__reset {
+        display: block;
+        -webkit-animation-name: sbx-reset-in;
+        animation-name: sbx-reset-in;
+        -webkit-animation-duration: .15s;
+        animation-duration: .15s;
+    }
+
+    @-webkit-keyframes sbx-reset-in {
+        0% {
+            -webkit-transform: translate3d(-20%, 0, 0);
+            transform: translate3d(-20%, 0, 0);
+            opacity: 0;
+        }
+        100% {
+            -webkit-transform: none;
+            transform: none;
+            opacity: 1;
+        }
+    }
+
+    @keyframes sbx-reset-in {
+        0% {
+            -webkit-transform: translate3d(-20%, 0, 0);
+            transform: translate3d(-20%, 0, 0);
+            opacity: 0;
+        }
+        100% {
+            -webkit-transform: none;
+            transform: none;
+            opacity: 1;
+        }
+    }
+</style>
+<div class="book-header" role="navigation">
+    
+    <a class="book-header-title" href="../..">
+        <img class="book-header-title-img" alt="JavaScript Primer"
+             src="../../gitbook/icons/icon-128x128.png"/>
+        <h2 class="book-header-title-h" title="JavaScript Primer - 迷わないための入門書">JavaScript Primer</h2>
+    </a>
+    <div class="searchbarWrapper header-center">
+        <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+            <symbol xmlns="http://www.w3.org/2000/svg" id="sbx-icon-search-8" viewBox="0 0 40 40">
+                <path d="M16 32c8.835 0 16-7.165 16-16 0-8.837-7.165-16-16-16C7.162 0 0 7.163 0 16c0 8.835 7.163 16 16 16zm0-5.76c5.654 0 10.24-4.586 10.24-10.24 0-5.656-4.586-10.24-10.24-10.24-5.656 0-10.24 4.584-10.24 10.24 0 5.654 4.584 10.24 10.24 10.24zM28.156 32.8c-1.282-1.282-1.278-3.363.002-4.643 1.282-1.284 3.365-1.28 4.642-.003l6.238 6.238c1.282 1.282 1.278 3.363-.002 4.643-1.283 1.283-3.366 1.28-4.643.002l-6.238-6.238z"
+                      fill-rule="evenodd"></path>
+            </symbol>
+            <symbol xmlns="http://www.w3.org/2000/svg" id="sbx-icon-clear-5" viewBox="0 0 20 20">
+                <path d="M10 20c5.523 0 10-4.477 10-10S15.523 0 10 0 0 4.477 0 10s4.477 10 10 10zm1.35-10.123l3.567 3.568-1.225 1.226-3.57-3.568-3.567 3.57-1.226-1.227 3.568-3.568-3.57-3.57 1.227-1.224 3.568 3.568 3.57-3.567 1.224 1.225-3.568 3.57zM10 18.272c4.568 0 8.272-3.704 8.272-8.272S14.568 1.728 10 1.728 1.728 5.432 1.728 10 5.432 18.272 10 18.272z"
+                      fill-rule="evenodd"></path>
+            </symbol>
+        </svg>
+
+        <form novalidate="novalidate" onsubmit="return false;" class="searchbox sbx-custom">
+            <div role="search" class="sbx-custom__wrapper">
+                <input name="search" placeholder="Search words" autocomplete="off" required="required"
+                       class="sbx-custom__input" type="search">
+                <button type="submit" title="Submit your search query." class="sbx-custom__submit">
+                    <svg role="img" aria-label="Search">
+                        <use xlink:href="#sbx-icon-search-8"></use>
+                    </svg>
+                </button>
+                <button type="reset" title="Clear the search query." class="sbx-custom__reset">
+                    <svg role="img" aria-label="Reset">
+                        <use xlink:href="#sbx-icon-clear-5"></use>
+                    </svg>
+                </button>
+            </div>
+        </form>
+    </div>
+    <div class="header-right">
+        <!-- Icon: https://www.iconfinder.com/iconsets/circle-payment -->
+        <a class="amazon-link" title="Amazon: JavaScript Primer 改訂2版 迷わないための入門書"
+           href="https://www.amazon.co.jp/dp/4048931105/" target="_blank"><img
+                width="22"
+                height="22"
+                style="margin: 1px;"
+                src="../../gitbook/icons/amazon-icon.png" alt=""></a>
+        <a class="github-link" title="GitHub: asciidwango/js-primer" href="https://github.com/asciidwango/js-primer"
+           target="_blank"><i
+                class="fa fa-github fa-fw"></i></a>
+    </div>
+</div>
+
+<script defer>
+    // focus on search box
+    document.querySelector(".searchbox [type=\"reset\"]").addEventListener("click", function() {
+        this.parentNode.querySelector("input").focus();
+    });
+    // init DocSearch
+    var search = docsearch({
+        apiKey: "fd28ebaba94be0c39fb9fa1b2fed4f23", // use a SEARCH-ONLY api key here
+        indexName: "asciidwango",
+        inputSelector: ".sbx-custom__input",
+        debug: false // set to `true` if you want to inspect the dropdown menu's CSS
+    });
+</script>
+<script>
+    window.addEventListener("DOMContentLoaded", function() {
+        gitbook.events.on("page.change", function() {
+            setTimeout(() => console.clear(), 1000);
+        });
+    });
+</script>
+
+
+
+
+
+                    <div class="page-wrapper" tabindex="-1" role="main">
+                        <div class="page-inner">
+                            
+                                <section class="normal markdown-section">
+                                
+<style>
+    .page-sponsors {
+        background: #fafafa;
+    }
+    .page-sponsors .page-sponsors-list {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 0;
+        padding: 1em 0;
+        list-style: none;
+        gap: 8px;
+    }
+    .page-sponsors-footer {
+        text-align: center;
+        padding: 0;
+        margin: 0;
+    }
+</style>
+<div class="page-sponsors">
+
+    <div class="page-sponsors-footer">
+        JavaScript Primerの<a href="https://jsprimer.net/intro/sponsors/">スポンサーを募集中</a>
+    </div>
+
+</div>
+
+                                <html><head></head><body><h1 id="function-this"><a name="function-this" class="plugin-anchor" href="#function-this"><i class="fa fa-link" aria-hidden="true"></i></a>関数とthis </h1>
+<p>この章では<code>this</code>という特殊な動作をするキーワードについて見ていきます。
+基本的にはメソッドの中で利用しますが、<code>this</code>は読み取り専用のグローバル変数のようなものでどこにでも書けます。
+加えて、<code>this</code>の参照先（評価結果）は条件によって異なります。</p>
+<p><code>this</code>の参照先は主に次の条件によって変化します。</p>
+<ul>
+<li>実行コンテキストにおける<code>this</code></li>
+<li>コンストラクタにおける<code>this</code></li>
+<li>関数とメソッドにおける<code>this</code></li>
+<li>Arrow Functionにおける<code>this</code></li>
+</ul>
+<p>コンストラクタにおける<code>this</code>は、次の章である「<a href="../class/">クラス</a>」で扱います。
+この章ではさまざまな条件での<code>this</code>について扱いますが、<code>this</code>が実際に使われるのはメソッドにおいてです。
+そのため、あらゆる条件下での<code>this</code>の動きをすべて覚える必要はありません。</p>
+<p>この章では、さまざまな条件下で変わる<code>this</code>の参照先と関数やArrow Functionとの関係を見ていきます。
+また、実際にどのような状況で問題が発生するかを知り、<code>this</code>の動きを予測可能にするにはどのようにするかを見ていきます。</p>
+<h2 id="execution-context-this"><a name="execution-context-this" class="plugin-anchor" href="#execution-context-this"><i class="fa fa-link" aria-hidden="true"></i></a>実行コンテキストと<code>this</code> </h2>
+<p>最初に「<a href="../introduction/">JavaScriptとは</a>」の章において、JavaScriptには実行コンテキストとして"Script"と"Module"があるという話をしました。
+どの実行コンテキストでJavaScriptのコードを評価するかは、実行環境によってやり方が異なります。
+この章では、ブラウザの<code>script</code>要素と<code>type</code>属性を使い、それぞれの実行コンテキストを明示しながら<code>this</code>の動きを見ていきます。</p>
+<p>トップレベル（もっとも外側のスコープ）にある<code>this</code>は、実行コンテキストによって値が異なります。
+実行コンテキストの違いは意識しにくい部分であり、トップレベルで<code>this</code>を使うと混乱を生むことになります。
+そのため、コードのトップレベルにおいては<code>this</code>を使うべきではありませんが、それぞれの実行コンテキストにおける動作を紹介します。</p>
+<h3 id="script-this"><a name="script-this" class="plugin-anchor" href="#script-this"><i class="fa fa-link" aria-hidden="true"></i></a>スクリプトにおける<code>this</code> </h3>
+<p>実行コンテキストが"Script"である場合、トップレベルのスコープに書かれた<code>this</code>はグローバルオブジェクトを参照します。
+グローバルオブジェクトは、実行環境ごとに異なるものが定義されています。
+ブラウザのグローバルオブジェクトは<code>window</code>オブジェクト、Node.jsのグローバルオブジェクトは<code>global</code>オブジェクトとなります。</p>
+<p>ブラウザでは、<code>script</code>要素の<code>type</code>属性を指定していない場合は、実行コンテキストが"Script"として実行されます。
+この<code>script</code>要素の直下に書いた<code>this</code>はグローバルオブジェクトである<code>window</code>オブジェクトとなります。</p>
+<pre><code class="lang-html"><span class="hljs-tag">&lt;<span class="hljs-name">script</span>&gt;</span><span class="language-javascript">
+<span class="hljs-comment">// 実行コンテキストは"Script"</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-variable language_">this</span>); <span class="hljs-comment">// =&gt; window</span>
+</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
+</code></pre>
+<h3 id="module-this"><a name="module-this" class="plugin-anchor" href="#module-this"><i class="fa fa-link" aria-hidden="true"></i></a>モジュールにおける<code>this</code> </h3>
+<p>実行コンテキストが"Module"である場合、そのトップレベルのスコープに書かれた<code>this</code>は常に<code>undefined</code>となります。</p>
+<p>ブラウザで、<code>script</code>要素に<code>type="module"</code>属性がついた場合は、実行コンテキストが"Module"として実行されます。
+この<code>script</code>要素の直下に書いた<code>this</code>は<code>undefined</code>となります。</p>
+<pre><code class="lang-html"><span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"module"</span>&gt;</span><span class="language-javascript">
+<span class="hljs-comment">// 実行コンテキストは"Module"</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-variable language_">this</span>); <span class="hljs-comment">// =&gt; undefined</span>
+</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
+</code></pre>
+<p>このように、トップレベルのスコープの<code>this</code>は実行コンテキストによって<code>undefined</code>となる場合があります。</p>
+<p>単純にグローバルオブジェクトを参照したい場合は、<code>this</code>ではなく<code>globalThis</code>を使います。
+<code>globalThis</code>は実行環境のグローバルオブジェクトを参照するためにES2020で導入されました。</p>
+<p>実行環境のグローバルオブジェクトは、ブラウザでは<code>window</code>、Node.jsでは<code>global</code>のように名前が異なります。
+そのため同じコードで、異なるグローバルオブジェクトを参照するには、コード上で分岐する必要がありました。
+ES2020ではこの問題を解決するために、実行環境のグローバルオブジェクトを参照する<code>globalThis</code>が導入されました。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a>
+<!-- doctest:meta:{ "ECMAScript": 2020 } --></p>
+<pre><code class="lang-js"><span class="hljs-comment">// ブラウザでは`window`オブジェクト、Node.jsでは`global`オブジェクトを参照する</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(globalThis);
+</code></pre>
+<h2 id="function-and-method-this"><a name="function-and-method-this" class="plugin-anchor" href="#function-and-method-this"><i class="fa fa-link" aria-hidden="true"></i></a>関数とメソッドにおける<code>this</code> </h2>
+<p><strong>関数</strong>を定義する方法として、<code>function</code>キーワードによる関数宣言と関数式、Arrow Functionなどがあります。
+<code>this</code>が参照先を決めるルールは、Arrow Functionとそれ以外の関数定義の方法で異なります。</p>
+<p>そのため、まずは関数定義の種類について振り返ってから、それぞれの<code>this</code>について見ていきます。</p>
+<h3 id="type-of-function"><a name="type-of-function" class="plugin-anchor" href="#type-of-function"><i class="fa fa-link" aria-hidden="true"></i></a>関数の種類 </h3>
+<p>「<a href="../function-declaration/">関数と宣言</a>」の章で詳しく紹介していますが、関数の定義方法と呼び出し方について改めて振り返ってみましょう。
+<strong>関数</strong>を定義する場合には、次の3つの方法を利用します。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// `function`キーワードからはじめる関数宣言</span>
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">fn1</span>(<span class="hljs-params"></span>) {}
+<span class="hljs-comment">// `function`を式として扱う関数式</span>
+<span class="hljs-keyword">const</span> fn2 = <span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) {};
+<span class="hljs-comment">// Arrow Functionを使った関数式</span>
+<span class="hljs-keyword">const</span> <span class="hljs-title function_">fn3</span> = (<span class="hljs-params"></span>) =&gt; {};
+</code></pre>
+<!-- textlint-disable no-js-function-paren -->
+<p>それぞれ定義した関数は<code>関数名()</code>と書くことで呼び出せます。</p>
+<!-- textlint-enable no-js-function-paren -->
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// 関数宣言</span>
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">fn</span>(<span class="hljs-params"></span>) {}
+<span class="hljs-comment">// 関数呼び出し</span>
+<span class="hljs-title function_">fn</span>();
+</code></pre>
+<h3 id="type-of-method"><a name="type-of-method" class="plugin-anchor" href="#type-of-method"><i class="fa fa-link" aria-hidden="true"></i></a>メソッドの種類 </h3>
+<p>JavaScriptではオブジェクトのプロパティが関数である場合にそれを<strong>メソッド</strong>と呼びます。
+一般的にはメソッドも含めたものを<strong>関数</strong>と言い、関数宣言などとプロパティである関数を区別する場合に<strong>メソッド</strong>と呼びます。</p>
+<p>メソッドを定義する場合には、オブジェクトのプロパティに関数式を定義するだけです。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> obj = {
+    <span class="hljs-comment">// `function`キーワードを使ったメソッド</span>
+    <span class="hljs-attr">method1</span>: <span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) {
+    },
+    <span class="hljs-comment">// Arrow Functionを使ったメソッド</span>
+    <span class="hljs-attr">method2</span>: <span class="hljs-function">() =&gt;</span> {
+    }
+};
+</code></pre>
+<p>これに加えてメソッドには短縮記法があります。
+オブジェクトリテラルの中で <code>メソッド名(){ /*メソッドの処理*/ }</code>と書くことで、メソッドを定義できます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> obj = {
+    <span class="hljs-comment">// メソッドの短縮記法で定義したメソッド</span>
+    <span class="hljs-title function_">method</span>(<span class="hljs-params"></span>) {
+    }
+};
+</code></pre>
+<!-- textlint-disable no-js-function-paren -->
+<p>これらのメソッドは、<code>オブジェクト名.メソッド名()</code>と書くことで呼び出せます。</p>
+<!-- textlint-enable no-js-function-paren -->
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> obj = {
+    <span class="hljs-comment">// メソッドの定義</span>
+    <span class="hljs-title function_">method</span>(<span class="hljs-params"></span>) {
+    }
+};
+<span class="hljs-comment">// メソッド呼び出し</span>
+obj.<span class="hljs-title function_">method</span>();
+</code></pre>
+<p>関数定義とメソッドの定義についてまとめると、次のようになります。</p>
+<table>
+<thead>
+<tr>
+<th>名前</th>
+<th>関数</th>
+<th>メソッド</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>関数宣言(<code>function fn(){}</code>)</td>
+<td>✔</td>
+<td>x</td>
+</tr>
+<tr>
+<td>関数式(<code>const fn = function(){}</code>)</td>
+<td>✔</td>
+<td>✔</td>
+</tr>
+<tr>
+<td>Arrow Function(<code>const fn = () =&gt; {}</code>)</td>
+<td>✔</td>
+<td>✔</td>
+</tr>
+<tr>
+<td>メソッドの短縮記法(<code>const obj = { method(){} }</code>)</td>
+<td>x</td>
+<td>✔</td>
+</tr>
+</tbody>
+</table>
+<p>最初に書いたように<code>this</code>の挙動は、Arrow Functionの関数定義とそれ以外（<code>function</code>キーワードやメソッドの短縮記法）の関数定義で異なります。
+そのため、まずは<strong>Arrow Function以外</strong>の関数やメソッドにおける<code>this</code>を見ていきます。</p>
+<h2 id="function-without-arrow-function-this"><a name="function-without-arrow-function-this" class="plugin-anchor" href="#function-without-arrow-function-this"><i class="fa fa-link" aria-hidden="true"></i></a>Arrow Function以外の関数における<code>this</code> </h2>
+<p>Arrow Function以外の関数（メソッドも含む）における<code>this</code>は、実行時に決まる値となります。
+言い方を変えると<code>this</code>は関数に渡される暗黙的な引数のようなもので、その渡される値は関数を実行するときに決まります。</p>
+<p>次のコードは疑似的なものです。
+関数の中に書かれた<code>this</code>は、関数の呼び出し元から暗黙的に渡される値を参照することになります。
+このルールはArrow Function以外の関数やメソッドで共通した仕組みとなります。Arrow Functionで定義した関数やメソッドはこのルールとは別の仕組みとなります。</p>
+<!-- doctest:disable -->
+<pre><code class="lang-js"><span class="hljs-comment">// 疑似的な`this`の値の仕組み</span>
+<span class="hljs-comment">// 関数は引数として暗黙的に`this`の値を受け取るイメージ</span>
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">fn</span>(<span class="hljs-params">暗黙的に渡される<span class="hljs-variable language_">this</span>の値, 仮引数</span>) {
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-variable language_">this</span>); <span class="hljs-comment">// =&gt; 暗黙的に渡されるthisの値</span>
+}
+<span class="hljs-comment">// 暗黙的に`this`の値を引数として渡しているイメージ</span>
+<span class="hljs-title function_">fn</span>(暗黙的に渡す<span class="hljs-variable language_">this</span>の値, 引数);
+</code></pre>
+<!-- textlint-disable no-js-function-paren -->
+<p>関数における<code>this</code>の基本的な参照先（暗黙的に関数に渡す<code>this</code>の値）は<strong>ベースオブジェクト</strong>となります。
+ベースオブジェクトとは「メソッドを呼ぶ際に、そのメソッドのドット演算子またはブラケット演算子のひとつ左にあるオブジェクト」のことを言います。
+ベースオブジェクトがない場合の<code>this</code>は<code>undefined</code>となります。</p>
+<p>たとえば、<code>fn()</code>のように関数を呼び出したとき、この<code>fn</code>関数呼び出しのベースオブジェクトはないため、<code>this</code>は<code>undefined</code>となります。
+一方、<code>obj.method()</code>のようにメソッドを呼び出したとき、この<code>obj.method</code>メソッド呼び出しのベースオブジェクトは<code>obj</code>オブジェクトとなり、<code>this</code>は<code>obj</code>となります。</p>
+<!-- textlint-enable no-js-function-paren -->
+<!-- doctest:disable -->
+<pre><code class="lang-js"><span class="hljs-comment">// `fn`関数はメソッドではないのでベースオブジェクトはない</span>
+<span class="hljs-title function_">fn</span>();
+<span class="hljs-comment">// `obj.method`メソッドのベースオブジェクトは`obj`</span>
+obj.<span class="hljs-title function_">method</span>();
+<span class="hljs-comment">// `obj1.obj2.method`メソッドのベースオブジェクトは`obj2`</span>
+<span class="hljs-comment">// ドット演算子、ブラケット演算子どちらも結果は同じ</span>
+obj1.<span class="hljs-property">obj2</span>.<span class="hljs-title function_">method</span>();
+obj1[<span class="hljs-string">"obj2"</span>][<span class="hljs-string">"method"</span>]();
+</code></pre>
+<p><code>this</code>は関数の定義ではなく呼び出し方で参照する値が異なります。これは、後述する「<code>this</code>が問題となるパターン」で詳しく紹介します。
+Arrow Function以外の関数では、関数の定義だけを見て<code>this</code>の値が何かということは決定できない点に注意が必要です。</p>
+<h3 id="function-declaration-expression-this"><a name="function-declaration-expression-this" class="plugin-anchor" href="#function-declaration-expression-this"><i class="fa fa-link" aria-hidden="true"></i></a>関数宣言や関数式における<code>this</code> </h3>
+<p>まずは、関数宣言や関数式の場合を見ていきます。</p>
+<!-- textlint-disable no-js-function-paren -->
+<p>次の例では、関数宣言で関数<code>fn1</code>、関数式で関数<code>fn2</code>を定義し、それぞれの関数内で<code>this</code>を返します。
+定義したそれぞれの関数を<code>fn1()</code>と<code>fn2()</code>のようにただの関数として呼び出しています。
+このとき、ベースオブジェクトはないため、<code>this</code>は<code>undefined</code>となります。</p>
+<!-- textlint-disable no-js-function-paren -->
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-meta">"use strict"</span>;
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">fn1</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>;
+}
+<span class="hljs-keyword">const</span> fn2 = <span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>;
+};
+<span class="hljs-comment">// 関数の中の`this`が参照する値は呼び出し方によって決まる</span>
+<span class="hljs-comment">// `fn1`と`fn2`どちらもただの関数として呼び出している</span>
+<span class="hljs-comment">// メソッドとして呼び出していないためベースオブジェクトはない</span>
+<span class="hljs-comment">// ベースオブジェクトがない場合、`this`は`undefined`となる</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">fn1</span>()); <span class="hljs-comment">// =&gt; undefined</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">fn2</span>()); <span class="hljs-comment">// =&gt; undefined</span>
+</code></pre>
+<p>これは、関数の中に関数を定義して呼び出す場合も同じです。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-meta">"use strict"</span>;
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">outer</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-variable language_">this</span>); <span class="hljs-comment">// =&gt; undefined</span>
+    <span class="hljs-keyword">function</span> <span class="hljs-title function_">inner</span>(<span class="hljs-params"></span>) {
+        <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-variable language_">this</span>); <span class="hljs-comment">// =&gt; undefined</span>
+    }
+    <span class="hljs-comment">// `inner`関数呼び出しのベースオブジェクトはない</span>
+    <span class="hljs-title function_">inner</span>();
+}
+<span class="hljs-comment">// `outer`関数呼び出しのベースオブジェクトはない</span>
+<span class="hljs-title function_">outer</span>();
+</code></pre>
+<p>この書籍では注釈がないコードはstrict modeとして扱いますが、コード例に<code>"use strict";</code>と改めてstrict modeを明示しています（詳細は「<a href="../introduction/">JavaScriptとは</a>」の<a href="../introduction/#strict-mode">strict mode</a>を参照）。
+なぜなら、strict modeではない状況で<code>this</code>が<code>undefined</code>の場合は、<code>this</code>がグローバルオブジェクトを参照するように変換される問題があるためです。</p>
+<p>strict modeは、このような意図しにくい動作を防止するために導入されています。
+しかしながら、strict modeのメソッド以外の関数における<code>this</code>は<code>undefined</code>となるため使い道がありません。
+そのため、メソッド以外で<code>this</code>を使う必要はありません。</p>
+<h3 id="method-this"><a name="method-this" class="plugin-anchor" href="#method-this"><i class="fa fa-link" aria-hidden="true"></i></a>メソッド呼び出しにおける<code>this</code> </h3>
+<p>次に、メソッドの場合を見ていきます。
+メソッドの場合は、そのメソッドが何かしらのオブジェクトに所属しています。
+なぜなら、JavaScriptではオブジェクトのプロパティとして指定される関数のことをメソッドと呼ぶためです。</p>
+<p>次の例では<code>method1</code>と<code>method2</code>はそれぞれメソッドとして呼び出されています。
+このとき、それぞれのベースオブジェクトは<code>obj</code>となり、<code>this</code>は<code>obj</code>となります。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> obj = {
+    <span class="hljs-comment">// 関数式をプロパティの値にしたメソッド</span>
+    <span class="hljs-attr">method1</span>: <span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) {
+        <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>;
+    },
+    <span class="hljs-comment">// 短縮記法で定義したメソッド</span>
+    <span class="hljs-title function_">method2</span>(<span class="hljs-params"></span>) {
+        <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>;
+    }
+};
+<span class="hljs-comment">// メソッド呼び出しの場合、それぞれの`this`はベースオブジェクト(`obj`)を参照する</span>
+<span class="hljs-comment">// メソッド呼び出しの`.`の左にあるオブジェクトがベースオブジェクト</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(obj.<span class="hljs-title function_">method1</span>()); <span class="hljs-comment">// =&gt; obj</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(obj.<span class="hljs-title function_">method2</span>()); <span class="hljs-comment">// =&gt; obj</span>
+</code></pre>
+<p>これを利用すれば、メソッドの中から同じオブジェクトに所属する別のプロパティを<code>this</code>で参照できます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> person = {
+    <span class="hljs-attr">fullName</span>: <span class="hljs-string">"Brendan Eich"</span>,
+    <span class="hljs-attr">sayName</span>: <span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) {
+        <span class="hljs-comment">// `person.fullName`と書いているのと同じ</span>
+        <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">fullName</span>;
+    }
+};
+<span class="hljs-comment">// `person.fullName`を出力する</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(person.<span class="hljs-title function_">sayName</span>()); <span class="hljs-comment">// =&gt; "Brendan Eich"</span>
+</code></pre>
+<p>このようにメソッドが所属するオブジェクトのプロパティを、<code>オブジェクト名.プロパティ名</code>の代わりに<code>this.プロパティ名</code>で参照できます。</p>
+<p>オブジェクトは何重にもネストできますが、<code>this</code>はベースオブジェクトを参照するというルールは同じです。</p>
+<p>次のコードを見てみると、ネストしたオブジェクトにおいてメソッド内の<code>this</code>がベースオブジェクトである<code>obj3</code>を参照していることがわかります。
+このときのベースオブジェクトはドットでつないだ一番左の<code>obj1</code>ではなく、メソッドから見てひとつ左の<code>obj3</code>となります。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> obj1 = {
+    <span class="hljs-attr">obj2</span>: {
+        <span class="hljs-attr">obj3</span>: {
+            <span class="hljs-title function_">method</span>(<span class="hljs-params"></span>) {
+                <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>;
+            }
+        }
+    }
+};
+<span class="hljs-comment">// `obj1.obj2.obj3.method`メソッドの`this`は`obj3`を参照</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(obj1.<span class="hljs-property">obj2</span>.<span class="hljs-property">obj3</span>.<span class="hljs-title function_">method</span>() === obj1.<span class="hljs-property">obj2</span>.<span class="hljs-property">obj3</span>); <span class="hljs-comment">// =&gt; true</span>
+</code></pre>
+<h2 id="this-problem"><a name="this-problem" class="plugin-anchor" href="#this-problem"><i class="fa fa-link" aria-hidden="true"></i></a><code>this</code>が問題となるパターン </h2>
+<p><code>this</code>はその関数（メソッドも含む）呼び出しのベースオブジェクトを参照することがわかりました。
+<code>this</code>は所属するオブジェクトを直接書く代わりとして利用できますが、一方<code>this</code>にはいろいろな問題があります。</p>
+<p>この問題の原因は<code>this</code>がどの値を参照するかは関数の呼び出し時に決まるという性質に由来します。
+この<code>this</code>の性質が問題となるパターンの代表的な2つの例とそれぞれの対策について見ていきます。</p>
+<h3 id="assign-this-function"><a name="assign-this-function" class="plugin-anchor" href="#assign-this-function"><i class="fa fa-link" aria-hidden="true"></i></a>問題: <code>this</code>を含むメソッドを変数に代入した場合 </h3>
+<p>JavaScriptではメソッドとして定義したものが、後からただの関数として呼び出されることがあります。
+なぜなら、メソッドは関数を値に持つプロパティのことで、プロパティは変数に代入し直すことができるためです。</p>
+<p>そのため、メソッドとして定義した関数も、別の変数に代入してただの関数として呼び出されることがあります。
+この場合には、メソッドとして定義した関数であっても、実行時にはただの関数であるためベースオブジェクトが変わっています。
+これは<code>this</code>が定義した時点ではなく実行したときに決まるという性質そのものです。</p>
+<p>具体的に、<code>this</code>が実行時に変わる例を見ていきます。
+次の例では、<code>person.sayName</code>メソッドを変数<code>say</code>に代入してから実行しています。
+このときの<code>say</code>関数（<code>sayName</code>メソッドを参照）のベースオブジェクトはありません。
+そのため、<code>this</code>は<code>undefined</code>となり、<code>undefined.fullName</code>は参照できずに例外を投げます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-meta">"use strict"</span>;
+<span class="hljs-keyword">const</span> person = {
+    <span class="hljs-attr">fullName</span>: <span class="hljs-string">"Brendan Eich"</span>,
+    <span class="hljs-attr">sayName</span>: <span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) {
+        <span class="hljs-comment">// `this`は呼び出し元によって異なる</span>
+        <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">fullName</span>;
+    }
+};
+<span class="hljs-comment">// `sayName`メソッドは`person`オブジェクトに所属する</span>
+<span class="hljs-comment">// `this`は`person`オブジェクトとなる</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(person.<span class="hljs-title function_">sayName</span>()); <span class="hljs-comment">// =&gt; "Brendan Eich"</span>
+<span class="hljs-comment">// `person.sayName`を`say`変数に代入する</span>
+<span class="hljs-keyword">const</span> say = person.<span class="hljs-property">sayName</span>;
+<span class="hljs-comment">// 代入したメソッドを関数として呼ぶ</span>
+<span class="hljs-comment">// この`say`関数はどのオブジェクトにも所属していない</span>
+<span class="hljs-comment">// `this`はundefinedとなるため例外を投げる</span>
+<span class="hljs-title function_">say</span>(); <span class="hljs-comment">// =&gt; TypeError: Cannot read property 'fullName' of undefined</span>
+</code></pre>
+<p>結果的には、次のようなコードが実行されているのと同じです。
+次のコードでは、<code>undefined.fullName</code>を参照しようとして例外が発生しています。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-meta">"use strict"</span>;
+<span class="hljs-comment">// const say = person.sayName; は次のようなイメージ</span>
+<span class="hljs-keyword">const</span> say = <span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">fullName</span>;
+};
+<span class="hljs-comment">// `this`は`undefined`となるため例外を投げる</span>
+<span class="hljs-title function_">say</span>(); <span class="hljs-comment">// =&gt; TypeError: Cannot read property 'fullName' of undefined</span>
+</code></pre>
+<p>このように、Arrow Function以外の関数において、<code>this</code>は定義したときではなく実行したときに決定されます。
+そのため、関数に<code>this</code>を含んでいる場合、その関数は意図した呼ばれ方がされないと間違った結果が発生するという問題があります。</p>
+<p>この問題の対処法としては大きく分けて2つあります。</p>
+<p>1つはメソッドとして定義されている関数はメソッドとして呼ぶということです。
+メソッドをわざわざただの関数として呼ばなければそもそもこの問題は発生しません。</p>
+<p>もう1つは、<code>this</code>の値を指定して関数を呼べるメソッドで関数を実行する方法です。</p>
+<h4 id="call-apply-bind"><a name="call-apply-bind" class="plugin-anchor" href="#call-apply-bind"><i class="fa fa-link" aria-hidden="true"></i></a>対処法: call、apply、bindメソッド </h4>
+<p>関数やメソッドの<code>this</code>を明示的に指定して関数を実行する方法もあります。
+<code>Function</code>（関数オブジェクト）には<code>call</code>、<code>apply</code>、<code>bind</code>といった明示的に<code>this</code>を指定して関数を実行するメソッドが用意されています。</p>
+<p><code>call</code>メソッドは第一引数に<code>this</code>としたい値を指定し、残りの引数には呼び出す関数の引数を指定します。
+暗黙的に渡される<code>this</code>の値を明示的に渡せるメソッドと言えます。</p>
+<!-- doctest:disable -->
+<pre><code class="lang-js">関数.<span class="hljs-title function_">call</span>(<span class="hljs-variable language_">this</span>の値, ...関数の引数);
+</code></pre>
+<p>次の例では<code>this</code>に<code>person</code>オブジェクトを指定した状態で<code>say</code>関数を呼び出しています。
+<code>call</code>メソッドの第二引数で指定した値が、<code>say</code>関数の仮引数<code>message</code>に入ります。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-meta">"use strict"</span>;
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">say</span>(<span class="hljs-params">message</span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-string">`<span class="hljs-subst">${message}</span> <span class="hljs-subst">${<span class="hljs-variable language_">this</span>.fullName}</span>！`</span>;
+}
+<span class="hljs-keyword">const</span> person = {
+    <span class="hljs-attr">fullName</span>: <span class="hljs-string">"Brendan Eich"</span>
+};
+<span class="hljs-comment">// `this`を`person`にして`say`関数を呼びだす</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(say.<span class="hljs-title function_">call</span>(person, <span class="hljs-string">"こんにちは"</span>)); <span class="hljs-comment">// =&gt; "こんにちは Brendan Eich！"</span>
+<span class="hljs-comment">// `say`関数をそのまま呼び出すと`this`は`undefined`となるため例外が発生</span>
+<span class="hljs-title function_">say</span>(<span class="hljs-string">"こんにちは"</span>); <span class="hljs-comment">// =&gt; TypeError: Cannot read property 'fullName' of undefined</span>
+</code></pre>
+<!--
+この例を見ると`this`が暗黙的に関数に渡される仮引数の一種のよう扱われていることが分かります。
+他の言語とは異なり`this`が実行時に決定されることは、定義時点ではthisの値が何になるのか分からないという曖昧さがあることを示しています。
+-->
+<p><code>apply</code>メソッドは第一引数に<code>this</code>とする値を指定し、第二引数に関数の引数を配列として渡します。</p>
+<!-- doctest:disable -->
+<pre><code class="lang-js">関数.<span class="hljs-title function_">apply</span>(<span class="hljs-variable language_">this</span>の値, [関数の引数<span class="hljs-number">1</span>, 関数の引数<span class="hljs-number">2</span>]);
+</code></pre>
+<p>次の例では<code>this</code>に<code>person</code>オブジェクトを指定した状態で<code>say</code>関数を呼び出しています。
+<code>apply</code>メソッドの第二引数で指定した配列は、自動的に展開されて<code>say</code>関数の仮引数<code>message</code>に入ります。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-meta">"use strict"</span>;
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">say</span>(<span class="hljs-params">message</span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-string">`<span class="hljs-subst">${message}</span> <span class="hljs-subst">${<span class="hljs-variable language_">this</span>.fullName}</span>！`</span>;
+}
+<span class="hljs-keyword">const</span> person = {
+    <span class="hljs-attr">fullName</span>: <span class="hljs-string">"Brendan Eich"</span>
+};
+<span class="hljs-comment">// `this`を`person`にして`say`関数を呼びだす</span>
+<span class="hljs-comment">// callとは異なり引数を配列として渡す</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(say.<span class="hljs-title function_">apply</span>(person, [<span class="hljs-string">"こんにちは"</span>])); <span class="hljs-comment">// =&gt; "こんにちは Brendan Eich！"</span>
+<span class="hljs-comment">// `say`関数をそのまま呼び出すと`this`は`undefined`となるため例外が発生</span>
+<span class="hljs-title function_">say</span>(<span class="hljs-string">"こんにちは"</span>); <span class="hljs-comment">// =&gt; TypeError: Cannot read property 'fullName' of undefined</span>
+</code></pre>
+<p><code>call</code>メソッドと<code>apply</code>メソッドの違いは、関数の引数への値の渡し方が異なるだけです。
+また、どちらのメソッドも<code>this</code>の値が不要な場合は<code>null</code>を渡すのが一般的です。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">function</span> <span class="hljs-title function_">add</span>(<span class="hljs-params">x, y</span>) {
+    <span class="hljs-keyword">return</span> x + y;
+}
+<span class="hljs-comment">// `this`が不要な場合は、nullを渡す</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(add.<span class="hljs-title function_">call</span>(<span class="hljs-literal">null</span>, <span class="hljs-number">1</span>, <span class="hljs-number">2</span>)); <span class="hljs-comment">// =&gt; 3</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(add.<span class="hljs-title function_">apply</span>(<span class="hljs-literal">null</span>, [<span class="hljs-number">1</span>, <span class="hljs-number">2</span>])); <span class="hljs-comment">// =&gt; 3</span>
+</code></pre>
+<p>最後に<code>bind</code>メソッドについてです。
+名前のとおり<code>this</code>の値を束縛（bind）した新しい関数を作成します。</p>
+<!-- doctest:disable -->
+<pre><code class="lang-js">関数.<span class="hljs-title function_">bind</span>(<span class="hljs-variable language_">this</span>の値, ...関数の引数); <span class="hljs-comment">// =&gt; thisや引数がbindされた関数</span>
+</code></pre>
+<p>次の例では<code>this</code>を<code>person</code>オブジェクトに束縛した<code>say</code>関数をラップした関数を作っています。
+<code>bind</code>メソッドの第二引数以降に値を渡すことで、束縛した関数の引数も束縛できます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">function</span> <span class="hljs-title function_">say</span>(<span class="hljs-params">message</span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-string">`<span class="hljs-subst">${message}</span> <span class="hljs-subst">${<span class="hljs-variable language_">this</span>.fullName}</span>！`</span>;
+}
+<span class="hljs-keyword">const</span> person = {
+    <span class="hljs-attr">fullName</span>: <span class="hljs-string">"Brendan Eich"</span>
+};
+<span class="hljs-comment">// `this`を`person`に束縛した`say`関数をラップした関数を作る</span>
+<span class="hljs-keyword">const</span> sayPerson = say.<span class="hljs-title function_">bind</span>(person, <span class="hljs-string">"こんにちは"</span>);
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">sayPerson</span>()); <span class="hljs-comment">// =&gt; "こんにちは Brendan Eich！"</span>
+</code></pre>
+<p>この<code>bind</code>メソッドをただの関数で表現すると次のように書けます。
+<code>bind</code>は<code>this</code>や引数を束縛した関数を作るメソッドだということがわかります。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">function</span> <span class="hljs-title function_">say</span>(<span class="hljs-params">message</span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-string">`<span class="hljs-subst">${message}</span> <span class="hljs-subst">${<span class="hljs-variable language_">this</span>.fullName}</span>！`</span>;
+}
+<span class="hljs-keyword">const</span> person = {
+    <span class="hljs-attr">fullName</span>: <span class="hljs-string">"Brendan Eich"</span>
+};
+<span class="hljs-comment">// `this`を`person`に束縛した`say`関数をラップした関数を作る</span>
+<span class="hljs-comment">//  say.bind(person, "こんにちは"); は次のようなラップ関数を作る</span>
+<span class="hljs-keyword">const</span> <span class="hljs-title function_">sayPerson</span> = (<span class="hljs-params"></span>) =&gt; {
+    <span class="hljs-keyword">return</span> say.<span class="hljs-title function_">call</span>(person, <span class="hljs-string">"こんにちは"</span>);
+};
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">sayPerson</span>()); <span class="hljs-comment">// =&gt; "こんにちは Brendan Eich！"</span>
+</code></pre>
+<p>このように<code>call</code>、<code>apply</code>、<code>bind</code>メソッドを使うことで<code>this</code>を明示的に指定した状態で関数を呼び出せます。
+しかし、毎回関数を呼び出すたびにこれらのメソッドを使うのは、関数を呼び出すための関数が必要になってしまい手間がかかります。
+そのため、基本的には「メソッドとして定義されている関数はメソッドとして呼ぶこと」でこの問題を回避するほうがよいでしょう。
+その中で、どうしても<code>this</code>を固定したい場合には<code>call</code>、<code>apply</code>、<code>bind</code>メソッドを利用します。</p>
+<!--
+そのため、ES2015ではこの`this`の問題を解決するためにArrow Functionという新しい関数の定義方法を導入しました。
+そもそも`call`、`apply`、`bind`が必要となるのは「`this`が呼び出し方によって暗黙的に決まる」という問題があるためです。
+-->
+<h3 id="callback-and-this"><a name="callback-and-this" class="plugin-anchor" href="#callback-and-this"><i class="fa fa-link" aria-hidden="true"></i></a>問題: コールバック関数と<code>this</code> </h3>
+<p>コールバック関数の中で<code>this</code>を参照すると問題となる場合があります。
+この問題は、メソッドの中でArrayの<code>map</code>メソッドなどのコールバック関数を扱う場合に発生しやすいです。</p>
+<p>具体的に、コールバック関数における<code>this</code>が問題となっている例を見てみましょう。
+次のコードでは<code>prefixArray</code>メソッドの中で<code>map</code>メソッドを使っています。
+このとき、<code>map</code>メソッドのコールバック関数の中で、<code>Prefixer</code>オブジェクトを参照するつもりで<code>this</code>を参照しています。</p>
+<p>しかし、このコールバック関数における<code>this</code>は<code>undefined</code>となり、<code>undefined.prefix</code>は参照できないためTypeErrorの例外が発生します。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-meta">"use strict"</span>;
+<span class="hljs-comment">// strict modeを明示しているのは、thisがグローバルオブジェクトに暗黙的に変換されるのを防止するため</span>
+<span class="hljs-keyword">const</span> <span class="hljs-title class_">Prefixer</span> = {
+    <span class="hljs-attr">prefix</span>: <span class="hljs-string">"pre"</span>,
+    <span class="hljs-comment">/**
+     * `strings`配列の各要素にprefixをつける
+     */</span>
+    <span class="hljs-title function_">prefixArray</span>(<span class="hljs-params">strings</span>) {
+        <span class="hljs-keyword">return</span> strings.<span class="hljs-title function_">map</span>(<span class="hljs-keyword">function</span>(<span class="hljs-params">str</span>) {
+            <span class="hljs-comment">// コールバック関数における`this`は`undefined`となる(strict mode)</span>
+            <span class="hljs-comment">// そのため`this.prefix`は`undefined.prefix`となり例外が発生する</span>
+            <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">prefix</span> + <span class="hljs-string">"-"</span> + str;
+        });
+    }
+};
+<span class="hljs-comment">// `prefixArray`メソッドにおける`this`は`Prefixer`</span>
+<span class="hljs-title class_">Prefixer</span>.<span class="hljs-title function_">prefixArray</span>([<span class="hljs-string">"a"</span>, <span class="hljs-string">"b"</span>, <span class="hljs-string">"c"</span>]); <span class="hljs-comment">// =&gt; TypeError: Cannot read property 'prefix' of undefined</span>
+</code></pre>
+<p>なぜコールバック関数の中の<code>this</code>が<code>undefined</code>となるのかを見ていきます。
+Arrayの<code>map</code>メソッドにはコールバック関数として、その場で定義した無名関数を渡していることに注目してください。</p>
+<!-- textlint-disable eslint -->
+<!-- doctest:disable -->
+<pre><code class="lang-js"><span class="hljs-comment">// ...</span>
+    <span class="hljs-title function_">prefixArray</span>(<span class="hljs-params">strings</span>) {
+        <span class="hljs-comment">// 無名関数をコールバック関数として渡している</span>
+        <span class="hljs-keyword">return</span> strings.<span class="hljs-title function_">map</span>(<span class="hljs-keyword">function</span>(<span class="hljs-params">str</span>) {
+            <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">prefix</span> + <span class="hljs-string">"-"</span> + str;
+        });
+    }
+<span class="hljs-comment">// ...</span>
+</code></pre>
+<!-- textlint-enable eslint -->
+<!-- textlint-disable no-js-function-paren -->
+<p>このとき、Arrayの<code>map</code>メソッドに渡しているコールバック関数は<code>callback()</code>のようにただの関数として呼び出されます。
+つまり、コールバック関数として呼び出すとき、この関数にはベースオブジェクトはありません。
+そのため<code>callback</code>関数の<code>this</code>は<code>undefined</code>となります。</p>
+<p>先ほどの例では無名関数をコールバック関数として直接メソッドに渡していますが、一度<code>callback</code>変数に入れてから渡しても結果は同じです。</p>
+<!-- textlint-enable no-js-function-paren -->
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-meta">"use strict"</span>;
+<span class="hljs-comment">// strict modeを明示しているのは、thisがグローバルオブジェクトに暗黙的に変換されるのを防止するため</span>
+<span class="hljs-keyword">const</span> <span class="hljs-title class_">Prefixer</span> = {
+    <span class="hljs-attr">prefix</span>: <span class="hljs-string">"pre"</span>,
+    <span class="hljs-title function_">prefixArray</span>(<span class="hljs-params">strings</span>) {
+        <span class="hljs-comment">// コールバック関数は`callback()`のように呼び出される</span>
+        <span class="hljs-comment">// そのためコールバック関数における`this`は`undefined`となる(strict mode)</span>
+        <span class="hljs-keyword">const</span> callback = <span class="hljs-keyword">function</span>(<span class="hljs-params">str</span>) {
+            <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">prefix</span> + <span class="hljs-string">"-"</span> + str;
+        };
+        <span class="hljs-keyword">return</span> strings.<span class="hljs-title function_">map</span>(callback);
+    }
+};
+<span class="hljs-comment">// `prefixArray`メソッドにおける`this`は`Prefixer`</span>
+<span class="hljs-title class_">Prefixer</span>.<span class="hljs-title function_">prefixArray</span>([<span class="hljs-string">"a"</span>, <span class="hljs-string">"b"</span>, <span class="hljs-string">"c"</span>]); <span class="hljs-comment">// =&gt; TypeError: Cannot read property 'prefix' of undefined</span>
+</code></pre>
+<h4 id="substitute-this"><a name="substitute-this" class="plugin-anchor" href="#substitute-this"><i class="fa fa-link" aria-hidden="true"></i></a>対処法: <code>this</code>を一時変数へ代入する </h4>
+<p>コールバック関数内での<code>this</code>の参照先が変わる問題への対処法として、<code>this</code>を別の変数に代入し、その<code>this</code>の参照先を保持するという方法があります。</p>
+<p><code>this</code>は関数の呼び出し元で変化し、その参照先は呼び出し元におけるベースオブジェクトです。
+<code>prefixArray</code>メソッドの呼び出しにおいては、<code>this</code>は<code>Prefixer</code>オブジェクトです。
+しかし、コールバック関数は改めて関数として呼び出されるため<code>this</code>が<code>undefined</code>となってしまうのが問題でした。</p>
+<p>そのため、最初の<code>prefixArray</code>メソッド呼び出しにおける<code>this</code>の参照先を一時変数として保存することでこの問題を回避できます。
+次のコードでは、<code>prefixArray</code>メソッドの<code>this</code>を<code>that</code>変数に保持しています。
+コールバック関数からは<code>this</code>の代わりに<code>that</code>変数を参照することで、コールバック関数からも<code>prefixArray</code>メソッド呼び出しと同じ<code>this</code>を参照できます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-meta">"use strict"</span>;
+<span class="hljs-keyword">const</span> <span class="hljs-title class_">Prefixer</span> = {
+    <span class="hljs-attr">prefix</span>: <span class="hljs-string">"pre"</span>,
+    <span class="hljs-title function_">prefixArray</span>(<span class="hljs-params">strings</span>) {
+        <span class="hljs-comment">// `that`は`prefixArray`メソッド呼び出しにおける`this`となる</span>
+        <span class="hljs-comment">// つまり`that`は`Prefixer`オブジェクトを参照する</span>
+        <span class="hljs-keyword">const</span> that = <span class="hljs-variable language_">this</span>;
+        <span class="hljs-keyword">return</span> strings.<span class="hljs-title function_">map</span>(<span class="hljs-keyword">function</span>(<span class="hljs-params">str</span>) {
+            <span class="hljs-comment">// `this`ではなく`that`を参照する</span>
+            <span class="hljs-keyword">return</span> that.<span class="hljs-property">prefix</span> + <span class="hljs-string">"-"</span> + str;
+        });
+    }
+};
+<span class="hljs-comment">// `prefixArray`メソッドにおける`this`は`Prefixer`</span>
+<span class="hljs-keyword">const</span> prefixedStrings = <span class="hljs-title class_">Prefixer</span>.<span class="hljs-title function_">prefixArray</span>([<span class="hljs-string">"a"</span>, <span class="hljs-string">"b"</span>, <span class="hljs-string">"c"</span>]);
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(prefixedStrings); <span class="hljs-comment">// =&gt; ["pre-a", "pre-b", "pre-c"]</span>
+</code></pre>
+<p>もちろんFunctionの<code>call</code>メソッドなどで明示的に<code>this</code>を渡して関数を呼び出すこともできます。
+また、Arrayの<code>map</code>メソッドなどは<code>this</code>となる値を引数として渡せる仕組みを持っています。
+そのため、次のように第二引数に<code>this</code>となる値を渡すことでも解決できます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-meta">"use strict"</span>;
+<span class="hljs-keyword">const</span> <span class="hljs-title class_">Prefixer</span> = {
+    <span class="hljs-attr">prefix</span>: <span class="hljs-string">"pre"</span>,
+    <span class="hljs-title function_">prefixArray</span>(<span class="hljs-params">strings</span>) {
+        <span class="hljs-comment">// Arrayの`map`メソッドは第二引数に`this`となる値を渡せる</span>
+        <span class="hljs-keyword">return</span> strings.<span class="hljs-title function_">map</span>(<span class="hljs-keyword">function</span>(<span class="hljs-params">str</span>) {
+            <span class="hljs-comment">// `this`が第二引数の値と同じになる</span>
+            <span class="hljs-comment">// つまり`prefixArray`メソッドと同じ`this`となる</span>
+            <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">prefix</span> + <span class="hljs-string">"-"</span> + str;
+        }, <span class="hljs-variable language_">this</span>);
+    }
+};
+<span class="hljs-comment">// `prefixArray`メソッドにおける`this`は`Prefixer`</span>
+<span class="hljs-keyword">const</span> prefixedStrings = <span class="hljs-title class_">Prefixer</span>.<span class="hljs-title function_">prefixArray</span>([<span class="hljs-string">"a"</span>, <span class="hljs-string">"b"</span>, <span class="hljs-string">"c"</span>]);
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(prefixedStrings); <span class="hljs-comment">// =&gt; ["pre-a", "pre-b", "pre-c"]</span>
+</code></pre>
+<p>しかし、これらの解決方法はコールバック関数において<code>this</code>が変わることを意識して書く必要があります。
+そもそもメソッド呼び出しとその中でのコールバック関数における<code>this</code>が変わってしまうのが問題でした。
+ES2015では<code>this</code>を変えずにコールバック関数を定義する方法として、Arrow Functionが導入されました。</p>
+<h4 id="arrow-function-callback"><a name="arrow-function-callback" class="plugin-anchor" href="#arrow-function-callback"><i class="fa fa-link" aria-hidden="true"></i></a>対処法: Arrow Functionでコールバック関数を扱う </h4>
+<p>通常の関数やメソッドは呼び出し時に暗黙的に<code>this</code>の値を受け取り、関数内の<code>this</code>はその値を参照します。
+一方、Arrow Functionはこの暗黙的な<code>this</code>の値を受け取りません。
+そのためArrow Function内の<code>this</code>は、スコープチェーンの仕組みと同様に外側の関数（この場合は<code>prefixArray</code>メソッド）を探索します。
+これにより、Arrow Functionで定義したコールバック関数は呼び出し方には関係なく、常に外側の関数の<code>this</code>をそのまま利用します。</p>
+<p>Arrow Functionを使うことで、先ほどのコードは次のように書けます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-meta">"use strict"</span>;
+<span class="hljs-keyword">const</span> <span class="hljs-title class_">Prefixer</span> = {
+    <span class="hljs-attr">prefix</span>: <span class="hljs-string">"pre"</span>,
+    <span class="hljs-title function_">prefixArray</span>(<span class="hljs-params">strings</span>) {
+        <span class="hljs-keyword">return</span> strings.<span class="hljs-title function_">map</span>(<span class="hljs-function">(<span class="hljs-params">str</span>) =&gt;</span> {
+            <span class="hljs-comment">// Arrow Function自体は`this`を持たない</span>
+            <span class="hljs-comment">// `this`は外側の`prefixArray`関数が持つ`this`を参照する</span>
+            <span class="hljs-comment">// そのため`this.prefix`は"pre"となる</span>
+            <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">prefix</span> + <span class="hljs-string">"-"</span> + str;
+        });
+    }
+};
+<span class="hljs-comment">// このとき、`prefixArray`のベースオブジェクトは`Prefixer`となる</span>
+<span class="hljs-comment">// つまり、`prefixArray`メソッド内の`this`は`Prefixer`を参照する</span>
+<span class="hljs-keyword">const</span> prefixedStrings = <span class="hljs-title class_">Prefixer</span>.<span class="hljs-title function_">prefixArray</span>([<span class="hljs-string">"a"</span>, <span class="hljs-string">"b"</span>, <span class="hljs-string">"c"</span>]);
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(prefixedStrings); <span class="hljs-comment">// =&gt; ["pre-a", "pre-b", "pre-c"]</span>
+</code></pre>
+<p>このように、Arrow Functionでのコールバック関数における<code>this</code>は簡潔です。
+コールバック関数内での<code>this</code>の対処法として<code>this</code>を代入する方法を紹介しましたが、
+ES2015からはArrow Functionを使うのがもっとも簡潔です。</p>
+<p>このArrow Functionと<code>this</code>の関係についてより詳しく見ていきます。</p>
+<h2 id="arrow-function-this"><a name="arrow-function-this" class="plugin-anchor" href="#arrow-function-this"><i class="fa fa-link" aria-hidden="true"></i></a>Arrow Functionと<code>this</code> </h2>
+<p>Arrow Functionで定義された関数やメソッドにおける<code>this</code>がどの値を参照するかは関数の定義時（静的）に決まります。
+一方、Arrow Functionではない関数においては、<code>this</code>は呼び出し元に依存するため関数の実行時（動的）に決まります。</p>
+<p>Arrow Functionとそれ以外の関数で大きく違うことは、Arrow Functionは<code>this</code>を暗黙的な引数として受けつけないということです。
+そのため、Arrow Function内には<code>this</code>が定義されていません。このときの<code>this</code>は外側のスコープ（関数）の<code>this</code>を参照します。</p>
+<p>これは、変数におけるスコープチェーンの仕組みと同様で、そのスコープに<code>this</code>が定義されていない場合には外側のスコープを探索します。
+そのため、Arrow Function内の<code>this</code>の参照で、常に外側のスコープ（関数）へと<code>this</code>の定義を探索しに行きます（詳細は<a href="../function-scope/##scope-chain%7D">スコープチェーン</a>を参照）。
+また、<code>this</code>はECMAScriptのキーワードであるため、ユーザーは<code>this</code>という変数を定義できません。</p>
+<pre><code class="lang-javascript"><span class="hljs-comment">// thisはキーワードであるため、ユーザーは`this`という名前の変数を定義できない</span>
+<span class="hljs-keyword">const</span> <span class="hljs-variable language_">this</span> = <span class="hljs-string">"thisは読み取り専用"</span>; <span class="hljs-comment">// =&gt; SyntaxError: Unexpected token this</span>
+</code></pre>
+<p>これにより、通常の変数のように<code>this</code>がどの値を参照するかは静的（定義時）に決定されます（詳細は<a href="../function-scope/#static-scope">静的スコープ</a>を参照）。
+つまり、Arrow Functionにおける<code>this</code>は「Arrow Function自身の外側のスコープに定義されたもっとも近い関数の<code>this</code>の値」となります。</p>
+<p>具体的なArrow Functionにおける<code>this</code>の動きを見ていきましょう。</p>
+<p>まずは、関数式のArrow Functionを見ていきます。</p>
+<p>次の例では、関数式で定義したArrow Functionの中の<code>this</code>をコンソールに出力しています。
+このとき、<code>fn</code>の外側には関数がないため、「自身より外側のスコープに定義されたもっとも近い関数」の条件にあてはまるものはありません。
+このときの<code>this</code>はトップレベルに書かれた<code>this</code>と同じ値になります。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a>
+<!-- TypeError: 'getOwnPropertyDescriptor' on proxy: trap returned descriptor for property 'global' that is incompatible with the existing property in the proxy target を回避する -->
+<!-- doctest:disable --></p>
+<pre><code class="lang-js"><span class="hljs-comment">// Arrow Functionで定義した関数</span>
+<span class="hljs-keyword">const</span> <span class="hljs-title function_">fn</span> = (<span class="hljs-params"></span>) =&gt; {
+    <span class="hljs-comment">// この関数の外側には関数は存在しない</span>
+    <span class="hljs-comment">// トップレベルの`this`と同じ値</span>
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>;
+};
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">fn</span>() === <span class="hljs-variable language_">this</span>); <span class="hljs-comment">// =&gt; true</span>
+</code></pre>
+<p>トップレベルに書かれた<code>this</code>の値は<a href="#execution-context-this">実行コンテキスト</a>によって異なることを紹介しました。
+<code>this</code>の値は、実行コンテキストが"Script"ならばグローバルオブジェクトとなり、"Module"ならば<code>undefined</code>となります。</p>
+<p>次の例のように、Arrow Functionを包むように通常の関数が定義されている場合はどうでしょうか。
+Arrow Functionにおける<code>this</code>は「自身の外側のスコープにあるもっとも近い関数の<code>this</code>の値」となるのは同じです。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-meta">"use strict"</span>;
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">outer</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-comment">// Arrow Functionで定義した関数を返す</span>
+    <span class="hljs-keyword">return</span> <span class="hljs-function">() =&gt;</span> {
+        <span class="hljs-comment">// この関数の外側には`outer`関数が存在する</span>
+        <span class="hljs-comment">// `outer`関数に`this`を書いた場合と同じ</span>
+        <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>;
+    };
+}
+<span class="hljs-comment">// `outer`関数の返り値はArrow Functionにて定義された関数</span>
+<span class="hljs-keyword">const</span> innerArrowFunction = <span class="hljs-title function_">outer</span>();
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">innerArrowFunction</span>()); <span class="hljs-comment">// =&gt; undefined</span>
+</code></pre>
+<p>つまり、このArrow Functionにおける<code>this</code>は<code>outer</code>関数で<code>this</code>を参照した場合と同じ値になります。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-meta">"use strict"</span>;
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">outer</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-comment">// `outer`関数直下の`this`</span>
+    <span class="hljs-keyword">const</span> that = <span class="hljs-variable language_">this</span>;
+    <span class="hljs-comment">// Arrow Functionで定義した関数を返す</span>
+    <span class="hljs-keyword">return</span> <span class="hljs-function">() =&gt;</span> {
+        <span class="hljs-comment">// Arrow Function自身は`this`を持たない</span>
+        <span class="hljs-comment">// `outer`関数に`this`を書いた場合と同じ</span>
+        <span class="hljs-keyword">return</span> that;
+    };
+}
+<span class="hljs-comment">// `outer()`と呼び出したときの`this`は`undefined`(strict mode)</span>
+<span class="hljs-keyword">const</span> innerArrowFunction = <span class="hljs-title function_">outer</span>();
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">innerArrowFunction</span>()); <span class="hljs-comment">// =&gt; undefined</span>
+</code></pre>
+<h3 id="method-callback-arrow-function"><a name="method-callback-arrow-function" class="plugin-anchor" href="#method-callback-arrow-function"><i class="fa fa-link" aria-hidden="true"></i></a>メソッドとコールバック関数とArrow Function </h3>
+<p>メソッド内におけるコールバック関数はArrow Functionをより活用できるパターンです。
+<code>function</code>キーワードでコールバック関数を定義すると、<code>this</code>の値はコールバック関数の呼ばれ方を意識する必要があります。
+なぜなら、<code>function</code>キーワードで定義した関数における<code>this</code>は呼び出し方によって変わるためです。</p>
+<p>コールバック関数側から見ると、どのように呼ばれるかによって変わってしまう<code>this</code>を使うことはできません。
+そのため、コールバック関数の外側のスコープで<code>this</code>を一時変数に代入し、それを使うという回避方法を取っていました。</p>
+<pre><code class="lang-js"><span class="hljs-comment">// `callback`関数を受け取り呼び出す関数</span>
+<span class="hljs-keyword">const</span> <span class="hljs-title function_">callCallback</span> = (<span class="hljs-params">callback</span>) =&gt; {
+    <span class="hljs-comment">// `callback`を呼び出す実装</span>
+};
+
+<span class="hljs-keyword">const</span> obj = {
+    <span class="hljs-title function_">method</span>(<span class="hljs-params"></span>) {
+        <span class="hljs-title function_">callCallback</span>(<span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) {
+            <span class="hljs-comment">// ここでの `this` は`callCallback`の実装に依存する</span>
+            <span class="hljs-comment">// `callback()`のように単純に呼び出されるなら`this`は`undefined`になる</span>
+            <span class="hljs-comment">// Functionの`call`メソッドなどを使って特定のオブジェクトを指定するかもしれない</span>
+            <span class="hljs-comment">// この問題を回避するために`const that = this`のような一時変数を使う</span>
+        });
+    }
+};
+</code></pre>
+<p>一方、Arrow Functionでコールバック関数を定義した場合は、1つ外側の関数の<code>this</code>を参照します。
+このときのArrow Functionで定義したコールバック関数における<code>this</code>は呼び出し方によって変化しません。
+そのため、<code>this</code>を一時変数に代入するなどの回避方法は必要ありません。</p>
+<pre><code class="lang-js"><span class="hljs-comment">// `callback`関数を受け取り呼び出す関数</span>
+<span class="hljs-keyword">const</span> <span class="hljs-title function_">callCallback</span> = (<span class="hljs-params">callback</span>) =&gt; {
+    <span class="hljs-comment">// `callback`を呼び出す実装</span>
+};
+
+<span class="hljs-keyword">const</span> obj = {
+    <span class="hljs-title function_">method</span>(<span class="hljs-params"></span>) {
+        <span class="hljs-title function_">callCallback</span>(<span class="hljs-function">() =&gt;</span> {
+            <span class="hljs-comment">// ここでの`this`は1つ外側の関数における`this`と同じ</span>
+        });
+    }
+};
+</code></pre>
+<p>このArrow Functionにおける<code>this</code>は呼び出し方の影響を受けません。
+つまり、コールバック関数がどのように呼ばれるかという実装についてを考えることなく<code>this</code>を扱えます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> <span class="hljs-title class_">Prefixer</span> = {
+    <span class="hljs-attr">prefix</span>: <span class="hljs-string">"pre"</span>,
+    <span class="hljs-title function_">prefixArray</span>(<span class="hljs-params">strings</span>) {
+        <span class="hljs-keyword">return</span> strings.<span class="hljs-title function_">map</span>(<span class="hljs-function">(<span class="hljs-params">str</span>) =&gt;</span> {
+            <span class="hljs-comment">// `Prefixer.prefixArray()` と呼び出されたとき</span>
+            <span class="hljs-comment">// `this`は常に`Prefixer`を参照する</span>
+            <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">prefix</span> + <span class="hljs-string">"-"</span> + str;
+        });
+    }
+};
+<span class="hljs-keyword">const</span> prefixedStrings = <span class="hljs-title class_">Prefixer</span>.<span class="hljs-title function_">prefixArray</span>([<span class="hljs-string">"a"</span>, <span class="hljs-string">"b"</span>, <span class="hljs-string">"c"</span>]);
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(prefixedStrings); <span class="hljs-comment">// =&gt; ["pre-a", "pre-b", "pre-c"]</span>
+</code></pre>
+<h3 id="not-bind-arrow-function"><a name="not-bind-arrow-function" class="plugin-anchor" href="#not-bind-arrow-function"><i class="fa fa-link" aria-hidden="true"></i></a>Arrow Functionは<code>this</code>をbindできない </h3>
+<p>Arrow Functionで定義した関数では<code>call</code>、<code>apply</code>、<code>bind</code>を使った<code>this</code>の指定は単に無視されます。
+これは、Arrow Functionは<code>this</code>を持てないためです。</p>
+<p>次のようにArrow Functionで定義した関数に対して<code>call</code>で<code>this</code>を指定しても、<code>this</code>の参照先が代わっていないことがわかります。
+同様に<code>apply</code>や<code>bind</code>メソッドを使った場合も<code>this</code>の参照先は変わりません。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a>
+<!-- doctest:disable --></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> <span class="hljs-title function_">fn</span> = (<span class="hljs-params"></span>) =&gt; {
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>;
+};
+<span class="hljs-comment">// Scriptコンテキストの場合、スクリプト直下のArrow Functionの`this`はグローバルオブジェクト</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">fn</span>()); <span class="hljs-comment">// グローバルオブジェクト</span>
+<span class="hljs-comment">// callで`this`を`{}`にしようとしても、`this`は変わらない</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(fn.<span class="hljs-title function_">call</span>({})); <span class="hljs-comment">// グローバルオブジェクト</span>
+</code></pre>
+<p>最初に述べたように<code>function</code>キーワードで定義した関数では呼び出し時に、ベースオブジェクトが<code>this</code>の値として暗黙的な引数のように渡されます。
+一方、Arrow Functionの関数は呼び出し時に<code>this</code>を受け取らず、<code>this</code>の参照先は定義時に静的に決定されます。</p>
+<!-- textlint-disable -->
+<p>また、<code>this</code>が変わらないのはあくまでArrow Functionで定義した関数だけで、Arrow Functionの<code>this</code>が参照する「自身の外側のスコープにあるもっとも近い関数の<code>this</code>の値」は<code>call</code>メソッドで変更できます。</p>
+<!-- textlint-enable -->
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> obj = {
+    <span class="hljs-title function_">method</span>(<span class="hljs-params"></span>) {
+        <span class="hljs-keyword">const</span> <span class="hljs-title function_">arrowFunction</span> = (<span class="hljs-params"></span>) =&gt; {
+            <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>;
+        };
+        <span class="hljs-keyword">return</span> <span class="hljs-title function_">arrowFunction</span>();
+    }
+};
+<span class="hljs-comment">// 通常の`this`は`obj.method`の`this`と同じ</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(obj.<span class="hljs-title function_">method</span>()); <span class="hljs-comment">// =&gt; obj</span>
+<span class="hljs-comment">// `obj.method`の`this`を変更すれば、Arrow Functionの`this`も変更される</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(obj.<span class="hljs-property">method</span>.<span class="hljs-title function_">call</span>(<span class="hljs-string">"THAT"</span>)); <span class="hljs-comment">// =&gt; "THAT"</span>
+</code></pre>
+<h2 id="conclusion"><a name="conclusion" class="plugin-anchor" href="#conclusion"><i class="fa fa-link" aria-hidden="true"></i></a>まとめ </h2>
+<p><code>this</code>は状況によって異なる値を参照する性質を持ったキーワードであることを紹介しました。
+その<code>this</code>の評価結果をまとめると次の表のようになります。</p>
+<table>
+<thead>
+<tr>
+<th>実行コンテキスト</th>
+<th>strict mode</th>
+<th>コード</th>
+<th><code>this</code>の評価結果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Script</td>
+<td>＊</td>
+<td><code>this</code></td>
+<td>globalThis</td>
+</tr>
+<tr>
+<td>Script</td>
+<td>＊</td>
+<td><code>const fn = () =&gt; this</code></td>
+<td>globalThis</td>
+</tr>
+<tr>
+<td>Script</td>
+<td>NO</td>
+<td><code>const fn = function(){ return this; }</code></td>
+<td>globalThis</td>
+</tr>
+<tr>
+<td>Script</td>
+<td>YES</td>
+<td><code>const fn = function(){ return this; }</code></td>
+<td>undefined</td>
+</tr>
+<tr>
+<td>Script</td>
+<td>＊</td>
+<td><code>const obj = { method: () =&gt; { return this; } }</code></td>
+<td>globalThis</td>
+</tr>
+<tr>
+<td>Module</td>
+<td>YES</td>
+<td><code>this</code></td>
+<td>undefined</td>
+</tr>
+<tr>
+<td>Module</td>
+<td>YES</td>
+<td><code>const fn = () =&gt; this</code></td>
+<td>undefined</td>
+</tr>
+<tr>
+<td>Module</td>
+<td>YES</td>
+<td><code>const fn = function(){ return this; }</code></td>
+<td>undefined</td>
+</tr>
+<tr>
+<td>Module</td>
+<td>YES</td>
+<td><code>const obj = { method: () =&gt; { return this; } }</code></td>
+<td>undefined</td>
+</tr>
+<tr>
+<td>＊</td>
+<td>＊</td>
+<td><code>const obj = { method(){ return this; } }</code></td>
+<td><code>obj</code></td>
+</tr>
+<tr>
+<td>＊</td>
+<td>＊</td>
+<td><code>const obj = { method: function(){ return this; } }</code></td>
+<td><code>obj</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>＊はどの場合でも<code>this</code>の評価結果に影響しないということを示しています。</p>
+</blockquote>
+<p>実際にブラウザで実行した結果は<a href="https://azu.github.io/what-is-this/" target="_blank">What is <code>this</code> value in JavaScript</a>というサイトで確認できます。</p>
+<p><code>this</code>はオブジェクト指向プログラミングの文脈でJavaScriptに導入されました。
+メソッド以外においても<code>this</code>は評価できますが、実行コンテキストやstrict modeなどによって結果が異なり、混乱の元となります。
+そのため、メソッドではない通常の関数においては<code>this</code>を使うべきではありません。<sup><a href="#fn_1" id="reffn_1">1</a></sup></p>
+<p>また、メソッドにおいても<code>this</code>は呼び出し方によって異なる値となり、それにより発生する問題と対処法について紹介しました。
+コールバック関数における<code>this</code>はArrow Functionを使うことでわかりやすく解決できます。
+この背景にはArrow Functionで定義した関数は<code>this</code>を持たないという性質があります。</p>
+<blockquote id="fn_1">
+<sup>1</sup>. ES2015の仕様編集者であるAllen Wirfs-Brock氏もただの関数においては<code>this</code>を使うべきではないと述べている。<a href="https://twitter.com/awbjs/status/938272440085446657" target="_blank">https://twitter.com/awbjs/status/938272440085446657</a>;<a href="#reffn_1" title="Jump back to footnote [1] in the text."> ↩</a>
+</blockquote>
+</body></html>
+                                
+
+                                </section>
+                            
+                        </div>
+                    </div>
+                
+<footer class="book_footer">
+    <p>Copyright (c) 2016-present <a href="https://github.com/asciidwango/js-primer" target="_blank">jsprimer project</a></p>
+</footer>
+
+            </div>
+
+            
+                
+                <a href="../function-scope/" class="navigation navigation-prev " aria-label="Previous page: 関数とスコープ">
+                    <i class="fa fa-angle-left"></i>
+                </a>
+                
+                
+                <a href="../class/" class="navigation navigation-next " aria-label="Next page: クラス">
+                    <i class="fa fa-angle-right"></i>
+                </a>
+                
+            
+        
+    </div>
+
+    <script>
+        var gitbook = gitbook || [];
+        gitbook.push(function() {
+            gitbook.page.hasChanged({"page":{"author":"azu","description":"JavaScriptにおける`this`というキーワードの動作を紹介します。`this`の参照先は条件によって解決方法が異なるため、`this`の動きについてをそれぞれの条件ごとに紹介します。一見複雑な`this`の動きを予測可能にするにはどうするべきかをコード例とともに紹介します。","sponsors":[],"title":"関数とthis","level":"1.3.19","depth":2,"next":{"title":"クラス","level":"1.3.20","depth":2,"path":"basic/class/README.md","ref":"./basic/class/README.md","articles":[]},"previous":{"title":"関数とスコープ","level":"1.3.18","depth":2,"path":"basic/function-scope/README.md","ref":"./basic/function-scope/README.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-search","-lunr","page-toc-button","include-codeblock","anchors","canonical-link","js-console","github-issue-feedback","sandpack"],"root":"./source/","styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"docSearch":{"index":"83I8JIFICQ","apiKey":"9169ce4cd84fcf2376f29d9585c89254"},"github-issue-feedback":{"repo":"asciidwango/js-primer","label":"問題を報告する"},"fontsettings":{"theme":"white","family":"sans","size":2},"js-console":{},"canonical-link":{"baseURL":"https://jsprimer.net"},"highlight":{},"page-toc-button":{"maxTocDepth":2,"minTocSize":2},"include-codeblock":{"check":false,"edit":false,"lang":"","fixlang":false,"template":"./resources/gitbook-plugin-include-codeblock.hbs","theme":"chrome","unindent":false},"sandpack":{},"edit-link":{"base":"https://github.com/asciidwango/js-primer/edit/master/source/","label":"Edit"},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false},"anchors":{}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"IPAexMincho","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"index.md","glossary":"GLOSSARY.md","summary":"README.md"},"variables":{"esversion":"2024","nodeversion":"22.7.0","npmversion":"10.8.2","triplebackticks":"```","console":"<a class=\"gitbook-plugin-js-console\" aria-hidden=\"true\"></a>"},"title":"JavaScript Primer #jsprimer","gitbook":">=3.0.0","description":"JavaScriptの基本的な書き方からアプリケーションの作成などのユースケースを学ぶための入門書です"},"file":{"path":"basic/function-this/README.md","mtime":"2025-05-18T21:58:17.824Z","type":"markdown"},"gitbook":{"version":"6.0.2","time":"2025-05-18T21:58:35.597Z"},"basePath":"../..","book":{"language":""}});
+        });
+    </script>
+</div>
+
+        
+    <noscript>
+        <style>
+            .honkit-cloak {
+                display: block !important;
+            }
+        </style>
+    </noscript>
+    <script>
+        // Restore sidebar state as critical path for prevent layout shift
+        function __init__getSidebarState(defaultValue){
+            var baseKey = "";
+            var key = baseKey + ":sidebar";
+            try {
+                var value = localStorage[key];
+                if (value === undefined) {
+                    return defaultValue;
+                }
+                var parsed = JSON.parse(value);
+                return parsed == null ? defaultValue : parsed;
+            } catch (e) {
+                return defaultValue;
+            }
+        }
+        function __init__restoreLastSidebarState() {
+            var isMobile = window.matchMedia("(max-width: 600px)").matches;
+            if (isMobile) {
+                // Init last state if not mobile
+                return;
+            }
+            var sidebarState = __init__getSidebarState(true);
+            var book = document.querySelector(".book");
+            // Show sidebar if it enabled
+            if (sidebarState && book) {
+                book.classList.add("without-animation", "with-summary");
+            }
+        }
+
+        try {
+            __init__restoreLastSidebarState();
+        } finally {
+            var book = document.querySelector(".book");
+            book.classList.remove("honkit-cloak");
+        }
+    </script>
+    <script src="../../gitbook/gitbook.js"></script>
+    <script src="../../gitbook/theme.js"></script>
+    
+        
+        <script src="../../gitbook/gitbook-plugin-page-toc-button/plugin.js"></script>
+        
+    
+        
+        <script src="../../gitbook/gitbook-plugin-js-console/console-ui.js"></script>
+        
+    
+        
+        <script src="../../gitbook/gitbook-plugin-github-issue-feedback/plugin.js"></script>
+        
+    
+        
+        <script src="../../gitbook/honkit-plugin-sandpack/honkit-plugin-sandpack.js"></script>
+        
+    
+        
+        <script src="../../gitbook/@honkit/honkit-plugin-fontsettings/fontsettings.js"></script>
+        
+    
+
+    </body>
+</html>
+

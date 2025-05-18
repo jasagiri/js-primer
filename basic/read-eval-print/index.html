@@ -1,0 +1,1997 @@
+
+<!DOCTYPE HTML>
+<html lang="" >
+    <head>
+        <meta charset="UTF-8">
+        <title>値の評価と表示 · JavaScript Primer #jsprimer</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="description" content="ブラウザでJavaScriptコードを実行する方法について紹介します。またプログラムを実行すると遭遇するエラーをどのように解決していくかを紹介します。エラーを大きく2種類に分けて構文エラーと実行時エラーについてそれぞれの問題点と解決の糸口を紹介します。">
+        <meta name="generator" content="HonKit 6.0.2">
+        
+        
+        
+    
+    <link rel="stylesheet" href="../../gitbook/style.css">
+
+    
+            
+                
+                <link rel="stylesheet" href="../../gitbook/gitbook-plugin-page-toc-button/plugin.css">
+                
+            
+                
+                <link rel="stylesheet" href="../../gitbook/gitbook-plugin-anchors/plugin.css">
+                
+            
+                
+                <link rel="stylesheet" href="../../gitbook/@honkit/honkit-plugin-highlight/website.css">
+                
+            
+                
+                <link rel="stylesheet" href="../../gitbook/@honkit/honkit-plugin-fontsettings/website.css">
+                
+            
+        
+
+    
+
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+         
+    
+    
+    
+    <meta name="HandheldFriendly" content="true"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../gitbook/images/apple-touch-icon-precomposed-152.png">
+    <link rel="shortcut icon" href="../../gitbook/images/favicon.ico" type="image/x-icon">
+
+    
+    <link rel="next" href="../data-type/" />
+    
+    
+    <link rel="prev" href="../variables/" />
+    
+
+    <link rel="canonical" href="https://jsprimer.net/basic/read-eval-print/">
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-DWY0DLHWB6"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+
+    gtag("js", new Date());
+
+    gtag("config", "G-DWY0DLHWB6");
+</script>
+<script type="module">
+    // コンソールUIでコード実行したらイベントとして送信する
+    const onExecuteCode = (scriptType) => {
+        gtag("event", "execute_code", {
+            "event_category": "console",
+            "event_label": "execute_code",
+            "script_type": scriptType || "unknown"
+        });
+    };
+    let observer;
+    const observeEvalEvent = () => {
+        if (observer) {
+            observer.disconnect();
+        }
+        const callback = function(mutationsList) {
+            for (const mutation of mutationsList) {
+                const mirrorConsole = Array.from(mutation.addedNodes).find(node => Boolean(node.dataset.mirrorConsole));
+                if (mirrorConsole) {
+                    return onExecuteCode(mirrorConsole.dataset.mirrorConsole);
+                }
+            }
+        };
+        observer = new MutationObserver(callback);
+        observer.observe(document.body, { childList: true });
+    };
+    const eventMap = new WeakMap();
+    // 問題を報告ボタンを押したらイベントとして送信する
+    const onClickIssueReport = () => {
+        console.log("click_issue_report");
+        gtag("event", "click_issue_report", {
+            "event_category": "contribution",
+            "event_label": "click_issue_report"
+        });
+    };
+    const observeIssueReport = () => {
+        const targetButton = document.querySelector(".gitbook-plugin-github-issue-feedback");
+        // すでにイベントが登録されていたら何もしない
+        if (eventMap.has(targetButton)) {
+            return;
+        }
+        if (targetButton) {
+            targetButton.addEventListener("click", onClickIssueReport);
+            eventMap.set(targetButton, onClickIssueReport);
+        }
+    };
+    window.addEventListener("DOMContentLoaded", function() {
+        gitbook.events.on("page.change", function() {
+            observeEvalEvent();
+            observeIssueReport();
+        });
+    });
+
+</script>
+<meta name="google-site-verification" content="bMotEbgYwkzA3k4PkuyK_NUdz0bKh-Phz0oUwNmRSVo"/>
+<style>
+    /*
+     * Disable antialias
+     */
+    * {
+        -webkit-font-smoothing: initial !important
+    }
+
+    body {
+        text-rendering: initial !important;
+        font-smoothing: initial !important;
+    }
+
+    /* deny access chapter */
+    .summary li.chapter > span {
+        cursor: not-allowed;
+        opacity: .3;
+    }
+
+    /* console ui */
+
+    .mirror-console-attach-button-wrapper {
+        margin-top: -1.275em;
+        margin-bottom: 1.275em
+    }
+
+    .mirror-console-wrapper {
+        margin-top: 1.275em;
+        margin-bottom: 1.275em
+    }
+
+    /* file name for codeblock */
+    .code-filename {
+        background-color: #eee;
+        display: inline-block;
+        padding: 2px 8px;
+        line-height: inherit;
+        margin-bottom: 0px !important;
+    }
+
+    /* Markdown */
+    /* Support horizon scroll */
+    /* https://stackoverflow.com/questions/17770257/scrolling-tables-horizontally-without-wrapping-them-in-div */
+    .markdown-section table {
+        max-width: 100%;
+        overflow-x: auto;
+        display: block;
+    }
+    .markdown-section sup,
+    .markdown-section sub {
+        font-size: 75%;
+    }
+
+    .book_footer {
+        text-align: center;
+        color: #000000;
+        background: #ddd;
+        font-size: 16px;
+        margin-top: 16px;
+        padding: 16px;
+    }
+
+    /* github-issue-feedback */
+    .gitbook-plugin-github-issue-feedback {
+        background-color: #333;
+        color: #fff;
+        opacity: 0.8;
+        padding: 4px;
+        margin-right: 24px;
+        margin-bottom: 4px;
+        border-radius: 6px;
+    }
+
+    .gitbook-plugin-github-issue-feedback:hover {
+        opacity: 1;
+    }
+
+    /* Hide footer on mobile */
+    /* Use navigation width */
+    @media (max-width: 1240px) {
+        .book_footer {
+            display: none;
+        }
+    }
+
+    .navigation {
+        min-width: 50px;
+    }
+
+    @media (min-width: 1240px) {
+        .honkit-plugin-sandpack {
+            width: calc(100% + 180px);
+            margin: 0 0 1em -90px;
+        }
+    }
+
+    .honkit-plugin-sandpack, .honkit-plugin-sandpack--buttonContainer {
+        margin-bottom: 1em;
+    }
+
+</style>
+<meta name="theme-color" content="#ffffff">
+<link rel="manifest" href="../../manifest.json">
+<script defer async>
+    // unregister old service worker(remove workbox)
+    // https://github.com/asciidwango/js-primer/pull/1701
+    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for (const registration of registrations) {
+            registration.unregister();
+        }
+    }).catch(function(err) {
+        console.error(new Error("Can not getRegistrations", {
+            cause: err
+        }));
+    });
+</script>
+
+    </head>
+    <body>
+        
+<div class="book honkit-cloak">
+    <div class="book-summary">
+        
+            
+            
+                <nav role="navigation">
+                
+
+
+<ul class="summary">
+    
+    
+
+    
+
+    
+        
+        
+    
+        <li class="chapter " data-level="1.1" data-path="../../">
+            
+                <a href="../../">
+            
+                    
+                    この書籍について
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2" data-path="../../intro/">
+            
+                <a href="../../intro/">
+            
+                    
+                    はじめに
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.2.1" data-path="../../intro/authors/">
+            
+                <a href="../../intro/authors/">
+            
+                    
+                    著者紹介
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.2" data-path="../../intro/sponsors/">
+            
+                <a href="../../intro/sponsors/">
+            
+                    
+                    JavaScript Primerスポンサー
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.3" data-path="../../intro/preparation/">
+            
+                <a href="../../intro/preparation/">
+            
+                    
+                    読みはじめる前の事前準備
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.4" data-path="../../intro/feedback/">
+            
+                <a href="../../intro/feedback/">
+            
+                    
+                    文章の間違いに気づいたら
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3" data-path="../">
+            
+                <a href="../">
+            
+                    
+                    第一部: 基本文法
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.3.1" data-path="../introduction/">
+            
+                <a href="../introduction/">
+            
+                    
+                    JavaScriptとは
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.2" data-path="../comments/">
+            
+                <a href="../comments/">
+            
+                    
+                    コメント
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.3" data-path="../variables/">
+            
+                <a href="../variables/">
+            
+                    
+                    変数と宣言
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter active" data-level="1.3.4" data-path="./">
+            
+                <a href="./">
+            
+                    
+                    値の評価と表示
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.5" data-path="../data-type/">
+            
+                <a href="../data-type/">
+            
+                    
+                    データ型とリテラル
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.6" data-path="../operator/">
+            
+                <a href="../operator/">
+            
+                    
+                    演算子
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.7" data-path="../implicit-coercion/">
+            
+                <a href="../implicit-coercion/">
+            
+                    
+                    暗黙的な型変換
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.8" data-path="../function-declaration/">
+            
+                <a href="../function-declaration/">
+            
+                    
+                    関数と宣言
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.9" data-path="../statement-expression/">
+            
+                <a href="../statement-expression/">
+            
+                    
+                    文と式
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.10" data-path="../condition/">
+            
+                <a href="../condition/">
+            
+                    
+                    条件分岐
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.11" data-path="../loop/">
+            
+                <a href="../loop/">
+            
+                    
+                    ループと反復処理
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.12" data-path="../object/">
+            
+                <a href="../object/">
+            
+                    
+                    オブジェクト
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.13" data-path="../prototype-object/">
+            
+                <a href="../prototype-object/">
+            
+                    
+                    プロトタイプオブジェクト
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.14" data-path="../array/">
+            
+                <a href="../array/">
+            
+                    
+                    配列
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.15" data-path="../string/">
+            
+                <a href="../string/">
+            
+                    
+                    文字列
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.16" data-path="../string-unicode/">
+            
+                <a href="../string-unicode/">
+            
+                    
+                    文字列とUnicode
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.17" data-path="../wrapper-object/">
+            
+                <a href="../wrapper-object/">
+            
+                    
+                    ラッパーオブジェクト
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.18" data-path="../function-scope/">
+            
+                <a href="../function-scope/">
+            
+                    
+                    関数とスコープ
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.19" data-path="../function-this/">
+            
+                <a href="../function-this/">
+            
+                    
+                    関数とthis
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.20" data-path="../class/">
+            
+                <a href="../class/">
+            
+                    
+                    クラス
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.21" data-path="../error-try-catch/">
+            
+                <a href="../error-try-catch/">
+            
+                    
+                    例外処理
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.22" data-path="../async/">
+            
+                <a href="../async/">
+            
+                    
+                    非同期処理:Promise/Async Function
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.23" data-path="../map-and-set/">
+            
+                <a href="../map-and-set/">
+            
+                    
+                    Map/Set
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.24" data-path="../json/">
+            
+                <a href="../json/">
+            
+                    
+                    JSON
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.25" data-path="../date/">
+            
+                <a href="../date/">
+            
+                    
+                    Date
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.26" data-path="../math/">
+            
+                <a href="../math/">
+            
+                    
+                    Math
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.27" data-path="../module/">
+            
+                <a href="../module/">
+            
+                    
+                    ECMAScriptモジュール
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.28" data-path="../ecmascript/">
+            
+                <a href="../ecmascript/">
+            
+                    
+                    ECMAScript
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.29" data-path="../other-parts/">
+            
+                <a href="../other-parts/">
+            
+                    
+                    第一部: おわりに
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4" data-path="../../use-case/">
+            
+                <a href="../../use-case/">
+            
+                    
+                    第二部: 応用編（ユースケース）
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.4.1" data-path="../../use-case/setup-local-env/">
+            
+                <a href="../../use-case/setup-local-env/">
+            
+                    
+                    アプリケーション開発の準備
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.2" data-path="../../use-case/ajaxapp/">
+            
+                <a href="../../use-case/ajaxapp/">
+            
+                    
+                    Ajax通信
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.4.2.1" data-path="../../use-case/ajaxapp/entrypoint/">
+            
+                <a href="../../use-case/ajaxapp/entrypoint/">
+            
+                    
+                    エントリーポイント
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.2.2" data-path="../../use-case/ajaxapp/http/">
+            
+                <a href="../../use-case/ajaxapp/http/">
+            
+                    
+                    HTTP通信
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.2.3" data-path="../../use-case/ajaxapp/display/">
+            
+                <a href="../../use-case/ajaxapp/display/">
+            
+                    
+                    データを表示する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.2.4" data-path="../../use-case/ajaxapp/promise/">
+            
+                <a href="../../use-case/ajaxapp/promise/">
+            
+                    
+                    Promiseを活用する
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3" data-path="../../use-case/nodecli/">
+            
+                <a href="../../use-case/nodecli/">
+            
+                    
+                    Node.jsでCLIアプリ
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.4.3.1" data-path="../../use-case/nodecli/helloworld/">
+            
+                <a href="../../use-case/nodecli/helloworld/">
+            
+                    
+                    Node.jsでHello World
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3.2" data-path="../../use-case/nodecli/argument-parse/">
+            
+                <a href="../../use-case/nodecli/argument-parse/">
+            
+                    
+                    コマンドライン引数を処理する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3.3" data-path="../../use-case/nodecli/read-file/">
+            
+                <a href="../../use-case/nodecli/read-file/">
+            
+                    
+                    ファイルを読み込む
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3.4" data-path="../../use-case/nodecli/md-to-html/">
+            
+                <a href="../../use-case/nodecli/md-to-html/">
+            
+                    
+                    MarkdownをHTMLに変換する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3.5" data-path="../../use-case/nodecli/refactor-and-unittest/">
+            
+                <a href="../../use-case/nodecli/refactor-and-unittest/">
+            
+                    
+                    ユニットテストを記述する
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4" data-path="../../use-case/todoapp/">
+            
+                <a href="../../use-case/todoapp/">
+            
+                    
+                    Todoアプリ
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.4.4.1" data-path="../../use-case/todoapp/entrypoint/">
+            
+                <a href="../../use-case/todoapp/entrypoint/">
+            
+                    
+                    エントリーポイント
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.2" data-path="../../use-case/todoapp/app-structure/">
+            
+                <a href="../../use-case/todoapp/app-structure/">
+            
+                    
+                    アプリの構成要素
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.3" data-path="../../use-case/todoapp/form-event/">
+            
+                <a href="../../use-case/todoapp/form-event/">
+            
+                    
+                    Todoアイテムの追加を実装する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.4" data-path="../../use-case/todoapp/event-model/">
+            
+                <a href="../../use-case/todoapp/event-model/">
+            
+                    
+                    イベントとモデル
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.5" data-path="../../use-case/todoapp/update-delete/">
+            
+                <a href="../../use-case/todoapp/update-delete/">
+            
+                    
+                    Todoアイテムの更新と削除を実装する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.6" data-path="../../use-case/todoapp/final/">
+            
+                <a href="../../use-case/todoapp/final/">
+            
+                    
+                    Todoアプリのリファクタリング
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5" data-path="../../appendix/links/">
+            
+                <a href="../../appendix/links/">
+            
+                    
+                    付録: 参考リンク集
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.6" data-path="../../cheatsheet/">
+            
+                <a href="../../cheatsheet/">
+            
+                    
+                    付録: JavaScriptチートシート
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.7" data-path="../../outro/">
+            
+                <a href="../../outro/">
+            
+                    
+                    おわりに
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+    
+
+    <li class="divider"></li>
+
+    <li>
+        <a href="https://github.com/honkit/honkit" target="blank" class="gitbook-link">
+            Published with HonKit
+        </a>
+    </li>
+</ul>
+
+
+                </nav>
+            
+        
+    </div>
+
+    <div class="book-body">
+        
+            <div class="body-inner">
+                
+                    
+
+<!-- Header -->
+<meta name="keywords" content="JavaScript,ECMAScript,JS,入門,チュートリアル,書籍,本,無料,Node.js,ブラウザ"/>
+<link rel="author" href="https://www.hatena.ne.jp/efcl/"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsearch.js@2/dist/cdn/docsearch.min.css"/>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/docsearch.js@2/dist/cdn/docsearch.min.js"></script>
+<!-- OGP -->
+<meta property="og:title" content="JavaScript Primer - 迷わないための入門書"/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://jsprimer.net/"/>
+<meta property="og:image" content="https://jsprimer.net/landing/img/cover-optimized.jpg"/>
+<meta property="og:site_name" content="JavaScript Primer"/>
+<meta property="og:description" content="JavaScript Primerは、JavaScriptの基礎から応用までを一貫して学べる入門書です。"/>
+<style>
+    .book-header {
+        display: flex;
+        flex-direction: row;
+        background-color: #333;
+    }
+
+    /* link color */
+    .book-header a {
+        color: #fff;
+    }
+
+    /* hover color */
+    .book-header .btn:hover, .book-header .btn:focus, .book-header a:focus, .book-header a:hover {
+        color: hsla(0, 0%, 100%, 0.75) !important;
+    }
+
+    /* Mobile header fixed */
+    @media (max-width: 768px) {
+        /* Headerを固定する */
+        .book-header {
+            position: fixed;
+            width: 100%;
+        }
+
+        /* Icon only */
+        .book-header-title-img {
+            margin: auto 18px auto 0 !important;
+        }
+
+        .book-header-title-h {
+            display: none;
+        }
+
+        /* Header分のズレを入れる */
+        .page-wrapper {
+            padding-top: 60px;
+        }
+
+        /* github-issue-feedbackを非表示にする */
+        .gitbook-plugin-github-issue-feedback {
+            display: none;
+        }
+    }
+
+    /* Dynamic created by GitBook*/
+    .btn.pull-left.js-toolbar-action {
+        order: 1;
+    }
+
+    .book-header-title {
+        order: 2;
+        display: inline-flex;
+        flex-direction: row;
+        color: #fff;
+    }
+
+    .book-header-title:hover {
+        color: hsla(0, 0%, 100%, 0.75);
+    }
+
+    .book-header-title-img {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        margin: auto 10px auto 0;
+    }
+
+    .book-header-title-h {
+        font-size: 20px;
+        margin: auto;
+        padding: 0;
+    }
+
+    .header-center {
+        order: 3;
+        display: inline-flex;
+        flex-direction: column;
+        justify-content: center;
+        /* self */
+        flex-grow: 1;
+        flex-shrink: 0;
+        flex-basis: auto;
+    }
+
+    .header-right {
+        order: 4;
+        display: inline-flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        /* icon size */
+        font-size: 24px;
+    }
+
+    .amazon-link, .github-link {
+        color: #fff;
+        /* Padding and make Vertical */
+        display: inline-flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding-left: 4px;
+        padding-right: 4px;
+    }
+
+    /* Desktop */
+    @media (min-width: 768px) {
+        .header-center {
+            align-items: center;
+        }
+
+        .header-right {
+            margin-right: 24px;
+        }
+    }
+
+    /* DocSearch */
+    @media (max-width: 768px) {
+        .algolia-autocomplete .ds-dropdown-menu {
+            max-width: calc(100vw - 32px) !important;
+            min-width: calc(100vw - 32px) !important;
+            width: calc(100vw - 32px) !important;
+            /* negative margin
+              This is absolute element
+              */
+            margin-left: -32px !important;
+        }
+
+        .algolia-autocomplete .algolia-docsearch-suggestion--content {
+            width: 100% !important;
+            padding-left: 0 !important;
+        }
+
+        .algolia-autocomplete .algolia-docsearch-suggestion--content:before {
+            display: none !important;
+        }
+
+        .algolia-autocomplete .algolia-docsearch-suggestion--subcategory-column {
+            display: none !important;
+        }
+
+        .algolia-autocomplete.algolia-autocomplete-right .ds-dropdown-menu {
+            right: inherit !important
+        }
+
+        .algolia-autocomplete.algolia-autocomplete-right .ds-dropdown-menu::before {
+            right: 50%;
+        }
+
+        .sbx-custom {
+            width: 92px !important;
+            padding: initial !important;
+        }
+
+        .amazon-link {
+            display: none;
+        }
+    }
+
+    /* SearchBox */
+    .searchbarWrapper {
+        height: 50px;
+    }
+
+
+    .sbx-custom {
+        display: inline-block;
+        position: relative;
+        min-width: 150px;
+        width: 300px;
+        max-width: 300px;
+        height: 33px;
+        white-space: nowrap;
+        box-sizing: border-box;
+        font-size: 14px;
+    }
+
+    .sbx-custom__wrapper {
+        width: 100%;
+        height: 100%;
+    }
+
+    .sbx-custom__input {
+        display: inline-block;
+        -webkit-transition: box-shadow .4s ease, background .4s ease;
+        transition: box-shadow .4s ease, background .4s ease;
+        border: 0;
+        border-radius: 5px;
+        box-shadow: inset 0 0 0 2px #CCCCCC;
+        background: #FFFFFF;
+        padding: 0 27px 0 33px;
+        width: 100%;
+        height: 100%;
+        vertical-align: middle;
+        white-space: normal;
+        font-size: inherit;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+    }
+
+    .sbx-custom__input::-webkit-search-decoration, .sbx-custom__input::-webkit-search-cancel-button, .sbx-custom__input::-webkit-search-results-button, .sbx-custom__input::-webkit-search-results-decoration {
+        display: none;
+    }
+
+    .sbx-custom__input:hover {
+        box-shadow: inset 0 0 0 2px #b3b3b3;
+    }
+
+    .sbx-custom__input:focus, .sbx-custom__input:active {
+        outline: 0;
+        box-shadow: inset 0 0 0 2px #4B54DE;
+        background: #FFFFFF;
+    }
+
+    .sbx-custom__input::-webkit-input-placeholder {
+        color: #BBBBBB;
+    }
+
+    .sbx-custom__input::-moz-placeholder {
+        color: #BBBBBB;
+    }
+
+    .sbx-custom__input:-ms-input-placeholder {
+        color: #BBBBBB;
+    }
+
+    .sbx-custom__input::placeholder {
+        color: #BBBBBB;
+    }
+
+    .sbx-custom__submit {
+        position: absolute;
+        top: 0;
+        right: inherit;
+        left: 0;
+        margin: 0;
+        border: 0;
+        border-radius: 4px 0 0 4px;
+        background-color: rgba(255, 255, 255, 0);
+        padding: 0;
+        width: 33px;
+        height: 100%;
+        vertical-align: middle;
+        text-align: center;
+        font-size: inherit;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+    .sbx-custom__submit::before {
+        display: inline-block;
+        margin-right: -4px;
+        height: 100%;
+        vertical-align: middle;
+        content: '';
+    }
+
+    .sbx-custom__submit:hover, .sbx-custom__submit:active {
+        cursor: pointer;
+    }
+
+    .sbx-custom__submit:focus {
+        outline: 0;
+    }
+
+    .sbx-custom__submit svg {
+        width: 17px;
+        height: 17px;
+        vertical-align: middle;
+        fill: #3A33D1;
+    }
+
+    .sbx-custom__reset {
+        display: none;
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        margin: 0;
+        border: 0;
+        background: none;
+        cursor: pointer;
+        padding: 0;
+        font-size: inherit;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        fill: rgba(0, 0, 0, 0.5);
+    }
+
+    .sbx-custom__reset:focus {
+        outline: 0;
+    }
+
+    .sbx-custom__reset svg {
+        display: block;
+        margin: 4px;
+        width: 17px;
+        height: 17px;
+    }
+
+    .sbx-custom__input:valid ~ .sbx-custom__reset {
+        display: block;
+        -webkit-animation-name: sbx-reset-in;
+        animation-name: sbx-reset-in;
+        -webkit-animation-duration: .15s;
+        animation-duration: .15s;
+    }
+
+    @-webkit-keyframes sbx-reset-in {
+        0% {
+            -webkit-transform: translate3d(-20%, 0, 0);
+            transform: translate3d(-20%, 0, 0);
+            opacity: 0;
+        }
+        100% {
+            -webkit-transform: none;
+            transform: none;
+            opacity: 1;
+        }
+    }
+
+    @keyframes sbx-reset-in {
+        0% {
+            -webkit-transform: translate3d(-20%, 0, 0);
+            transform: translate3d(-20%, 0, 0);
+            opacity: 0;
+        }
+        100% {
+            -webkit-transform: none;
+            transform: none;
+            opacity: 1;
+        }
+    }
+</style>
+<div class="book-header" role="navigation">
+    
+    <a class="book-header-title" href="../..">
+        <img class="book-header-title-img" alt="JavaScript Primer"
+             src="../../gitbook/icons/icon-128x128.png"/>
+        <h2 class="book-header-title-h" title="JavaScript Primer - 迷わないための入門書">JavaScript Primer</h2>
+    </a>
+    <div class="searchbarWrapper header-center">
+        <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+            <symbol xmlns="http://www.w3.org/2000/svg" id="sbx-icon-search-8" viewBox="0 0 40 40">
+                <path d="M16 32c8.835 0 16-7.165 16-16 0-8.837-7.165-16-16-16C7.162 0 0 7.163 0 16c0 8.835 7.163 16 16 16zm0-5.76c5.654 0 10.24-4.586 10.24-10.24 0-5.656-4.586-10.24-10.24-10.24-5.656 0-10.24 4.584-10.24 10.24 0 5.654 4.584 10.24 10.24 10.24zM28.156 32.8c-1.282-1.282-1.278-3.363.002-4.643 1.282-1.284 3.365-1.28 4.642-.003l6.238 6.238c1.282 1.282 1.278 3.363-.002 4.643-1.283 1.283-3.366 1.28-4.643.002l-6.238-6.238z"
+                      fill-rule="evenodd"></path>
+            </symbol>
+            <symbol xmlns="http://www.w3.org/2000/svg" id="sbx-icon-clear-5" viewBox="0 0 20 20">
+                <path d="M10 20c5.523 0 10-4.477 10-10S15.523 0 10 0 0 4.477 0 10s4.477 10 10 10zm1.35-10.123l3.567 3.568-1.225 1.226-3.57-3.568-3.567 3.57-1.226-1.227 3.568-3.568-3.57-3.57 1.227-1.224 3.568 3.568 3.57-3.567 1.224 1.225-3.568 3.57zM10 18.272c4.568 0 8.272-3.704 8.272-8.272S14.568 1.728 10 1.728 1.728 5.432 1.728 10 5.432 18.272 10 18.272z"
+                      fill-rule="evenodd"></path>
+            </symbol>
+        </svg>
+
+        <form novalidate="novalidate" onsubmit="return false;" class="searchbox sbx-custom">
+            <div role="search" class="sbx-custom__wrapper">
+                <input name="search" placeholder="Search words" autocomplete="off" required="required"
+                       class="sbx-custom__input" type="search">
+                <button type="submit" title="Submit your search query." class="sbx-custom__submit">
+                    <svg role="img" aria-label="Search">
+                        <use xlink:href="#sbx-icon-search-8"></use>
+                    </svg>
+                </button>
+                <button type="reset" title="Clear the search query." class="sbx-custom__reset">
+                    <svg role="img" aria-label="Reset">
+                        <use xlink:href="#sbx-icon-clear-5"></use>
+                    </svg>
+                </button>
+            </div>
+        </form>
+    </div>
+    <div class="header-right">
+        <!-- Icon: https://www.iconfinder.com/iconsets/circle-payment -->
+        <a class="amazon-link" title="Amazon: JavaScript Primer 改訂2版 迷わないための入門書"
+           href="https://www.amazon.co.jp/dp/4048931105/" target="_blank"><img
+                width="22"
+                height="22"
+                style="margin: 1px;"
+                src="../../gitbook/icons/amazon-icon.png" alt=""></a>
+        <a class="github-link" title="GitHub: asciidwango/js-primer" href="https://github.com/asciidwango/js-primer"
+           target="_blank"><i
+                class="fa fa-github fa-fw"></i></a>
+    </div>
+</div>
+
+<script defer>
+    // focus on search box
+    document.querySelector(".searchbox [type=\"reset\"]").addEventListener("click", function() {
+        this.parentNode.querySelector("input").focus();
+    });
+    // init DocSearch
+    var search = docsearch({
+        apiKey: "fd28ebaba94be0c39fb9fa1b2fed4f23", // use a SEARCH-ONLY api key here
+        indexName: "asciidwango",
+        inputSelector: ".sbx-custom__input",
+        debug: false // set to `true` if you want to inspect the dropdown menu's CSS
+    });
+</script>
+<script>
+    window.addEventListener("DOMContentLoaded", function() {
+        gitbook.events.on("page.change", function() {
+            setTimeout(() => console.clear(), 1000);
+        });
+    });
+</script>
+
+
+
+
+
+                    <div class="page-wrapper" tabindex="-1" role="main">
+                        <div class="page-inner">
+                            
+                                <section class="normal markdown-section">
+                                
+<style>
+    .page-sponsors {
+        background: #fafafa;
+    }
+    .page-sponsors .page-sponsors-list {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 0;
+        padding: 1em 0;
+        list-style: none;
+        gap: 8px;
+    }
+    .page-sponsors-footer {
+        text-align: center;
+        padding: 0;
+        margin: 0;
+    }
+</style>
+<div class="page-sponsors">
+
+    <div class="page-sponsors-footer">
+        JavaScript Primerの<a href="https://jsprimer.net/intro/sponsors/">スポンサーを募集中</a>
+    </div>
+
+</div>
+
+                                <html><head></head><body><h1 id="read-eval-print"><a name="read-eval-print" class="plugin-anchor" href="#read-eval-print"><i class="fa fa-link" aria-hidden="true"></i></a>値の評価と表示 </h1>
+<p>変数宣言を使うことで値に名前をつける方法を学びました。
+次はその値をどのように評価するかについてです。</p>
+<p>値の評価とは、入力した値を評価してその結果を返すことを示しています。
+たとえば、次のような値の評価があります。</p>
+<ul>
+<li><code>1 + 1</code> という式を評価したら <code>2</code> という結果を返す</li>
+<li><code>bookTitle</code> という変数を評価したら、変数に代入されている値を返す</li>
+<li><code>const x = 1;</code>という文を評価することで変数を定義するが、この文には返り値はない</li>
+</ul>
+<p>この値の評価方法を確認するために、ウェブブラウザ（以下ブラウザ）を使ってJavaScriptを実行する方法を見ていきます。</p>
+<h2 id="recommended-browser"><a name="recommended-browser" class="plugin-anchor" href="#recommended-browser"><i class="fa fa-link" aria-hidden="true"></i></a>この書籍で利用するブラウザ </h2>
+<p>まずはブラウザ上でJavaScriptのコードを実行してみましょう。
+この書籍ではブラウザとして<a href="https://www.mozilla.org/ja/firefox/new/" target="_blank">Firefox</a>を利用します。
+次のURLからFirefoxをダウンロードし、インストールしてください。</p>
+<ul>
+<li>Firefox: <a href="https://www.mozilla.org/ja/firefox/new/" target="_blank">https://www.mozilla.org/ja/firefox/new/</a></li>
+</ul>
+<p>この書籍で紹介するサンプルコードのほとんどは、Google Chrome、Microsoft Edge、Safariなどのブラウザの最新版でも動作します。</p>
+<p>また、ブラウザによっては標準化されていないエラーメッセージの細かな違いや開発者ツールの使い方の違いなどもあります。
+この書籍ではFirefoxで実行した結果を記載しています。
+そのため、Firefox以外のブラウザでは細かな違いがあることに注意してください。</p>
+<h2 id="execute-js-on-browser"><a name="execute-js-on-browser" class="plugin-anchor" href="#execute-js-on-browser"><i class="fa fa-link" aria-hidden="true"></i></a>ブラウザでJavaScriptを実行する </h2>
+<p>ブラウザでJavaScriptを実行する方法としては大きく分けて2つあります。
+1つ目はブラウザの開発者ツールのコンソール上でJavaScriptコードを評価する方法です。
+2つ目はHTMLファイルを作成しJavaScriptコードを読み込む方法です。</p>
+<h3 id="repl-on-browser"><a name="repl-on-browser" class="plugin-anchor" href="#repl-on-browser"><i class="fa fa-link" aria-hidden="true"></i></a>ブラウザの開発者ツールのコンソール上でJavaScriptコードを評価する方法 </h3>
+<p>ブラウザやNode.jsなど多くの実行環境には、コードを評価してその結果を表示するREPL（read–eval–print loop）と呼ばれる開発者向けの機能があります。
+Firefoxでは、開発者ツールの<strong>Webコンソール</strong>と呼ばれるパネルにREPL機能が含まれています。
+REPL機能を使うことで、試したいコードをその場で実行できるため、JavaScriptの動作を理解するのに役立ちます。</p>
+<p>REPL機能を使うには、まずFirefoxの開発者ツールを次のいずれかの方法で開きます。</p>
+<ul>
+<li>Firefox メニュー（メニューバーがある場合や macOS では、ツールメニュー）の "ブラウザーツール"のサブメニューから "ウェブ開発ツール" を選択する</li>
+<li>キーボードショートカット Ctrl+Shift+K（macOS では Command+Option+K）を押下する</li>
+</ul>
+<p>詳細は"<a href="https://firefox-source-docs.mozilla.org/devtools-user/" target="_blank">Firefox DevTools User Docs</a>"を参照してください。</p>
+<p><img src="img/web-console.png" alt="FirefoxでWebコンソールを開いた状態"></img></p>
+<p>開発者ツールの"コンソール"タブを選択すると、コマンドライン（二重山カッコ<code>»</code>からはじまる欄）に任意のコードを入力し評価できます。
+このコマンドラインがブラウザにおけるREPL機能です。</p>
+<p>REPLに<code>1</code>という値を入力しEnterキーを押すと、その評価結果である<code>1</code>が次の行に表示されます。</p>
+<pre><code>» 1
+1
+</code></pre><p><code>1 + 1</code> という式を入力すると、その評価結果である<code>2</code>が次の行に表示されます。</p>
+<pre><code>» 1 + 1
+2
+</code></pre><p>次に<code>const</code>キーワードを使って<code>bookTitle</code>という変数を宣言してみると、<code>undefined</code>という結果が次の行に表示されます。
+変数宣言は変数名と値を関連づけるだけであるため、変数宣言自体は何も値を返さないという意味で<code>undefined</code>が結果になります。
+REPLではそのまま次の入力ができるため、<code>bookTitle</code>という入力をすると、先ほど変数に入れた<code>"JavaScript Primer"</code>という結果が次の行に表示されます。</p>
+<pre><code>» const bookTitle = "JavaScript Primer";
+undefined
+» bookTitle
+"JavaScript Primer"
+</code></pre><p>このようにコマンドラインのREPL機能では、JavaScriptのコードを1行ごとに実行できます。
+Shift + Enterで改行して複数行の入力もできます。
+好きな単位でJavaScriptのコードを評価できるため、コードの動きを簡単に試したい場合などに利用できます。</p>
+<p>注意点としては、REPLではそのREPLを終了するまで<code>const</code>キーワードなどで宣言した変数が残り続けます。
+たとえば、<code>const</code>での変数宣言は同じ変数名を二度定義できないというルールでした。
+そのため1行ずつ実行しても、同じ変数名を定義したことになるため構文エラー（<code>SyntaxError</code>）となります。</p>
+<pre><code>» const bookTitle = "JavaScript Primer";
+undefined
+» const bookTitle = "JavaScript Primer";
+SyntaxError: redeclaration of const bookTitle
+</code></pre><p>ブラウザでは、開発者ツールを開いているウェブページでリロードするとREPLの実行状態もリセットされます。
+<code>redeclaration</code>（再定義）に関するエラーメッセージが出た際にはページをリロードしてみてください。</p>
+<h3 id="js-in-html"><a name="js-in-html" class="plugin-anchor" href="#js-in-html"><i class="fa fa-link" aria-hidden="true"></i></a>HTMLファイルを作成しJavaScriptコードを読み込む方法 </h3>
+<p>REPLはあくまで開発者向けの機能です。
+ウェブサイトではHTMLに記述した<code>&lt;script&gt;</code>タグでJavaScriptを読み込み実行します。
+ここでは、HTMLとJavaScriptファイルを使ったJavaScriptコードの実行方法を見ていきます。</p>
+<p>HTMLファイルとJavaScriptファイルの2種類を使い、JavaScriptのコードを実行する準備をしていきます。
+ファイルを作成するため<a href="https://code.visualstudio.com/" target="_blank">Visual Studio Code</a>などのJavaScriptに対応したエディターを用意しておくとスムーズです。
+エディターはどんなものでも問題ありませんが、必ず文字コード（エンコーディング）は<strong>UTF-8</strong>、改行コードは<strong>LF</strong>にしてファイルを保存してください。</p>
+<p>ファイルを作成するディレクトリはどんな場所でも問題ありませんが、ここでは<code>example</code>という名前のディレクトリにファイルを作成していきます。</p>
+<p>まずはJavaScriptファイルとして<code>index.js</code>ファイルを<code>example/index.js</code>というパスに作成します。
+<code>index.js</code>の中には次のようなコードを書いておきます。</p>
+<div class="code-filename-block">
+    <p class="code-filename">index.js</p>
+</div>
+
+<pre><code class="lang-javascript"><span class="hljs-number">1</span>;
+</code></pre>
+<p>次にHTMLファイルとして<code>index.html</code>ファイルを<code>example/index.html</code>というパスに作成します。
+このHTMLファイルから先ほど作成した<code>index.js</code>ファイルを読み込み実行します。
+<code>index.html</code>の中には次のようなコードを書いておきます。</p>
+<div class="code-filename-block">
+    <p class="code-filename">index.html</p>
+</div>
+
+<pre><code class="lang-html"><span class="hljs-tag">&lt;<span class="hljs-name">html</span>&gt;</span>
+<span class="hljs-tag">&lt;<span class="hljs-name">head</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">meta</span> <span class="hljs-attr">charset</span>=<span class="hljs-string">"UTF-8"</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">title</span>&gt;</span>Example<span class="hljs-tag">&lt;/<span class="hljs-name">title</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">"./index.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">head</span>&gt;</span>
+<span class="hljs-tag">&lt;<span class="hljs-name">body</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">body</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">html</span>&gt;</span>
+</code></pre>
+<p>重要なのは<code>&lt;script src="./index.js"&gt;&lt;/script&gt;</code>という記述です。
+これは同じディレクトリにある<code>index.js</code>という名前のJavaScriptファイルをスクリプトとして読み込むという意味になります。</p>
+<p>最後にブラウザで作成した<code>index.html</code>を開きます。
+HTMLファイルを開くには、ブラウザにHTMLファイルをドラッグアンドドロップするかまたはファイルメニューから"ファイルを開く"でHTMLファイルを選択します。
+HTMLファイルを開いた際に、ブラウザのアドレスバーには<code>file:///</code>からはじまるローカルファイルのファイルパスが表示されます。</p>
+<p>先ほどと同じ手順で"Web コンソール"を開いてみると、コンソールには何も表示されていないはずです。
+REPLでは自動で評価結果のコンソール表示まで行いますが、JavaScriptコードとして読み込んだ場合は勝手に評価結果を表示することはありません。
+あくまで自動表示はREPLの機能です。そのため多くの実行環境では<strong>コンソール表示</strong>するためのAPI（機能）が存在しています。</p>
+<h2 id="console-api"><a name="console-api" class="plugin-anchor" href="#console-api"><i class="fa fa-link" aria-hidden="true"></i></a>Console API </h2>
+<p>JavaScriptの多くの実行環境では、Console APIを使って<strong>コンソールに表示</strong>します。
+<code>console.log(引数)</code>の引数にコンソール表示したい値を渡すことで、評価結果がコンソールに表示されます。</p>
+<p>先ほどの<code>index.js</code>の中身を次のように書き換えます。
+そしてページをリロードすると、 <code>1</code> という値を評価した結果がWebコンソールに表示されます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<div class="code-filename-block">
+    <p class="code-filename">index.js</p>
+</div>
+
+<pre><code class="lang-javascript"><span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-number">1</span>); <span class="hljs-comment">// =&gt; 1</span>
+</code></pre>
+<p>次のように引数に式を書いた場合は先に引数（<code>(</code>と<code>)</code>の間に書かれたもの）の式を評価してから、その結果をコンソールに表示します。
+そのため、<code>1 + 1</code> の評価結果として <code>2</code> がコンソールに表示されます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<div class="code-filename-block">
+    <p class="code-filename">index.js</p>
+</div>
+
+<pre><code class="lang-javascript"><span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-number">1</span> + <span class="hljs-number">1</span>); <span class="hljs-comment">// =&gt; 2</span>
+</code></pre>
+<p>同じように引数に変数を渡すこともできます。
+この場合もまず先に引数である変数を評価してから、その結果をコンソールに表示します。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<div class="code-filename-block">
+    <p class="code-filename">index.js</p>
+</div>
+
+<pre><code class="lang-javascript"><span class="hljs-keyword">const</span> total = <span class="hljs-number">42</span> + <span class="hljs-number">42</span>;
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(total); <span class="hljs-comment">// =&gt; 84</span>
+</code></pre>
+<p>Console APIは原始的なプリントデバッグとして利用できます。
+「この値は何だろう」と思ったらコンソールに表示すると解決する問題は多いです。
+またJavaScriptの開発環境は高機能化が進んでいるため、Console API以外にもさまざまな機能がありますがここでは詳細は省きます。</p>
+<p>この書籍では、コード内で評価結果を表示するためにConsole APIを利用していきます。</p>
+<p>すでに何度も登場していますが、コード内のコメントで<code>// =&gt; 評価結果</code>と書いている場合があります。
+このコメントは、その左辺にある値を評価した結果またはConsole APIで表示した結果を掲載しています。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// 式の評価結果の例（コンソールには表示されない）</span>
+<span class="hljs-number">1</span>; <span class="hljs-comment">// =&gt; 1</span>
+<span class="hljs-keyword">const</span> total = <span class="hljs-number">42</span> + <span class="hljs-number">42</span>;
+<span class="hljs-comment">// 変数の評価結果の例（コンソールには表示されない）</span>
+total; <span class="hljs-comment">// =&gt; 84</span>
+<span class="hljs-comment">// Console APIでコンソールに表示する例</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">"JavaScript"</span>); <span class="hljs-comment">// =&gt; "JavaScript"</span>
+</code></pre>
+<h2 id="execute-on-web"><a name="execute-on-web" class="plugin-anchor" href="#execute-on-web"><i class="fa fa-link" aria-hidden="true"></i></a>ウェブ版の書籍でコードを実行する </h2>
+<!-- TODO: Web版のみ表示する -->
+<p>ウェブ版の書籍では実行できるサンプルコードには<strong>実行</strong>というボタンが配置されています。
+このボタンでは実行するたびに毎回新しい環境を作成して実行するため、REPLで発生する変数の再定義といった問題はおきません。</p>
+<p>一方で、REPLと同じように<code>1</code>というコードを実行すると<code>1</code>という評価結果を得られます。
+またConsole APIにも対応しています。サンプルコードを改変して実行するなど、よりコードへの理解を深めるために利用できます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">"Console APIで表示"</span>);
+<span class="hljs-comment">// 値を評価した場合は最後の結果が表示される</span>
+<span class="hljs-number">42</span>; <span class="hljs-comment">// =&gt; 42</span>
+</code></pre>
+<h2 id="eval-code-and-error"><a name="eval-code-and-error" class="plugin-anchor" href="#eval-code-and-error"><i class="fa fa-link" aria-hidden="true"></i></a>コードの評価とエラー </h2>
+<p>JavaScriptのコードを実行したときにエラーメッセージが表示されて意図したように動かなかった場合もあるはずです。
+プログラムを書くときに一度もエラーを出さずに書き終えることはほとんどありません。
+特に新しいプログラミング言語を学ぶ際にはトライアンドエラー（試行錯誤）することはとても重要です。</p>
+<p>エラーメッセージがWebコンソールに表示された際には、あわてずにそのエラーメッセージを読むことで多くの問題は解決できます。
+またエラーには大きく分けて構文エラーと実行時エラーの2種類があります。
+ここではエラーメッセージの簡単な読み方を知り、そのエラーを修正する足がかりを見ていきます。</p>
+<h3 id="syntax-error"><a name="syntax-error" class="plugin-anchor" href="#syntax-error"><i class="fa fa-link" aria-hidden="true"></i></a>構文エラー </h3>
+<p>構文エラーは書かれたコードの文法が間違っている場合に発生するエラーです。</p>
+<p>JavaScriptエンジンは、コードをパース（解釈）してから、プログラムとして実行できる形に変換して実行します。
+コードをパースする際に文法の問題が見つかると、その時点で構文エラーが発生するためプログラムとして実行できません。</p>
+<p>次のコードでは、関数呼び出しに<code>)</code>をつけ忘れているため構文エラーが発生します。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a>
+<!-- doctest:Error --></p>
+<div class="code-filename-block">
+    <p class="code-filename">index.js</p>
+</div>
+
+<pre><code class="lang-javascript"><span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-number">1</span>; <span class="hljs-comment">// =&gt; SyntaxError: missing ) after argument list</span>
+</code></pre>
+<p><img src="img/syntax-error.png" alt="SyntaxError in Console"></img></p>
+<p>Firefoxでこのコードを実行すると次のようなエラーメッセージがコンソールに表示されます。</p>
+<blockquote>
+<p>SyntaxError: missing ) after argument list[詳細] index.js:1:13</p>
+</blockquote>
+<p>エラーメッセージはブラウザによって多少の違いはありますが、基本的には同じ形式のメッセージになります。
+このエラーメッセージをパーツごとに見てみると次のようになります。</p>
+<pre><code>SyntaxError: missing ) after argument list[詳細] index.js:1:13
+^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^      ^^^^^^^^　^^^^
+エラーの種類                |                        | 　行番号:列番号
+                  エラー内容の説明                 ファイル名
+</code></pre><table>
+<thead>
+<tr>
+<th>メッセージ</th>
+<th>意味</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SyntaxError: missing ) after argument list</code></td>
+<td>エラーの種類は<code>SyntaxError</code>で、関数呼び出しの<code>)</code>が足りないこと</td>
+</tr>
+<tr>
+<td><code>index.js:1:13</code></td>
+<td>例外が<code>index.js</code>の1行目13列目で発生したこと</td>
+</tr>
+</tbody>
+</table>
+<p>Firefoxでは<strong>[詳細]</strong>というリンクがエラーメッセージによっては表示されます。
+この<strong>[詳細]</strong>リンクはエラーメッセージに関するMDNの解説ページへのリンクとなっています。
+この例のエラーメッセージでは次の解説ページへリンクされています。</p>
+<ul>
+<li><a href="https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Errors/Missing_parenthesis_after_argument_list" target="_blank">https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Errors/Missing_parenthesis_after_argument_list</a></li>
+</ul>
+<p>このエラーメッセージや解説ページから、関数呼び出しの<code>)</code>が足りないため構文エラーとなっていることがわかります。
+そのため、次のように足りない<code>)</code>を追加することでエラーを修正できます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-number">1</span>);
+</code></pre>
+<p>構文エラーによっては少しエラーメッセージから意味が読み取りにくいものもあります。</p>
+<p>次のコードでは、<code>const</code>を<code>cosnt</code>とタイプミスしているため構文エラーが発生しています。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a>
+<!-- doctest:Error --></p>
+<div class="code-filename-block">
+    <p class="code-filename">index.js</p>
+</div>
+
+<pre><code class="lang-javascript">cosnt a = <span class="hljs-number">1</span>;
+</code></pre>
+<blockquote>
+<p>SyntaxError: unexpected token: identifier[詳細] index.js:1:6</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>メッセージ</th>
+<th>意味</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SyntaxError: unexpected token: identifier</code></td>
+<td>エラーの種類は<code>SyntaxError</code>で、予期しない識別子（変数名 <code>a</code>）が指定されている</td>
+</tr>
+<tr>
+<td><code>index.js:1:6</code></td>
+<td>例外が<code>index.js</code>の1行目6列目で発生したこと</td>
+</tr>
+</tbody>
+</table>
+<p>プログラムをパースする際に<code>index.js:1:6</code>で予期しない（構文として解釈できない）識別子が見つかったため、構文エラーが発生したという意味になります。
+1行目6列目（行は1から、列は0からカウントする）である<code>a</code>という文字列がおかしいということになります。
+しかし、実際には<code>cosnt</code>というタイプミスがこの構文エラーの原因です。</p>
+<p>なぜこのようなエラーメッセージになるかというと、<code>cosnt</code>（<code>const</code>のタイプミス）はキーワードではないため、ただの変数名として解釈されます。
+そのため、このコードは次のようなコードであると解釈され、そのような文法は認められないということで構文エラーとなっています。</p>
+<!-- doctest:Error -->
+<pre><code class="lang-javascript">cosntという変数名 aという変数名 = <span class="hljs-number">1</span>;
+</code></pre>
+<p>このようにエラーメッセージとエラーの原因は必ずしも一致しません。
+しかし、構文エラーの原因はコードの書き間違いであることがほとんどです。
+そのため、エラーが発生した位置やその周辺を注意深く見ることで、エラーの原因を特定できます。</p>
+<h3 id="runtime-error"><a name="runtime-error" class="plugin-anchor" href="#runtime-error"><i class="fa fa-link" aria-hidden="true"></i></a>実行時エラー </h3>
+<p>実行時エラーはプログラムを実行している最中に発生するエラーです。
+実行時（ランタイム）におきるエラーであるため、ランタイムエラーと呼ばれることもあります。
+APIに渡す値のデータ型の問題から起きる<code>TypeError</code>や存在しない変数を参照しようとして起きる<code>ReferenceError</code>などさまざまな種類があります。</p>
+<p>実行時エラーが発生した場合は、そのコードは構文としては正しい（構文エラーではない）のですが、別のことが原因でエラーが発生しています。</p>
+<p>次のコードでは<code>x</code>という存在しない変数を参照したため、<code>ReferenceError</code>という実行時エラーが発生しています。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a>
+<!-- doctest:Error --></p>
+<div class="code-filename-block">
+    <p class="code-filename">index.js</p>
+</div>
+
+<pre><code class="lang-javascript"><span class="hljs-keyword">const</span> value = <span class="hljs-string">"値"</span>;
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(x); <span class="hljs-comment">// =&gt; ReferenceError: x is not defined</span>
+</code></pre>
+<blockquote>
+<p>ReferenceError: x is not defined[詳細]  index.js:2:1</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>メッセージ</th>
+<th>意味</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ReferenceError: x is not defined</code></td>
+<td>エラーの種類は<code>ReferenceError</code>で、<code>x</code>という未定義の識別子を参照したため発生</td>
+</tr>
+<tr>
+<td><code>index.js:2:1</code></td>
+<td>例外が<code>index.js</code>の2行目1列目で発生したこと</td>
+</tr>
+</tbody>
+</table>
+<p><code>x</code>という変数や関数が存在するかは、実行してみないとわかりません。
+そのため、実行して<code>x</code>という識別子を参照したときに、初めて<code>x</code>が存在するかが判明し、<code>x</code>が存在しない場合は<code>ReferenceError</code>となります。</p>
+<p>この例では、<code>value</code>変数を参照しているつもりで、<code>x</code>という存在しない変数を参照していたのが原因のようです。
+先ほどのコードは、次のように参照する変数を<code>value</code>に変更すれば、エラーが修正できます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> value = <span class="hljs-string">"値"</span>;
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(value); <span class="hljs-comment">// =&gt; "値"</span>
+</code></pre>
+<p>このように、実行時エラーは該当する箇所を実行するまで、エラーになるかがわからない場合も多いのです。
+そのため、どこまではちゃんと実行できたか順番に追っていくような、エラーの原因を特定する作業が必要になる場合があります。
+このようなエラーの原因を特定し、修正する作業のことを<strong>デバッグ</strong>と呼びます。</p>
+<p>実行時エラーは構文エラーに比べてエラーの種類も多く、その原因もプログラムの数だけあります。
+そのため、エラーの原因を見つけることが大変な場合もあります。
+しかし、JavaScriptはとてもよく使われている言語なので、ウェブ上には類似するエラーを報告している人も多いです。
+エラーメッセージで検索をしてみると、類似するエラーの原因と解消方法が見つかるケースもあります。</p>
+<p>実行時エラーが発生した際には、エラーが発生した行の周辺をよく見ることやエラーメッセージを調べてみることが大切です。</p>
+<h2 id="conclusion"><a name="conclusion" class="plugin-anchor" href="#conclusion"><i class="fa fa-link" aria-hidden="true"></i></a>まとめ </h2>
+<p>ブラウザ上でJavaScriptを実行する方法として開発者ツールを使う方法とHTMLからJavaScriptファイルを読み込む方法を紹介しました。
+「第一部 基本文法」で紹介するサンプルコードは基本的にこれらの方法で実行できます。
+サンプルコードを自分なりに改変して実行してみるとより理解が深くなるため、サンプルコードの動作を自分自身で確認してみてください。</p>
+<p>コードを実行してエラーが発生した場合にはエラーメッセージや位置情報などが表示されます。
+これらのエラー情報を使ってデバッグすることでエラーの原因を取り除けるはずです。</p>
+<p>JavaScriptにおいては多くのエラーはすでに類似するケースがウェブ上に報告されています。
+構文エラーや実行時エラーの典型的なものはMDNの<a href="https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Errors" target="_blank">JavaScript エラーリファレンス</a>にまとめられています。
+また<a href="https://www.google.com/" target="_blank">Google</a>、<a href="https://github.com/" target="_blank">GitHub</a>、<a href="https://stackoverflow.com/" target="_blank">Stack Overflow</a>などでエラーメッセージを検索することで、エラーの原因を見つけられることもあります。</p>
+<p>エラーがWebコンソールに表示されているならば、そのエラーは修正できます。
+エラーを過度に怖がる必要はありません。エラーメッセージなどのヒントを使ってエラーを修正していけるようにしましょう。</p>
+</body></html>
+                                
+
+                                </section>
+                            
+                        </div>
+                    </div>
+                
+<footer class="book_footer">
+    <p>Copyright (c) 2016-present <a href="https://github.com/asciidwango/js-primer" target="_blank">jsprimer project</a></p>
+</footer>
+
+            </div>
+
+            
+                
+                <a href="../variables/" class="navigation navigation-prev " aria-label="Previous page: 変数と宣言">
+                    <i class="fa fa-angle-left"></i>
+                </a>
+                
+                
+                <a href="../data-type/" class="navigation navigation-next " aria-label="Next page: データ型とリテラル">
+                    <i class="fa fa-angle-right"></i>
+                </a>
+                
+            
+        
+    </div>
+
+    <script>
+        var gitbook = gitbook || [];
+        gitbook.push(function() {
+            gitbook.page.hasChanged({"page":{"author":"azu","description":"ブラウザでJavaScriptコードを実行する方法について紹介します。またプログラムを実行すると遭遇するエラーをどのように解決していくかを紹介します。エラーを大きく2種類に分けて構文エラーと実行時エラーについてそれぞれの問題点と解決の糸口を紹介します。","sponsors":[],"title":"値の評価と表示","level":"1.3.4","depth":2,"next":{"title":"データ型とリテラル","level":"1.3.5","depth":2,"path":"basic/data-type/README.md","ref":"./basic/data-type/README.md","articles":[]},"previous":{"title":"変数と宣言","level":"1.3.3","depth":2,"path":"basic/variables/README.md","ref":"./basic/variables/README.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-search","-lunr","page-toc-button","include-codeblock","anchors","canonical-link","js-console","github-issue-feedback","sandpack"],"root":"./source/","styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"docSearch":{"index":"83I8JIFICQ","apiKey":"9169ce4cd84fcf2376f29d9585c89254"},"github-issue-feedback":{"repo":"asciidwango/js-primer","label":"問題を報告する"},"fontsettings":{"theme":"white","family":"sans","size":2},"js-console":{},"canonical-link":{"baseURL":"https://jsprimer.net"},"highlight":{},"page-toc-button":{"maxTocDepth":2,"minTocSize":2},"include-codeblock":{"check":false,"edit":false,"lang":"","fixlang":false,"template":"./resources/gitbook-plugin-include-codeblock.hbs","theme":"chrome","unindent":false},"sandpack":{},"edit-link":{"base":"https://github.com/asciidwango/js-primer/edit/master/source/","label":"Edit"},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false},"anchors":{}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"IPAexMincho","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"index.md","glossary":"GLOSSARY.md","summary":"README.md"},"variables":{"esversion":"2024","nodeversion":"22.7.0","npmversion":"10.8.2","triplebackticks":"```","console":"<a class=\"gitbook-plugin-js-console\" aria-hidden=\"true\"></a>"},"title":"JavaScript Primer #jsprimer","gitbook":">=3.0.0","description":"JavaScriptの基本的な書き方からアプリケーションの作成などのユースケースを学ぶための入門書です"},"file":{"path":"basic/read-eval-print/README.md","mtime":"2025-05-18T21:58:17.830Z","type":"markdown"},"gitbook":{"version":"6.0.2","time":"2025-05-18T21:58:35.597Z"},"basePath":"../..","book":{"language":""}});
+        });
+    </script>
+</div>
+
+        
+    <noscript>
+        <style>
+            .honkit-cloak {
+                display: block !important;
+            }
+        </style>
+    </noscript>
+    <script>
+        // Restore sidebar state as critical path for prevent layout shift
+        function __init__getSidebarState(defaultValue){
+            var baseKey = "";
+            var key = baseKey + ":sidebar";
+            try {
+                var value = localStorage[key];
+                if (value === undefined) {
+                    return defaultValue;
+                }
+                var parsed = JSON.parse(value);
+                return parsed == null ? defaultValue : parsed;
+            } catch (e) {
+                return defaultValue;
+            }
+        }
+        function __init__restoreLastSidebarState() {
+            var isMobile = window.matchMedia("(max-width: 600px)").matches;
+            if (isMobile) {
+                // Init last state if not mobile
+                return;
+            }
+            var sidebarState = __init__getSidebarState(true);
+            var book = document.querySelector(".book");
+            // Show sidebar if it enabled
+            if (sidebarState && book) {
+                book.classList.add("without-animation", "with-summary");
+            }
+        }
+
+        try {
+            __init__restoreLastSidebarState();
+        } finally {
+            var book = document.querySelector(".book");
+            book.classList.remove("honkit-cloak");
+        }
+    </script>
+    <script src="../../gitbook/gitbook.js"></script>
+    <script src="../../gitbook/theme.js"></script>
+    
+        
+        <script src="../../gitbook/gitbook-plugin-page-toc-button/plugin.js"></script>
+        
+    
+        
+        <script src="../../gitbook/gitbook-plugin-js-console/console-ui.js"></script>
+        
+    
+        
+        <script src="../../gitbook/gitbook-plugin-github-issue-feedback/plugin.js"></script>
+        
+    
+        
+        <script src="../../gitbook/honkit-plugin-sandpack/honkit-plugin-sandpack.js"></script>
+        
+    
+        
+        <script src="../../gitbook/@honkit/honkit-plugin-fontsettings/fontsettings.js"></script>
+        
+    
+
+    </body>
+</html>
+

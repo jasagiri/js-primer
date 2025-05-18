@@ -1,0 +1,2433 @@
+
+<!DOCTYPE HTML>
+<html lang="" >
+    <head>
+        <meta charset="UTF-8">
+        <title>関数とスコープ · JavaScript Primer #jsprimer</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="description" content="スコープという変数などを参照できる範囲を決める概念を紹介します。ブロックスコープや関数スコープなどがどのような働きをしているのかや複数のスコープが重なったときにどのように変数の参照先が決まるのかを紹介します。また、スコープに関係する動作としてクロージャーという性質を紹介します。">
+        <meta name="generator" content="HonKit 6.0.2">
+        
+        
+        
+    
+    <link rel="stylesheet" href="../../gitbook/style.css">
+
+    
+            
+                
+                <link rel="stylesheet" href="../../gitbook/gitbook-plugin-page-toc-button/plugin.css">
+                
+            
+                
+                <link rel="stylesheet" href="../../gitbook/gitbook-plugin-anchors/plugin.css">
+                
+            
+                
+                <link rel="stylesheet" href="../../gitbook/@honkit/honkit-plugin-highlight/website.css">
+                
+            
+                
+                <link rel="stylesheet" href="../../gitbook/@honkit/honkit-plugin-fontsettings/website.css">
+                
+            
+        
+
+    
+
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+         
+    
+    
+    
+    <meta name="HandheldFriendly" content="true"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../gitbook/images/apple-touch-icon-precomposed-152.png">
+    <link rel="shortcut icon" href="../../gitbook/images/favicon.ico" type="image/x-icon">
+
+    
+    <link rel="next" href="../function-this/" />
+    
+    
+    <link rel="prev" href="../wrapper-object/" />
+    
+
+    <link rel="canonical" href="https://jsprimer.net/basic/function-scope/">
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-DWY0DLHWB6"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+
+    gtag("js", new Date());
+
+    gtag("config", "G-DWY0DLHWB6");
+</script>
+<script type="module">
+    // コンソールUIでコード実行したらイベントとして送信する
+    const onExecuteCode = (scriptType) => {
+        gtag("event", "execute_code", {
+            "event_category": "console",
+            "event_label": "execute_code",
+            "script_type": scriptType || "unknown"
+        });
+    };
+    let observer;
+    const observeEvalEvent = () => {
+        if (observer) {
+            observer.disconnect();
+        }
+        const callback = function(mutationsList) {
+            for (const mutation of mutationsList) {
+                const mirrorConsole = Array.from(mutation.addedNodes).find(node => Boolean(node.dataset.mirrorConsole));
+                if (mirrorConsole) {
+                    return onExecuteCode(mirrorConsole.dataset.mirrorConsole);
+                }
+            }
+        };
+        observer = new MutationObserver(callback);
+        observer.observe(document.body, { childList: true });
+    };
+    const eventMap = new WeakMap();
+    // 問題を報告ボタンを押したらイベントとして送信する
+    const onClickIssueReport = () => {
+        console.log("click_issue_report");
+        gtag("event", "click_issue_report", {
+            "event_category": "contribution",
+            "event_label": "click_issue_report"
+        });
+    };
+    const observeIssueReport = () => {
+        const targetButton = document.querySelector(".gitbook-plugin-github-issue-feedback");
+        // すでにイベントが登録されていたら何もしない
+        if (eventMap.has(targetButton)) {
+            return;
+        }
+        if (targetButton) {
+            targetButton.addEventListener("click", onClickIssueReport);
+            eventMap.set(targetButton, onClickIssueReport);
+        }
+    };
+    window.addEventListener("DOMContentLoaded", function() {
+        gitbook.events.on("page.change", function() {
+            observeEvalEvent();
+            observeIssueReport();
+        });
+    });
+
+</script>
+<meta name="google-site-verification" content="bMotEbgYwkzA3k4PkuyK_NUdz0bKh-Phz0oUwNmRSVo"/>
+<style>
+    /*
+     * Disable antialias
+     */
+    * {
+        -webkit-font-smoothing: initial !important
+    }
+
+    body {
+        text-rendering: initial !important;
+        font-smoothing: initial !important;
+    }
+
+    /* deny access chapter */
+    .summary li.chapter > span {
+        cursor: not-allowed;
+        opacity: .3;
+    }
+
+    /* console ui */
+
+    .mirror-console-attach-button-wrapper {
+        margin-top: -1.275em;
+        margin-bottom: 1.275em
+    }
+
+    .mirror-console-wrapper {
+        margin-top: 1.275em;
+        margin-bottom: 1.275em
+    }
+
+    /* file name for codeblock */
+    .code-filename {
+        background-color: #eee;
+        display: inline-block;
+        padding: 2px 8px;
+        line-height: inherit;
+        margin-bottom: 0px !important;
+    }
+
+    /* Markdown */
+    /* Support horizon scroll */
+    /* https://stackoverflow.com/questions/17770257/scrolling-tables-horizontally-without-wrapping-them-in-div */
+    .markdown-section table {
+        max-width: 100%;
+        overflow-x: auto;
+        display: block;
+    }
+    .markdown-section sup,
+    .markdown-section sub {
+        font-size: 75%;
+    }
+
+    .book_footer {
+        text-align: center;
+        color: #000000;
+        background: #ddd;
+        font-size: 16px;
+        margin-top: 16px;
+        padding: 16px;
+    }
+
+    /* github-issue-feedback */
+    .gitbook-plugin-github-issue-feedback {
+        background-color: #333;
+        color: #fff;
+        opacity: 0.8;
+        padding: 4px;
+        margin-right: 24px;
+        margin-bottom: 4px;
+        border-radius: 6px;
+    }
+
+    .gitbook-plugin-github-issue-feedback:hover {
+        opacity: 1;
+    }
+
+    /* Hide footer on mobile */
+    /* Use navigation width */
+    @media (max-width: 1240px) {
+        .book_footer {
+            display: none;
+        }
+    }
+
+    .navigation {
+        min-width: 50px;
+    }
+
+    @media (min-width: 1240px) {
+        .honkit-plugin-sandpack {
+            width: calc(100% + 180px);
+            margin: 0 0 1em -90px;
+        }
+    }
+
+    .honkit-plugin-sandpack, .honkit-plugin-sandpack--buttonContainer {
+        margin-bottom: 1em;
+    }
+
+</style>
+<meta name="theme-color" content="#ffffff">
+<link rel="manifest" href="../../manifest.json">
+<script defer async>
+    // unregister old service worker(remove workbox)
+    // https://github.com/asciidwango/js-primer/pull/1701
+    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for (const registration of registrations) {
+            registration.unregister();
+        }
+    }).catch(function(err) {
+        console.error(new Error("Can not getRegistrations", {
+            cause: err
+        }));
+    });
+</script>
+
+    </head>
+    <body>
+        
+<div class="book honkit-cloak">
+    <div class="book-summary">
+        
+            
+            
+                <nav role="navigation">
+                
+
+
+<ul class="summary">
+    
+    
+
+    
+
+    
+        
+        
+    
+        <li class="chapter " data-level="1.1" data-path="../../">
+            
+                <a href="../../">
+            
+                    
+                    この書籍について
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2" data-path="../../intro/">
+            
+                <a href="../../intro/">
+            
+                    
+                    はじめに
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.2.1" data-path="../../intro/authors/">
+            
+                <a href="../../intro/authors/">
+            
+                    
+                    著者紹介
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.2" data-path="../../intro/sponsors/">
+            
+                <a href="../../intro/sponsors/">
+            
+                    
+                    JavaScript Primerスポンサー
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.3" data-path="../../intro/preparation/">
+            
+                <a href="../../intro/preparation/">
+            
+                    
+                    読みはじめる前の事前準備
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.4" data-path="../../intro/feedback/">
+            
+                <a href="../../intro/feedback/">
+            
+                    
+                    文章の間違いに気づいたら
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3" data-path="../">
+            
+                <a href="../">
+            
+                    
+                    第一部: 基本文法
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.3.1" data-path="../introduction/">
+            
+                <a href="../introduction/">
+            
+                    
+                    JavaScriptとは
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.2" data-path="../comments/">
+            
+                <a href="../comments/">
+            
+                    
+                    コメント
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.3" data-path="../variables/">
+            
+                <a href="../variables/">
+            
+                    
+                    変数と宣言
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.4" data-path="../read-eval-print/">
+            
+                <a href="../read-eval-print/">
+            
+                    
+                    値の評価と表示
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.5" data-path="../data-type/">
+            
+                <a href="../data-type/">
+            
+                    
+                    データ型とリテラル
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.6" data-path="../operator/">
+            
+                <a href="../operator/">
+            
+                    
+                    演算子
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.7" data-path="../implicit-coercion/">
+            
+                <a href="../implicit-coercion/">
+            
+                    
+                    暗黙的な型変換
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.8" data-path="../function-declaration/">
+            
+                <a href="../function-declaration/">
+            
+                    
+                    関数と宣言
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.9" data-path="../statement-expression/">
+            
+                <a href="../statement-expression/">
+            
+                    
+                    文と式
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.10" data-path="../condition/">
+            
+                <a href="../condition/">
+            
+                    
+                    条件分岐
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.11" data-path="../loop/">
+            
+                <a href="../loop/">
+            
+                    
+                    ループと反復処理
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.12" data-path="../object/">
+            
+                <a href="../object/">
+            
+                    
+                    オブジェクト
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.13" data-path="../prototype-object/">
+            
+                <a href="../prototype-object/">
+            
+                    
+                    プロトタイプオブジェクト
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.14" data-path="../array/">
+            
+                <a href="../array/">
+            
+                    
+                    配列
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.15" data-path="../string/">
+            
+                <a href="../string/">
+            
+                    
+                    文字列
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.16" data-path="../string-unicode/">
+            
+                <a href="../string-unicode/">
+            
+                    
+                    文字列とUnicode
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.17" data-path="../wrapper-object/">
+            
+                <a href="../wrapper-object/">
+            
+                    
+                    ラッパーオブジェクト
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter active" data-level="1.3.18" data-path="./">
+            
+                <a href="./">
+            
+                    
+                    関数とスコープ
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.19" data-path="../function-this/">
+            
+                <a href="../function-this/">
+            
+                    
+                    関数とthis
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.20" data-path="../class/">
+            
+                <a href="../class/">
+            
+                    
+                    クラス
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.21" data-path="../error-try-catch/">
+            
+                <a href="../error-try-catch/">
+            
+                    
+                    例外処理
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.22" data-path="../async/">
+            
+                <a href="../async/">
+            
+                    
+                    非同期処理:Promise/Async Function
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.23" data-path="../map-and-set/">
+            
+                <a href="../map-and-set/">
+            
+                    
+                    Map/Set
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.24" data-path="../json/">
+            
+                <a href="../json/">
+            
+                    
+                    JSON
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.25" data-path="../date/">
+            
+                <a href="../date/">
+            
+                    
+                    Date
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.26" data-path="../math/">
+            
+                <a href="../math/">
+            
+                    
+                    Math
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.27" data-path="../module/">
+            
+                <a href="../module/">
+            
+                    
+                    ECMAScriptモジュール
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.28" data-path="../ecmascript/">
+            
+                <a href="../ecmascript/">
+            
+                    
+                    ECMAScript
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.29" data-path="../other-parts/">
+            
+                <a href="../other-parts/">
+            
+                    
+                    第一部: おわりに
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4" data-path="../../use-case/">
+            
+                <a href="../../use-case/">
+            
+                    
+                    第二部: 応用編（ユースケース）
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.4.1" data-path="../../use-case/setup-local-env/">
+            
+                <a href="../../use-case/setup-local-env/">
+            
+                    
+                    アプリケーション開発の準備
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.2" data-path="../../use-case/ajaxapp/">
+            
+                <a href="../../use-case/ajaxapp/">
+            
+                    
+                    Ajax通信
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.4.2.1" data-path="../../use-case/ajaxapp/entrypoint/">
+            
+                <a href="../../use-case/ajaxapp/entrypoint/">
+            
+                    
+                    エントリーポイント
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.2.2" data-path="../../use-case/ajaxapp/http/">
+            
+                <a href="../../use-case/ajaxapp/http/">
+            
+                    
+                    HTTP通信
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.2.3" data-path="../../use-case/ajaxapp/display/">
+            
+                <a href="../../use-case/ajaxapp/display/">
+            
+                    
+                    データを表示する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.2.4" data-path="../../use-case/ajaxapp/promise/">
+            
+                <a href="../../use-case/ajaxapp/promise/">
+            
+                    
+                    Promiseを活用する
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3" data-path="../../use-case/nodecli/">
+            
+                <a href="../../use-case/nodecli/">
+            
+                    
+                    Node.jsでCLIアプリ
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.4.3.1" data-path="../../use-case/nodecli/helloworld/">
+            
+                <a href="../../use-case/nodecli/helloworld/">
+            
+                    
+                    Node.jsでHello World
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3.2" data-path="../../use-case/nodecli/argument-parse/">
+            
+                <a href="../../use-case/nodecli/argument-parse/">
+            
+                    
+                    コマンドライン引数を処理する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3.3" data-path="../../use-case/nodecli/read-file/">
+            
+                <a href="../../use-case/nodecli/read-file/">
+            
+                    
+                    ファイルを読み込む
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3.4" data-path="../../use-case/nodecli/md-to-html/">
+            
+                <a href="../../use-case/nodecli/md-to-html/">
+            
+                    
+                    MarkdownをHTMLに変換する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3.5" data-path="../../use-case/nodecli/refactor-and-unittest/">
+            
+                <a href="../../use-case/nodecli/refactor-and-unittest/">
+            
+                    
+                    ユニットテストを記述する
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4" data-path="../../use-case/todoapp/">
+            
+                <a href="../../use-case/todoapp/">
+            
+                    
+                    Todoアプリ
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.4.4.1" data-path="../../use-case/todoapp/entrypoint/">
+            
+                <a href="../../use-case/todoapp/entrypoint/">
+            
+                    
+                    エントリーポイント
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.2" data-path="../../use-case/todoapp/app-structure/">
+            
+                <a href="../../use-case/todoapp/app-structure/">
+            
+                    
+                    アプリの構成要素
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.3" data-path="../../use-case/todoapp/form-event/">
+            
+                <a href="../../use-case/todoapp/form-event/">
+            
+                    
+                    Todoアイテムの追加を実装する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.4" data-path="../../use-case/todoapp/event-model/">
+            
+                <a href="../../use-case/todoapp/event-model/">
+            
+                    
+                    イベントとモデル
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.5" data-path="../../use-case/todoapp/update-delete/">
+            
+                <a href="../../use-case/todoapp/update-delete/">
+            
+                    
+                    Todoアイテムの更新と削除を実装する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.6" data-path="../../use-case/todoapp/final/">
+            
+                <a href="../../use-case/todoapp/final/">
+            
+                    
+                    Todoアプリのリファクタリング
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5" data-path="../../appendix/links/">
+            
+                <a href="../../appendix/links/">
+            
+                    
+                    付録: 参考リンク集
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.6" data-path="../../cheatsheet/">
+            
+                <a href="../../cheatsheet/">
+            
+                    
+                    付録: JavaScriptチートシート
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.7" data-path="../../outro/">
+            
+                <a href="../../outro/">
+            
+                    
+                    おわりに
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+    
+
+    <li class="divider"></li>
+
+    <li>
+        <a href="https://github.com/honkit/honkit" target="blank" class="gitbook-link">
+            Published with HonKit
+        </a>
+    </li>
+</ul>
+
+
+                </nav>
+            
+        
+    </div>
+
+    <div class="book-body">
+        
+            <div class="body-inner">
+                
+                    
+
+<!-- Header -->
+<meta name="keywords" content="JavaScript,ECMAScript,JS,入門,チュートリアル,書籍,本,無料,Node.js,ブラウザ"/>
+<link rel="author" href="https://www.hatena.ne.jp/efcl/"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsearch.js@2/dist/cdn/docsearch.min.css"/>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/docsearch.js@2/dist/cdn/docsearch.min.js"></script>
+<!-- OGP -->
+<meta property="og:title" content="JavaScript Primer - 迷わないための入門書"/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://jsprimer.net/"/>
+<meta property="og:image" content="https://jsprimer.net/landing/img/cover-optimized.jpg"/>
+<meta property="og:site_name" content="JavaScript Primer"/>
+<meta property="og:description" content="JavaScript Primerは、JavaScriptの基礎から応用までを一貫して学べる入門書です。"/>
+<style>
+    .book-header {
+        display: flex;
+        flex-direction: row;
+        background-color: #333;
+    }
+
+    /* link color */
+    .book-header a {
+        color: #fff;
+    }
+
+    /* hover color */
+    .book-header .btn:hover, .book-header .btn:focus, .book-header a:focus, .book-header a:hover {
+        color: hsla(0, 0%, 100%, 0.75) !important;
+    }
+
+    /* Mobile header fixed */
+    @media (max-width: 768px) {
+        /* Headerを固定する */
+        .book-header {
+            position: fixed;
+            width: 100%;
+        }
+
+        /* Icon only */
+        .book-header-title-img {
+            margin: auto 18px auto 0 !important;
+        }
+
+        .book-header-title-h {
+            display: none;
+        }
+
+        /* Header分のズレを入れる */
+        .page-wrapper {
+            padding-top: 60px;
+        }
+
+        /* github-issue-feedbackを非表示にする */
+        .gitbook-plugin-github-issue-feedback {
+            display: none;
+        }
+    }
+
+    /* Dynamic created by GitBook*/
+    .btn.pull-left.js-toolbar-action {
+        order: 1;
+    }
+
+    .book-header-title {
+        order: 2;
+        display: inline-flex;
+        flex-direction: row;
+        color: #fff;
+    }
+
+    .book-header-title:hover {
+        color: hsla(0, 0%, 100%, 0.75);
+    }
+
+    .book-header-title-img {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        margin: auto 10px auto 0;
+    }
+
+    .book-header-title-h {
+        font-size: 20px;
+        margin: auto;
+        padding: 0;
+    }
+
+    .header-center {
+        order: 3;
+        display: inline-flex;
+        flex-direction: column;
+        justify-content: center;
+        /* self */
+        flex-grow: 1;
+        flex-shrink: 0;
+        flex-basis: auto;
+    }
+
+    .header-right {
+        order: 4;
+        display: inline-flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        /* icon size */
+        font-size: 24px;
+    }
+
+    .amazon-link, .github-link {
+        color: #fff;
+        /* Padding and make Vertical */
+        display: inline-flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding-left: 4px;
+        padding-right: 4px;
+    }
+
+    /* Desktop */
+    @media (min-width: 768px) {
+        .header-center {
+            align-items: center;
+        }
+
+        .header-right {
+            margin-right: 24px;
+        }
+    }
+
+    /* DocSearch */
+    @media (max-width: 768px) {
+        .algolia-autocomplete .ds-dropdown-menu {
+            max-width: calc(100vw - 32px) !important;
+            min-width: calc(100vw - 32px) !important;
+            width: calc(100vw - 32px) !important;
+            /* negative margin
+              This is absolute element
+              */
+            margin-left: -32px !important;
+        }
+
+        .algolia-autocomplete .algolia-docsearch-suggestion--content {
+            width: 100% !important;
+            padding-left: 0 !important;
+        }
+
+        .algolia-autocomplete .algolia-docsearch-suggestion--content:before {
+            display: none !important;
+        }
+
+        .algolia-autocomplete .algolia-docsearch-suggestion--subcategory-column {
+            display: none !important;
+        }
+
+        .algolia-autocomplete.algolia-autocomplete-right .ds-dropdown-menu {
+            right: inherit !important
+        }
+
+        .algolia-autocomplete.algolia-autocomplete-right .ds-dropdown-menu::before {
+            right: 50%;
+        }
+
+        .sbx-custom {
+            width: 92px !important;
+            padding: initial !important;
+        }
+
+        .amazon-link {
+            display: none;
+        }
+    }
+
+    /* SearchBox */
+    .searchbarWrapper {
+        height: 50px;
+    }
+
+
+    .sbx-custom {
+        display: inline-block;
+        position: relative;
+        min-width: 150px;
+        width: 300px;
+        max-width: 300px;
+        height: 33px;
+        white-space: nowrap;
+        box-sizing: border-box;
+        font-size: 14px;
+    }
+
+    .sbx-custom__wrapper {
+        width: 100%;
+        height: 100%;
+    }
+
+    .sbx-custom__input {
+        display: inline-block;
+        -webkit-transition: box-shadow .4s ease, background .4s ease;
+        transition: box-shadow .4s ease, background .4s ease;
+        border: 0;
+        border-radius: 5px;
+        box-shadow: inset 0 0 0 2px #CCCCCC;
+        background: #FFFFFF;
+        padding: 0 27px 0 33px;
+        width: 100%;
+        height: 100%;
+        vertical-align: middle;
+        white-space: normal;
+        font-size: inherit;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+    }
+
+    .sbx-custom__input::-webkit-search-decoration, .sbx-custom__input::-webkit-search-cancel-button, .sbx-custom__input::-webkit-search-results-button, .sbx-custom__input::-webkit-search-results-decoration {
+        display: none;
+    }
+
+    .sbx-custom__input:hover {
+        box-shadow: inset 0 0 0 2px #b3b3b3;
+    }
+
+    .sbx-custom__input:focus, .sbx-custom__input:active {
+        outline: 0;
+        box-shadow: inset 0 0 0 2px #4B54DE;
+        background: #FFFFFF;
+    }
+
+    .sbx-custom__input::-webkit-input-placeholder {
+        color: #BBBBBB;
+    }
+
+    .sbx-custom__input::-moz-placeholder {
+        color: #BBBBBB;
+    }
+
+    .sbx-custom__input:-ms-input-placeholder {
+        color: #BBBBBB;
+    }
+
+    .sbx-custom__input::placeholder {
+        color: #BBBBBB;
+    }
+
+    .sbx-custom__submit {
+        position: absolute;
+        top: 0;
+        right: inherit;
+        left: 0;
+        margin: 0;
+        border: 0;
+        border-radius: 4px 0 0 4px;
+        background-color: rgba(255, 255, 255, 0);
+        padding: 0;
+        width: 33px;
+        height: 100%;
+        vertical-align: middle;
+        text-align: center;
+        font-size: inherit;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+    .sbx-custom__submit::before {
+        display: inline-block;
+        margin-right: -4px;
+        height: 100%;
+        vertical-align: middle;
+        content: '';
+    }
+
+    .sbx-custom__submit:hover, .sbx-custom__submit:active {
+        cursor: pointer;
+    }
+
+    .sbx-custom__submit:focus {
+        outline: 0;
+    }
+
+    .sbx-custom__submit svg {
+        width: 17px;
+        height: 17px;
+        vertical-align: middle;
+        fill: #3A33D1;
+    }
+
+    .sbx-custom__reset {
+        display: none;
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        margin: 0;
+        border: 0;
+        background: none;
+        cursor: pointer;
+        padding: 0;
+        font-size: inherit;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        fill: rgba(0, 0, 0, 0.5);
+    }
+
+    .sbx-custom__reset:focus {
+        outline: 0;
+    }
+
+    .sbx-custom__reset svg {
+        display: block;
+        margin: 4px;
+        width: 17px;
+        height: 17px;
+    }
+
+    .sbx-custom__input:valid ~ .sbx-custom__reset {
+        display: block;
+        -webkit-animation-name: sbx-reset-in;
+        animation-name: sbx-reset-in;
+        -webkit-animation-duration: .15s;
+        animation-duration: .15s;
+    }
+
+    @-webkit-keyframes sbx-reset-in {
+        0% {
+            -webkit-transform: translate3d(-20%, 0, 0);
+            transform: translate3d(-20%, 0, 0);
+            opacity: 0;
+        }
+        100% {
+            -webkit-transform: none;
+            transform: none;
+            opacity: 1;
+        }
+    }
+
+    @keyframes sbx-reset-in {
+        0% {
+            -webkit-transform: translate3d(-20%, 0, 0);
+            transform: translate3d(-20%, 0, 0);
+            opacity: 0;
+        }
+        100% {
+            -webkit-transform: none;
+            transform: none;
+            opacity: 1;
+        }
+    }
+</style>
+<div class="book-header" role="navigation">
+    
+    <a class="book-header-title" href="../..">
+        <img class="book-header-title-img" alt="JavaScript Primer"
+             src="../../gitbook/icons/icon-128x128.png"/>
+        <h2 class="book-header-title-h" title="JavaScript Primer - 迷わないための入門書">JavaScript Primer</h2>
+    </a>
+    <div class="searchbarWrapper header-center">
+        <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+            <symbol xmlns="http://www.w3.org/2000/svg" id="sbx-icon-search-8" viewBox="0 0 40 40">
+                <path d="M16 32c8.835 0 16-7.165 16-16 0-8.837-7.165-16-16-16C7.162 0 0 7.163 0 16c0 8.835 7.163 16 16 16zm0-5.76c5.654 0 10.24-4.586 10.24-10.24 0-5.656-4.586-10.24-10.24-10.24-5.656 0-10.24 4.584-10.24 10.24 0 5.654 4.584 10.24 10.24 10.24zM28.156 32.8c-1.282-1.282-1.278-3.363.002-4.643 1.282-1.284 3.365-1.28 4.642-.003l6.238 6.238c1.282 1.282 1.278 3.363-.002 4.643-1.283 1.283-3.366 1.28-4.643.002l-6.238-6.238z"
+                      fill-rule="evenodd"></path>
+            </symbol>
+            <symbol xmlns="http://www.w3.org/2000/svg" id="sbx-icon-clear-5" viewBox="0 0 20 20">
+                <path d="M10 20c5.523 0 10-4.477 10-10S15.523 0 10 0 0 4.477 0 10s4.477 10 10 10zm1.35-10.123l3.567 3.568-1.225 1.226-3.57-3.568-3.567 3.57-1.226-1.227 3.568-3.568-3.57-3.57 1.227-1.224 3.568 3.568 3.57-3.567 1.224 1.225-3.568 3.57zM10 18.272c4.568 0 8.272-3.704 8.272-8.272S14.568 1.728 10 1.728 1.728 5.432 1.728 10 5.432 18.272 10 18.272z"
+                      fill-rule="evenodd"></path>
+            </symbol>
+        </svg>
+
+        <form novalidate="novalidate" onsubmit="return false;" class="searchbox sbx-custom">
+            <div role="search" class="sbx-custom__wrapper">
+                <input name="search" placeholder="Search words" autocomplete="off" required="required"
+                       class="sbx-custom__input" type="search">
+                <button type="submit" title="Submit your search query." class="sbx-custom__submit">
+                    <svg role="img" aria-label="Search">
+                        <use xlink:href="#sbx-icon-search-8"></use>
+                    </svg>
+                </button>
+                <button type="reset" title="Clear the search query." class="sbx-custom__reset">
+                    <svg role="img" aria-label="Reset">
+                        <use xlink:href="#sbx-icon-clear-5"></use>
+                    </svg>
+                </button>
+            </div>
+        </form>
+    </div>
+    <div class="header-right">
+        <!-- Icon: https://www.iconfinder.com/iconsets/circle-payment -->
+        <a class="amazon-link" title="Amazon: JavaScript Primer 改訂2版 迷わないための入門書"
+           href="https://www.amazon.co.jp/dp/4048931105/" target="_blank"><img
+                width="22"
+                height="22"
+                style="margin: 1px;"
+                src="../../gitbook/icons/amazon-icon.png" alt=""></a>
+        <a class="github-link" title="GitHub: asciidwango/js-primer" href="https://github.com/asciidwango/js-primer"
+           target="_blank"><i
+                class="fa fa-github fa-fw"></i></a>
+    </div>
+</div>
+
+<script defer>
+    // focus on search box
+    document.querySelector(".searchbox [type=\"reset\"]").addEventListener("click", function() {
+        this.parentNode.querySelector("input").focus();
+    });
+    // init DocSearch
+    var search = docsearch({
+        apiKey: "fd28ebaba94be0c39fb9fa1b2fed4f23", // use a SEARCH-ONLY api key here
+        indexName: "asciidwango",
+        inputSelector: ".sbx-custom__input",
+        debug: false // set to `true` if you want to inspect the dropdown menu's CSS
+    });
+</script>
+<script>
+    window.addEventListener("DOMContentLoaded", function() {
+        gitbook.events.on("page.change", function() {
+            setTimeout(() => console.clear(), 1000);
+        });
+    });
+</script>
+
+
+
+
+
+                    <div class="page-wrapper" tabindex="-1" role="main">
+                        <div class="page-inner">
+                            
+                                <section class="normal markdown-section">
+                                
+<style>
+    .page-sponsors {
+        background: #fafafa;
+    }
+    .page-sponsors .page-sponsors-list {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 0;
+        padding: 1em 0;
+        list-style: none;
+        gap: 8px;
+    }
+    .page-sponsors-footer {
+        text-align: center;
+        padding: 0;
+        margin: 0;
+    }
+</style>
+<div class="page-sponsors">
+
+    <div class="page-sponsors-footer">
+        JavaScript Primerの<a href="https://jsprimer.net/intro/sponsors/">スポンサーを募集中</a>
+    </div>
+
+</div>
+
+                                <html><head></head><body><h1 id="function-and-scope"><a name="function-and-scope" class="plugin-anchor" href="#function-and-scope"><i class="fa fa-link" aria-hidden="true"></i></a>関数とスコープ </h1>
+<p>定義された関数はそれぞれのスコープを持っています。スコープとは変数や関数の引数などを参照できる範囲を決めるものです。
+JavaScriptでは、新しい関数を定義するとその関数にひもづけられた新しいスコープが作成されます。関数を定義するということは処理をまとめるというだけではなく、変数が有効な範囲を決める新しいスコープを作っていると言えます。</p>
+<p>スコープの仕組みを理解することは関数をより深く理解することにつながります。なぜなら関数とスコープは密接な関係を持っているからです。
+この章では関数とスコープの関係を中心に、スコープとはどのような働きをしていて、スコープ内では変数の名前から取得する値がどのように決まるかを見ていきます。</p>
+<p>JavaScriptのスコープは、ES2015において直感的に理解しやすい仕組みが整備されました。
+基本的にはES2015以降の仕組みを理解していればコードを書く場合には問題ありません。</p>
+<p>しかし、既存のコードを理解するためには、ES2015より前に決められた古い仕組みについても知る必要があります。
+なぜなら、既存のコードは古い仕組みを使って書かれていることもあるためです。
+また、JavaScriptでは古い仕組みと新しい仕組みを混在して書くことができます。
+古い仕組みによるスコープは直感的でない挙動も多いため、古い仕組みについても補足していきます。</p>
+<h2 id="what-is-scope"><a name="what-is-scope" class="plugin-anchor" href="#what-is-scope"><i class="fa fa-link" aria-hidden="true"></i></a>スコープとは </h2>
+<p>スコープとは変数の名前や関数などの参照できる範囲を決めるものです。
+スコープの中で定義された変数はスコープの内側でのみ参照でき、スコープの外側からは参照できません。</p>
+<p>身近なスコープの例として関数によるスコープを見ていきます。</p>
+<p>次のコードでは、<code>fn</code>関数のブロック（<code>{</code>と<code>}</code>）内で変数<code>x</code>を定義しています。
+この変数<code>x</code>は<code>fn</code>関数のスコープに定義されているため、<code>fn</code>関数の内側では参照できます。
+一方、<code>fn</code>関数の外側から変数<code>x</code>は参照できないため<code>ReferenceError</code>が発生します。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">function</span> <span class="hljs-title function_">fn</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-keyword">const</span> x = <span class="hljs-number">1</span>;
+    <span class="hljs-comment">// fn関数のスコープ内から`x`は参照できる</span>
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(x); <span class="hljs-comment">// =&gt; 1</span>
+}
+<span class="hljs-title function_">fn</span>();
+<span class="hljs-comment">// fn関数のスコープ外から`x`は参照できないためエラー</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(x); <span class="hljs-comment">// =&gt; ReferenceError: x is not defined</span>
+</code></pre>
+<p>このコードを見てわかるように、変数<code>x</code>は<code>fn</code>関数のスコープにひもづけて定義されます。
+そのため、変数<code>x</code>は<code>fn</code>関数のスコープ内でのみ参照できます。</p>
+<p>関数は<strong>仮引数</strong>を持てますが、仮引数は関数のスコープにひもづけて定義されます。
+そのため、仮引数はその関数の中でのみ参照が可能で、関数の外からは参照できません。</p>
+<!-- Note: 関数の仮引数はvarで宣言されたものと同じ扱い
+
+関数の宣言
+- Set F.[[FormalParameters]] to ParameterList.
+- https://tc39.es/ecma262/#sec-functioninitialize
+- function objectの[[Environment]]ではなく、[[FormalParameters]]に代入される
+- 仮引数は関数のスコープではなくfunction objectに紐づく
+
+関数の初期化処理
+- https://tc39.es/ecma262/#sec-functiondeclarationinstantiation
+- [[FormalParameters]]は初期化時に`varEnv`に対して代入される
+- つまり、仮引数はvarで宣言しているのと同じになる
+- スコープという意味では内側のみから参照でき、外からは参照できないという点で同じ
+
+ -->
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">function</span> <span class="hljs-title function_">fn</span>(<span class="hljs-params">arg</span>) {
+    <span class="hljs-comment">// fn関数のスコープ内から仮引数`arg`は参照できる</span>
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(arg); <span class="hljs-comment">// =&gt; 1</span>
+}
+<span class="hljs-title function_">fn</span>(<span class="hljs-number">1</span>);
+<span class="hljs-comment">// fn関数のスコープ外から`arg`は参照できないためエラー</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(arg); <span class="hljs-comment">// =&gt; ReferenceError: arg is not defined</span>
+</code></pre>
+<p>このような、関数によるスコープのことを<strong>関数スコープ</strong>と呼びます。</p>
+<p>「<a href="../variables/">変数と宣言</a>」の章にて、<code>let</code>や<code>const</code>は同じスコープ内に同じ名前の変数を二重に定義できないという話をしました。
+これは、各スコープには同じ名前の変数は1つしか宣言できないためです（<code>var</code>による変数宣言と<code>function</code>による関数宣言は例外的に可能です）。</p>
+<pre><code class="lang-javascript"><span class="hljs-comment">// スコープ内に同じ"a"を定義すると SyntaxError となる</span>
+<span class="hljs-keyword">let</span> a;
+<span class="hljs-keyword">let</span> a;
+</code></pre>
+<p>一方、スコープが異なれば同じ名前で変数を宣言できます。
+次のコードでは、<code>fnA</code>関数と<code>fnB</code>関数という異なるスコープで、それぞれ変数<code>x</code>を定義できていることがわかります。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// 異なる関数のスコープには同じ"x"を定義できる</span>
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">fnA</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-keyword">let</span> x;
+}
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">fnB</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-keyword">let</span> x;
+}
+</code></pre>
+<p>このように、スコープが異なれば同じ名前の変数を定義できます。
+スコープの仕組みがないと、グローバルな空間内で一意な変数名を考える必要があります。
+スコープがあることで同じ名前の変数をスコープごとに定義できるため、スコープの役割は重要です。</p>
+<h2 id="block-scope"><a name="block-scope" class="plugin-anchor" href="#block-scope"><i class="fa fa-link" aria-hidden="true"></i></a>ブロックスコープ </h2>
+<p><code>{</code>と<code>}</code>で囲んだ範囲をブロックと呼びます（「<a href="../statement-expression/">文と式</a>」の章を参照）。
+ブロックもスコープを作成します。
+ブロック内で宣言された変数は、スコープ内でのみ参照でき、スコープの外側からは参照できません。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// ブロック内で定義した変数はスコープ内でのみ参照できる</span>
+{
+    <span class="hljs-keyword">const</span> x = <span class="hljs-number">1</span>;
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(x); <span class="hljs-comment">// =&gt; 1</span>
+}
+<span class="hljs-comment">// スコープの外から`x`を参照できないためエラー</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(x); <span class="hljs-comment">// =&gt; ReferenceError: x is not defined</span>
+</code></pre>
+<p>ブロックによるスコープのことを<strong>ブロックスコープ</strong>と呼びます。</p>
+<!-- Notes: ブロックスコープと仕様
+
+- ブロック`{}`は新しい[NewDeclarativeEnvironment](https://tc39.es/ecma262/#sec-newdeclarativeenvironment "NewDeclarativeEnvironment")を作成する
+- つまり、新しいLexicalEnvironmentというスコープを作成している
+- https://tc39.es/ecma262/#sec-block-runtime-semantics-evaluation
+- そして評価する際に、そのブロック内に宣言されている変数をスコープに対してひもづけている
+- https://tc39.es/ecma262/#sec-blockdeclarationinstantiation
+
+ -->
+<p>if文やwhile文などもブロックスコープを作成します。
+単独のブロックと同じく、ブロックの中で宣言した変数は外から参照できません。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// if文のブロック内で定義した変数はブロックスコープの中でのみ参照できる</span>
+<span class="hljs-keyword">if</span> (<span class="hljs-literal">true</span>) {
+    <span class="hljs-keyword">const</span> x = <span class="hljs-string">"inner"</span>;
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(x); <span class="hljs-comment">// =&gt; "inner"</span>
+}
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(x); <span class="hljs-comment">// =&gt; ReferenceError: x is not defined</span>
+</code></pre>
+<p>for文は、ループごとに新しいブロックスコープを作成します。
+このことは「各スコープには同じ名前の変数は1つしか宣言できない」のルールを考えてみるとわかりやすいです。
+次のコードでは、ループごとに<code>const</code>で<code>element</code>変数を定義していますが、エラーなく定義できています。
+これは、ループごとに別々のブロックスコープが作成され、変数の宣言もそれぞれ別々のスコープで行われるためです。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> array = [<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>, <span class="hljs-number">4</span>, <span class="hljs-number">5</span>];
+<span class="hljs-comment">// ループごとに新しいブロックスコープを作成する</span>
+<span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> element <span class="hljs-keyword">of</span> array) {
+    <span class="hljs-comment">// forのブロックスコープの中でのみ`element`を参照できる</span>
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(element);
+}
+<span class="hljs-comment">// ループの外からはブロックスコープ内の変数は参照できない</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(element); <span class="hljs-comment">// =&gt; ReferenceError: element is not defined</span>
+</code></pre>
+<!-- Note: forとブロックスコープの仕様
+
+- 仕様ではforをIterateする際に`CreatePerIterationEnvironment`で新しい NewDeclarativeEnvironmentを作成している
+- [9. Variables and scoping](http://exploringjs.com/es6/ch_variables.html#sec_let-const-loop-heads)
+- [ECMAScript 2015 Language Specification – ECMA-262 6th Edition](http://www.ecma-international.org/ecma-262/6.0/#sec-createperiterationenvironment)
+
+ -->
+<h2 id="scope-chain"><a name="scope-chain" class="plugin-anchor" href="#scope-chain"><i class="fa fa-link" aria-hidden="true"></i></a>スコープチェーン </h2>
+<p>関数やブロックはネスト（入れ子）して書けますが、同様にスコープもネストできます。
+次のコードではブロックの中にブロックを書いています。
+このとき外側のブロックスコープのことを<code>OUTER</code>、内側のブロックスコープのことを<code>INNER</code>と呼ぶことにします。</p>
+<pre><code class="lang-js">{
+    <span class="hljs-comment">// OUTERブロックスコープ</span>
+    {
+        <span class="hljs-comment">// INNERブロックスコープ</span>
+    }
+}
+</code></pre>
+<p>スコープがネストしている場合に、内側のスコープから外側のスコープにある変数を参照できます。
+次のコードでは、内側のINNERブロックスコープから外側のOUTERブロックスコープに定義されている変数<code>x</code>を参照できます。
+これは、ブロックスコープに限らず関数スコープでも同様です。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js">{
+    <span class="hljs-comment">// OUTERブロックスコープ</span>
+    <span class="hljs-keyword">const</span> x = <span class="hljs-string">"x"</span>;
+    {
+        <span class="hljs-comment">// INNERブロックスコープからOUTERブロックスコープの変数を参照できる</span>
+        <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(x); <span class="hljs-comment">// =&gt; "x"</span>
+    }
+}
+</code></pre>
+<p>変数を参照する際には、現在のスコープ（変数を参照する式が書かれているスコープ）から外側のスコープへと順番に変数が定義されているかを確認します。
+上記のコードでは、内側のINNERブロックスコープには変数<code>x</code>はありませんが、外側のOUTERブロックスコープに変数<code>x</code>が定義されているため参照できます。
+つまり、次のようなステップで参照したい変数を探索しています。</p>
+<ol>
+<li>INNERブロックスコープに変数<code>x</code>があるかを確認 =&gt; ない</li>
+<li>ひとつ外側のOUTERブロックスコープに変数<code>x</code>があるかを確認 =&gt; ある</li>
+</ol>
+<p>一方、現在のスコープも含め、外側のどのスコープにも該当する変数が定義されていない場合は、<code>ReferenceError</code>の例外が発生します。
+次の例では、どのスコープにも存在しない<code>xyz</code>を参照しているため、<code>ReferenceError</code>の例外が発生します。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js">{
+    <span class="hljs-comment">// OUTERブロックスコープ</span>
+    {
+        <span class="hljs-comment">// INNERブロックスコープ</span>
+        <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(xyz); <span class="hljs-comment">// =&gt; ReferenceError: xyz is not defined</span>
+    }
+}
+</code></pre>
+<p>このときも、現在のスコープ（変数を参照する式が書かれているスコープ）から外側のスコープへと順番に変数が定義されているかを確認しています。
+しかし、どのスコープにも変数<code>xyz</code>は定義されていないため、<code>ReferenceError</code>の例外が発生していました。
+つまり次のようなステップで参照したい変数を探索しています。</p>
+<ol>
+<li>INNERブロックスコープに変数<code>xyz</code>があるかを確認 =&gt; ない</li>
+<li>ひとつ外側のOUTERブロックスコープに変数<code>xyz</code>があるかを確認 =&gt; ない</li>
+<li>一番外側のスコープにも変数<code>xyz</code>は定義されていない =&gt; <code>ReferenceError</code>が発生</li>
+</ol>
+<p>この内側から外側のスコープへと順番に変数が定義されているか探す仕組みのことを<strong>スコープチェーン</strong>と呼びます。</p>
+<p>内側と外側のスコープ両方に同じ名前の変数が定義されている場合もスコープチェーンの仕組みで解決できます。
+次のコードでは、内側のINNERブロックスコープと外側のOUTERブロックスコープに同じ名前の変数<code>x</code>が定義されています。
+スコープチェーンの仕組みにより、現在のスコープに定義されている変数<code>x</code>を優先的に参照します。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js">{
+    <span class="hljs-comment">// OUTERブロックスコープ</span>
+    <span class="hljs-keyword">const</span> x = <span class="hljs-string">"outer"</span>;
+    {
+        <span class="hljs-comment">// INNERブロックスコープ</span>
+        <span class="hljs-keyword">const</span> x = <span class="hljs-string">"inner"</span>;
+        <span class="hljs-comment">// 現在のスコープ(INNERブロックスコープ)にある`x`を参照する</span>
+        <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(x); <span class="hljs-comment">// =&gt; "inner"</span>
+    }
+    <span class="hljs-comment">// 現在のスコープ(OUTERブロックスコープ)にある`x`を参照する</span>
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(x); <span class="hljs-comment">// =&gt; "outer"</span>
+}
+</code></pre>
+<p>このようにスコープは階層的な構造となっており、変数を参照する際にどの変数が参照できるかはスコープチェーンによって解決されています。</p>
+<h2 id="global-scope"><a name="global-scope" class="plugin-anchor" href="#global-scope"><i class="fa fa-link" aria-hidden="true"></i></a>グローバルスコープ </h2>
+<p>今までコードをプログラム直下に書いていましたが、ここにも暗黙的な<strong>グローバルスコープ</strong>（大域スコープ）と呼ばれるスコープが存在します。
+グローバルスコープとは名前のとおりもっとも外側にあるスコープで、プログラム実行時に暗黙的に作成されます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// プログラム直下はグローバルスコープ</span>
+<span class="hljs-keyword">const</span> x = <span class="hljs-string">"x"</span>;
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(x); <span class="hljs-comment">// =&gt; "x"</span>
+</code></pre>
+<p>グローバルスコープで定義した変数は<strong>グローバル変数</strong>と呼ばれ、グローバル変数はあらゆるスコープから参照できる変数となります。
+なぜなら、スコープチェーンの仕組みにより、最終的にもっとも外側のグローバルスコープに定義されている変数を参照できるためです。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// グローバル変数はどのスコープからも参照できる</span>
+<span class="hljs-keyword">const</span> globalVariable = <span class="hljs-string">"グローバル"</span>;
+<span class="hljs-comment">// ブロックスコープ</span>
+{
+    <span class="hljs-comment">// ブロックスコープ内には該当する変数が定義されてない -&gt; 外側のスコープへ</span>
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(globalVariable); <span class="hljs-comment">// =&gt; "グローバル"</span>
+}
+<span class="hljs-comment">// 関数スコープ</span>
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">fn</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-comment">// 関数ブロックスコープ内には該当する変数が定義されてない -&gt; 外側のスコープへ</span>
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(globalVariable); <span class="hljs-comment">// =&gt; "グローバル"</span>
+}
+<span class="hljs-title function_">fn</span>();
+</code></pre>
+<!-- textlint-disable preset-ja-technical-writing/sentence-length -->
+<p>グローバルスコープには自分で定義したグローバル変数以外に、プログラム実行時に自動的に定義される<strong>ビルトインオブジェクト</strong>があります。</p>
+<p>ビルトインオブジェクトには、大きく分けて2種類のものがあります。
+1つ目はECMAScript仕様が定義する<code>undefined</code>のような変数（「<a href="../data-type/#undefined-is-not-literal">undefinedはリテラルではない</a>」を参照）や<code>isNaN</code>のような関数、<code>Array</code>や<code>RegExp</code>などのコンストラクタ関数です。2つ目は実行環境（ブラウザやNode.jsなど）が定義するオブジェクトで<code>document</code>や<code>module</code>などがあります。
+どちらもグローバルスコープに自動的に定義されているという点で大きな使い分けはないため、この章ではどちらも<strong>ビルトインオブジェクト</strong>と呼ぶことにします。</p>
+<!-- Notes: global objectとbuilt-in object
+
+- global object: https://tc39.es/ecma262/#sec-global-object
+    - `global`でアクセスできる予定 https://github.com/tc39/proposal-global
+    - Arrayなどもglobal objectのプロパティの一種
+- builtin object: https://tc39.es/ecma262/#sec-built-in-object
+    - ECMAScriptの定義したものと実装が加えたオブジェクトをまとめた用語
+- 仕様どおりの定義で言えば、紹介してる`undefined`などはあくまでglobal objectのプロパティ
+- `global`を使ってプロパティとしてアクセスする方法は言及していないので省略している
+
+ -->
+<!-- textlint-enable preset-ja-technical-writing/sentence-length -->
+<p>ビルトインオブジェクトは、プログラム開始時にグローバルスコープへ自動的に定義されているためどのスコープからも参照できます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// ビルトインオブジェクトは実行環境が自動的に定義している</span>
+<span class="hljs-comment">// どこのスコープから参照してもReferenceErrorにはならない</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-built_in">isNaN</span>); <span class="hljs-comment">// =&gt; isNaN</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title class_">Array</span>); <span class="hljs-comment">// =&gt; Array</span>
+</code></pre>
+<p>自分で定義したグローバル変数とビルトインオブジェクトでは、グローバル変数が優先して参照されます。
+つまり次のようにビルトインオブジェクトと同じ名前の変数を定義すると、定義した変数が参照されます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// "Array"という名前の変数を定義</span>
+<span class="hljs-keyword">const</span> <span class="hljs-title class_">Array</span> = <span class="hljs-number">1</span>;
+<span class="hljs-comment">// 自分で定義した変数がビルトインオブジェクトより優先される</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title class_">Array</span>); <span class="hljs-comment">// =&gt; 1</span>
+</code></pre>
+<p>ビルトインオブジェクトと同じ名前の変数を定義したことにより、ビルトインオブジェクトを参照できなくなります。
+このように内側のスコープで外側のスコープと同じ名前の変数を定義することで、外側の変数が参照できなくなることを<strong>変数の隠蔽</strong>（shadowing）と呼びます。</p>
+<p>この問題を回避する方法としては、むやみにグローバルスコープへ変数を定義しないことです。グローバルスコープでビルトインオブジェクトと名前が衝突するとすべてのスコープへ影響を与えますが、関数のスコープ内では影響範囲がその関数の中だけにとどまります。</p>
+<p>ビルトインオブジェクトと同じ名前を避けることは難しいです。
+なぜならビルトインオブジェクトには実行環境（ブラウザやNode.jsなど）がそれぞれ独自に定義したものが多く存在するためです。
+関数などを活用して小さなスコープを中心にしてプログラムを書くことで、ビルトインオブジェクトと同じ名前の変数があっても影響範囲を限定できます。</p>
+<h2 id="reduce-scope"><a name="reduce-scope" class="plugin-anchor" href="#reduce-scope"><i class="fa fa-link" aria-hidden="true"></i></a>[コラム] 変数を参照できる範囲を小さくする </h2>
+<p>グローバル変数に限らず、特定の変数を参照できる範囲を小さくするのはよいことです。
+なぜなら、現在のスコープの変数を参照するつもりがグローバル変数を参照したり、その逆も起きることがあるからです。
+あらゆる変数がグローバルスコープにあると、どこでその変数が参照されているのかを把握できなくなります。
+これを避けるシンプルな考え方は、変数はできるだけ利用するスコープ内に定義するというものです。</p>
+<p>次のコードでは、<code>doHeavyTask</code>関数の実行時間を計測しようとしています。
+<code>Date.now</code>静的メソッドは現在の時刻をミリ秒にして返す関数です。
+<code>Date.now</code>静的メソッドを使った<strong>実行後の時刻</strong>から<strong>実行前の時刻</strong>を引くことで、間に行われた処理の実行時間が得られます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">function</span> <span class="hljs-title function_">doHeavyTask</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-comment">// 計測したい処理</span>
+}
+<span class="hljs-keyword">const</span> startTime = <span class="hljs-title class_">Date</span>.<span class="hljs-title function_">now</span>();
+<span class="hljs-title function_">doHeavyTask</span>();
+<span class="hljs-keyword">const</span> endTime = <span class="hljs-title class_">Date</span>.<span class="hljs-title function_">now</span>();
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">`実行時間は<span class="hljs-subst">${endTime - startTime}</span>ミリ秒`</span>);
+</code></pre>
+<p>このコードでは、計測処理以外で利用しない<code>startTime</code>と<code>endTime</code>という変数がグローバルスコープに定義されています。
+プログラム全体が短い場合はあまり問題になりませんが、プログラムが長くなっていくにつれ影響の範囲が広がっていきます。
+この2つの変数を参照できる範囲を小さくする簡単な方法は、この実行時間を計測する処理を関数にすることです。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// 実行時間を計測したい関数をコールバック関数として引数に渡す</span>
+<span class="hljs-keyword">const</span> <span class="hljs-title function_">measureTask</span> = (<span class="hljs-params">taskFn</span>) =&gt; {
+    <span class="hljs-keyword">const</span> startTime = <span class="hljs-title class_">Date</span>.<span class="hljs-title function_">now</span>();
+    <span class="hljs-title function_">taskFn</span>();
+    <span class="hljs-keyword">const</span> endTime = <span class="hljs-title class_">Date</span>.<span class="hljs-title function_">now</span>();
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">`実行時間は<span class="hljs-subst">${endTime - startTime}</span>ミリ秒`</span>);
+};
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">doHeavyTask</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-comment">// 計測したい処理</span>
+}
+<span class="hljs-title function_">measureTask</span>(doHeavyTask);
+</code></pre>
+<p>これにより、<code>startTime</code>と<code>endTime</code>という変数をグローバルスコープからなくせました。
+また、実行時間を計測するという処理を<code>measureTask</code>という関数にしたことで再利用できます。</p>
+<p>コードの量が増えていくにつれ、人が一度に把握できる量にも限界がやってきます。
+そのため、人が一度に把握できる範囲のサイズに処理をまとめていくことが必要です。
+この問題を解決するアプローチとして、変数を参照できる範囲を小さくするために、処理を関数にまとめるという手法がよく利用されます。</p>
+<h2 id="hoisting-var"><a name="hoisting-var" class="plugin-anchor" href="#hoisting-var"><i class="fa fa-link" aria-hidden="true"></i></a>関数スコープとvarの巻き上げ </h2>
+<!-- textlint-disable eslint -->
+<p>変数宣言には<code>var</code>、<code>let</code>、<code>const</code>が利用できます。
+「<a href="../variables/">変数と宣言</a>」の章において、「<code>let</code>は<code>var</code>を改善したバージョン」と紹介したように、<code>let</code>は<code>var</code>を改善する目的で導入された構文です。<code>const</code>は再代入できないという点以外は<code>let</code>と同じ動作になります。そのため、<code>let</code>が使える場合に<code>var</code>を使う理由はありませんが、既存のコードや既存のライブラリなどでは<code>var</code>が利用されている場面もあるため、<code>var</code>の動作を理解する必要があります。</p>
+<p>まず最初に、<code>let</code>と<code>var</code>で共通する動作を見ていきます。
+<code>let</code>と<code>var</code>どちらも、初期値を指定せずに宣言した変数の評価結果は暗黙的に<code>undefined</code>になります。
+また、<code>let</code>と<code>var</code>どちらも、変数宣言をした後に値を代入できます。</p>
+<p>次のコードでは、それぞれ初期値を持たない変数を<strong>宣言した後</strong>に参照すると、変数の評価結果は<code>undefined</code>となっています。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">let</span> let_x;
+<span class="hljs-keyword">var</span> var_x;
+<span class="hljs-comment">// 宣言後にそれぞれの変数を参照すると`undefined`となる</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(let_x); <span class="hljs-comment">// =&gt; undefined</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(var_x); <span class="hljs-comment">// =&gt; undefined</span>
+<span class="hljs-comment">// 宣言後に値を代入できる</span>
+let_x = <span class="hljs-string">"letのx"</span>;
+var_x = <span class="hljs-string">"varのx"</span>;
+</code></pre>
+<p>次に、<code>let</code>と<code>var</code>で異なる動作を見ていきます。</p>
+<p><code>let</code>では、変数を<strong>宣言する前</strong>にその変数を参照すると<code>ReferenceError</code>の例外が発生して参照できません。
+次のコードでは、変数を宣言する前に変数<code>x</code>を参照したため<code>ReferenceError</code>となっています。
+エラーメッセージから、変数<code>x</code>が存在しないからエラーになっているのではなく、実際に宣言した行より前に参照したためエラーとなっているのがわかります。<sup><a href="#fn_1" id="reffn_1">1</a></sup></p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(x); <span class="hljs-comment">// =&gt; ReferenceError: can't access lexical declaration `x' before initialization</span>
+<span class="hljs-keyword">let</span> x = <span class="hljs-string">"letのx"</span>;
+</code></pre>
+<p>一方<code>var</code>では、変数を<strong>宣言する前</strong>にその変数を参照しても<code>undefined</code>となります。
+次のコードは、変数を宣言する前に参照しているにもかかわらずエラーにはならず、変数<code>x</code>の評価結果は<code>undefined</code>となります。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// var宣言より前に参照してもエラーにならない</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(x); <span class="hljs-comment">// =&gt; undefined</span>
+<span class="hljs-keyword">var</span> x = <span class="hljs-string">"varのx"</span>;
+</code></pre>
+<p>このように<code>var</code>で宣言された変数が宣言前に参照でき、その値が<code>undefined</code>となる特殊な動きをしていることがわかります。</p>
+<p>この<code>var</code>の振る舞いを理解するために、変数宣言が<strong>宣言</strong>と<strong>代入</strong>の2つの部分から構成されていると考えてみましょう。
+<code>var</code>による変数宣言は、<strong>宣言</strong>部分が暗黙的にもっとも近い関数またはグローバルスコープの先頭に巻き上げられ、<strong>代入</strong>部分はそのままの位置に残るという特殊な動作をします。</p>
+<p>この動作により、変数<code>x</code>を参照するコードより前に変数<code>x</code>の宣言部分が移動し、変数<code>x</code>の評価結果は暗黙的に<code>undefined</code>となっています。
+つまり、先ほどのコードは実際の実行時には、次のように解釈されて実行されていると考えられます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// 解釈されたコード</span>
+<span class="hljs-comment">// スコープの先頭に宣言部分が巻き上げられる</span>
+<span class="hljs-keyword">var</span> x;
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(x); <span class="hljs-comment">// =&gt; undefined</span>
+<span class="hljs-comment">// 変数への代入はそのままの位置に残る</span>
+x = <span class="hljs-string">"varのx"</span>;
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(x); <span class="hljs-comment">// =&gt; "varのx"</span>
+</code></pre>
+<p>さらに、<code>var</code>変数の宣言の巻き上げは、ブロックスコープを無視してもっとも近い関数またはグローバルスコープに変数をひもづけます。
+そのため、次のようにブロック<code>{}</code>で<code>var</code>による変数宣言を囲んでも、もっとも近い関数スコープである<code>fn</code>関数の直下に<strong>宣言</strong>部分が巻き上げられます
+（if文やfor文におけるブロックスコープも同様に無視されます）。</p>
+<pre><code class="lang-js"><span class="hljs-keyword">function</span> <span class="hljs-title function_">fn</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-comment">// 内側のスコープにあるはずの変数`x`が参照できる</span>
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(x); <span class="hljs-comment">// =&gt; undefined</span>
+    {
+        <span class="hljs-keyword">var</span> x = <span class="hljs-string">"varのx"</span>;
+    }
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(x); <span class="hljs-comment">// =&gt; "varのx"</span>
+}
+<span class="hljs-title function_">fn</span>();
+</code></pre>
+<p>つまり、先ほどのコードは実際の実行時には、次のように解釈されて実行されていると考えられます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// 解釈されたコード</span>
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">fn</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-comment">// もっとも近い関数スコープの先頭に宣言部分が巻き上げられる</span>
+    <span class="hljs-keyword">var</span> x;
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(x); <span class="hljs-comment">// =&gt; undefined</span>
+    {
+        <span class="hljs-comment">// 変数への代入はそのままの位置に残る</span>
+        x = <span class="hljs-string">"varのx"</span>;
+    }
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(x); <span class="hljs-comment">// =&gt; "varのx"</span>
+}
+<span class="hljs-title function_">fn</span>();
+</code></pre>
+<p>この変数の<strong>宣言</strong>部分がもっとも近い関数またはグローバルスコープの先頭に移動しているように見える動作のことを変数の<strong>巻き上げ</strong>（hoisting）と呼びます。</p>
+<p>このように<code>var</code>は<code>let</code>、<code>const</code>とは異なった動作をしています。
+<code>var</code>は巻き上げによりブロックスコープを無視して、宣言部分を自動的に関数スコープの先頭に移動するという予測しにくい問題を持っています。
+この問題のもっとも簡単な回避方法は<code>var</code>を使わないことですが、<code>var</code>を含んだコードではこの動作に気をつける必要があります。</p>
+<!-- textlint-enable eslint -->
+<h2 id="function-declaration-hoisting"><a name="function-declaration-hoisting" class="plugin-anchor" href="#function-declaration-hoisting"><i class="fa fa-link" aria-hidden="true"></i></a>関数宣言と巻き上げ </h2>
+<!-- textlint-disable eslint -->
+<p><code>function</code>キーワードを使った関数宣言も<code>var</code>と同様に、もっとも近い関数またはグローバルスコープの先頭に<strong>巻き上げ</strong>られます。
+次のコードでは、実際に<code>hello</code>関数を宣言した行より前に関数を呼び出せます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// `hello`関数の宣言より前に呼び出せる</span>
+<span class="hljs-title function_">hello</span>(); <span class="hljs-comment">// =&gt; "Hello"</span>
+
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">hello</span>(<span class="hljs-params"></span>){
+    <span class="hljs-keyword">return</span> <span class="hljs-string">"Hello"</span>;
+}
+</code></pre>
+<p>これは、関数宣言は<strong>宣言</strong>そのものであるため、<code>hello</code>関数そのものがスコープの先頭に巻き上げられます。
+つまり先ほどのコードは、次のように解釈されて実行されていると考えられます。</p>
+<pre><code class="lang-js"><span class="hljs-comment">// 解釈されたコード</span>
+<span class="hljs-comment">// `hello`関数の宣言が巻き上げられる</span>
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">hello</span>(<span class="hljs-params"></span>){
+    <span class="hljs-keyword">return</span> <span class="hljs-string">"Hello"</span>;
+}
+
+<span class="hljs-title function_">hello</span>(); <span class="hljs-comment">// =&gt; "Hello"</span>
+</code></pre>
+<p><code>function</code>キーワードによる関数宣言も巻き上げられます。
+しかし、<code>var</code>による変数宣言の巻き上げとは異なり、問題となることはほとんどありません。
+なぜなら、実際に巻き上げられた関数を呼び出せるためです。</p>
+<p>注意点として、<code>var</code>で宣言された変数へ関数を代入した場合は<code>var</code>のルールで巻き上げられます。
+<!-- textlint-enable eslint -->
+<!-- textlint-disable -->
+そのため、<code>var</code>で変数へ関数を代入する関数式では、<code>hello</code>変数が巻き上げにより<code>undefined</code>となるため呼び出せません（「<a href="../function-declaration/#function-expression">関数と宣言（関数式）</a>」を参照）。
+<!-- textlint-enable -->
+<!-- textlint-disable eslint --></p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// `hello`変数は巻き上げられ、暗黙的に`undefined`となる</span>
+<span class="hljs-title function_">hello</span>(); <span class="hljs-comment">// =&gt; TypeError: hello is not a function</span>
+
+<span class="hljs-comment">// `hello`変数へ関数を代入している</span>
+<span class="hljs-keyword">var</span> hello = <span class="hljs-keyword">function</span>(<span class="hljs-params"></span>){
+    <span class="hljs-keyword">return</span> <span class="hljs-string">"Hello"</span>;
+};
+</code></pre>
+<!-- textlint-enable eslint -->
+<h3 id="immediate-function"><a name="immediate-function" class="plugin-anchor" href="#immediate-function"><i class="fa fa-link" aria-hidden="true"></i></a>[コラム] 即時実行関数 </h3>
+<p>即時実行関数（<strong>IIFE</strong>, <em>Immediately-Invoked Function Expression</em>）は、
+グローバルスコープの汚染を避けるために生まれたイディオムです。</p>
+<p>次のように、無名関数を宣言した直後に呼び出すことで、任意の処理を関数のスコープに閉じて実行できます。
+関数スコープを作ることで<code>foo</code>変数は無名関数の外側からはアクセスできません。</p>
+<!-- textlint-disable eslint -->
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// 無名関数を宣言 + 実行を同時に行っている</span>
+(<span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-comment">// 関数のスコープ内でfoo変数を宣言している</span>
+    <span class="hljs-keyword">var</span> foo = <span class="hljs-string">"foo"</span>;
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(foo); <span class="hljs-comment">// =&gt; "foo"</span>
+})();
+<span class="hljs-comment">// foo変数のスコープ外</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-keyword">typeof</span> foo === <span class="hljs-string">"undefined"</span>); <span class="hljs-comment">// =&gt; true</span>
+</code></pre>
+<p>関数を<strong>式</strong>として定義して、そのまま呼び出しています。
+<code>function</code>からはじまってしまうとJavaScriptエンジンが<strong>関数宣言</strong>と解釈してしまうため、無害なカッコなどで囲んで<strong>関数式</strong>として解釈させるのが特徴的な記法です。これは次のように書いた場合と意味は同じですが、無名関数を定義して実行するため短く書くことができ、余計な関数定義がグローバルスコープに残りません。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">function</span> <span class="hljs-title function_">fn</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-keyword">var</span> foo = <span class="hljs-string">"foo"</span>;
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(foo); <span class="hljs-comment">// =&gt; "foo"</span>
+}
+<span class="hljs-title function_">fn</span>();
+<span class="hljs-comment">// foo変数のスコープ外</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-keyword">typeof</span> foo === <span class="hljs-string">"undefined"</span>); <span class="hljs-comment">// =&gt; true</span>
+</code></pre>
+<p>ECMAScript 5までは、変数を宣言する方法は<code>var</code>しか存在しませんでした。
+そのため、即時実行関数は<code>var</code>によるグローバルスコープの汚染を防ぐために使われていました。</p>
+<p>しかしECMAScript 2015で導入された<code>let</code>と<code>const</code>により、ブロックスコープに対して変数宣言できるようになりました。
+そのため、グローバルスコープの汚染を防ぐための即時実行関数は不要です。
+先ほどの即時実行関数は次のように<code>let</code>や<code>const</code>とブロックスコープで置き換えられます。</p>
+<!-- textlint-enable eslint -->
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js">{
+    <span class="hljs-comment">// ブロックスコープ内でfoo変数を宣言している</span>
+    <span class="hljs-keyword">const</span> foo = <span class="hljs-string">"foo"</span>;
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(foo); <span class="hljs-comment">// =&gt; "foo"</span>
+}
+<span class="hljs-comment">// foo変数のスコープ外</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-keyword">typeof</span> foo === <span class="hljs-string">"undefined"</span>); <span class="hljs-comment">// =&gt; true</span>
+</code></pre>
+<h2 id="closure"><a name="closure" class="plugin-anchor" href="#closure"><i class="fa fa-link" aria-hidden="true"></i></a>クロージャー </h2>
+<p>最後にこの章ではクロージャーと呼ばれる関数とスコープに関わる性質について見ていきます。
+クロージャーとは「外側のスコープにある変数への参照を保持できる」という関数が持つ性質のことです。</p>
+<p>クロージャーは言葉で説明しただけではわかりにくい性質です。
+このセクションでは、クロージャーを使ったコードがどのように動くのかを理解することを目標にします。</p>
+<p>次の例では<code>createCounter</code>関数が、関数内で定義した<code>increment</code>関数を返しています。
+その返された<code>increment</code>関数を<code>myCounter</code>変数に代入しています。この<code>myCounter</code>変数を実行するたびに1, 2, 3と1ずつ増えた値を返しています。</p>
+<p>さらに、もう一度<code>createCounter</code>関数を実行して、その返り値を<code>newCounter</code>変数に代入します。
+<code>newCounter</code>変数も実行するたびに1ずつ増えていますが、<code>myCounter</code>変数とその値を共有しているわけではないことがわかります。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// `increment`関数を定義して返す関数</span>
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">createCounter</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-keyword">let</span> count = <span class="hljs-number">0</span>;
+    <span class="hljs-comment">// `increment`関数は`count`変数を参照</span>
+    <span class="hljs-keyword">function</span> <span class="hljs-title function_">increment</span>(<span class="hljs-params"></span>) {
+        count = count + <span class="hljs-number">1</span>;
+        <span class="hljs-keyword">return</span> count;
+    }
+    <span class="hljs-keyword">return</span> increment;
+}
+<span class="hljs-comment">// `myCounter`は`createCounter`が返した関数を参照</span>
+<span class="hljs-keyword">const</span> myCounter = <span class="hljs-title function_">createCounter</span>();
+<span class="hljs-title function_">myCounter</span>(); <span class="hljs-comment">// =&gt; 1</span>
+<span class="hljs-title function_">myCounter</span>(); <span class="hljs-comment">// =&gt; 2</span>
+<span class="hljs-comment">// 新しく`newCounter`を定義する</span>
+<span class="hljs-keyword">const</span> newCounter = <span class="hljs-title function_">createCounter</span>();
+<span class="hljs-title function_">newCounter</span>(); <span class="hljs-comment">// =&gt; 1</span>
+<span class="hljs-title function_">newCounter</span>(); <span class="hljs-comment">// =&gt; 2</span>
+<span class="hljs-comment">// `myCounter`と`newCounter`は別々の状態を持っている</span>
+<span class="hljs-title function_">myCounter</span>(); <span class="hljs-comment">// =&gt; 3</span>
+<span class="hljs-title function_">newCounter</span>(); <span class="hljs-comment">// =&gt; 3</span>
+</code></pre>
+<p>このように、まるで関数が状態（ここでは1ずつ増える<code>count</code>という値）を持っているように振る舞える仕組みの背景にはクロージャーがあります。
+クロージャーは直感的に理解しにくいため、まずはクロージャーを理解するために必要な「静的スコープ」と「メモリ管理の仕組み」について見ていきます。</p>
+<h3 id="static-scope"><a name="static-scope" class="plugin-anchor" href="#static-scope"><i class="fa fa-link" aria-hidden="true"></i></a>静的スコープ </h3>
+<p>クロージャーを理解するために、今まで意識してこなかったスコープの性質について見ていきます。
+JavaScriptのスコープには、どの識別子がどの変数を参照するかが静的に決定されるという性質があります。
+つまり、コードを実行する前にどの識別子がどの変数を参照しているかがわかるということです。</p>
+<p>次のような例を見てみます。
+<code>printX</code>関数内で変数<code>x</code>を参照していますが、変数<code>x</code>はグローバルスコープと関数<code>run</code>の中で、それぞれ定義されています。
+このとき<code>printX</code>関数内の<code>x</code>という識別子がどの変数<code>x</code>を参照するかは静的に決定されます。</p>
+<p>結論から言えば、<code>printX</code>関数中にある識別子<code>x</code>はグローバルスコープ（＊1）の変数<code>x</code>を参照します。
+そのため、<code>printX</code>関数の実行結果は常に<code>10</code>となります。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> x = <span class="hljs-number">10</span>; <span class="hljs-comment">// ＊1</span>
+
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">printX</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-comment">// この識別子`x`は常に ＊1 の変数`x`を参照する</span>
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(x); <span class="hljs-comment">// =&gt; 10</span>
+}
+
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">run</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-keyword">const</span> x = <span class="hljs-number">20</span>; <span class="hljs-comment">// ＊2</span>
+    <span class="hljs-title function_">printX</span>(); <span class="hljs-comment">// 常に10が出力される</span>
+}
+
+<span class="hljs-title function_">run</span>();
+</code></pre>
+<p>スコープチェーンの仕組みを思い出すと、この識別子<code>x</code>は次のように名前解決されてグローバルスコープの変数<code>x</code>を参照することがわかります。</p>
+<ol>
+<li><code>printX</code>の関数スコープに変数<code>x</code>が定義されていない</li>
+<li>ひとつ外側のスコープ（グローバルスコープ）を確認する</li>
+<li>ひとつ外側のスコープに<code>const x = 10;</code>が定義されているので、識別子<code>x</code>はこの変数を参照する</li>
+</ol>
+<p>つまり、<code>printX</code>関数中に書かれた<code>x</code>という識別子は、<code>run</code>関数の実行とは関係なく、静的に＊1で定義された変数<code>x</code>を参照することが決定されます。
+このように、どの識別子がどの変数を参照しているかを静的に決定する性質を<strong>静的スコープ</strong>と呼びます。</p>
+<p>この静的スコープの仕組みは<code>function</code>キーワードを使った関数宣言、メソッド、Arrow Functionなどすべての関数で共通する性質です。</p>
+<h3 id="dynamic-scope"><a name="dynamic-scope" class="plugin-anchor" href="#dynamic-scope"><i class="fa fa-link" aria-hidden="true"></i></a>[コラム] 動的スコープ </h3>
+<p>JavaScriptは静的スコープです。
+しかし、動的スコープという呼び出し元により識別子がどの変数を参照するかが変わる仕組みを持つ言語もあります。</p>
+<p>次のコードは、動的スコープの動きを説明する<strong>疑似的な言語のコード例</strong>です。
+識別子<code>x</code>が呼び出し元のスコープを参照する仕組みである場合には、次のような結果になります。</p>
+<pre><code>// 動的スコープの疑似的な言語のコード例（JavaScriptではありません）
+// 変数`x`を宣言
+var x = 10;
+
+// `printX`という関数を定義
+fn printX() {
+    // 動的スコープの言語では、識別子`x`は呼び出し元によってどの変数`x`を参照するかが変わる
+    // `print`関数でコンソールへログ出力する
+    print(x);
+}
+
+fn run() {
+    // 呼び出し元のスコープで、変数`x`を定義している
+    var x = 20;
+    printX();
+}
+
+printX(); // ここでは 10 が出力される
+run(); // ここでは 20 が出力される
+</code></pre><p>このように関数呼び出し時に呼び出し元のスコープの変数を参照する仕組みを<strong>動的スコープ</strong>と呼びます。</p>
+<p>JavaScriptは変数や関数の参照先は静的スコープで決まるため、上記のような動的スコープではありません。
+しかし、JavaScriptでも<code>this</code>という特別なキーワードだけは、呼び出し元によって動的に参照先が変わります。
+<code>this</code>というキーワードについては次の章で解説します。</p>
+<h2 id="memory-management"><a name="memory-management" class="plugin-anchor" href="#memory-management"><i class="fa fa-link" aria-hidden="true"></i></a>メモリ管理の仕組み </h2>
+<p>プログラミング言語は、使わなくなった変数やデータを解放する仕組みを持っています。
+なぜなら、変数や関数を定義すると定義されたデータはメモリ上に確保されますが、ハードウェアのメモリは有限だからです。
+そのため、メモリからデータがあふれないように、必要なタイミングで不要なデータをメモリから解放する必要があります。</p>
+<p>不要なデータをメモリから解放する方法は言語によって異なりますが、JavaScriptでは<strong>ガベージコレクション</strong>が採用されています。
+ガベージコレクションとは、どこからも参照されなくなったデータを不要なデータと判断して自動的にメモリ上から解放する仕組みのことです。</p>
+<p>JavaScriptにはガベージコレクションがあるため、手動でメモリを解放するコードを書く必要はありません。
+しかし、ガベージコレクションといったメモリ管理の仕組みを理解することは、スコープやクロージャーに関係するため大切です。</p>
+<p>どのようなタイミングでメモリ上から不要なデータが解放されるのか、具体的な例を見てみましょう。</p>
+<p>次の例では、最初に<code>"before text"</code>という文字列のデータがメモリ上に確保され、変数<code>x</code>はそのメモリ上のデータを参照しています。
+その後、<code>"after text"</code>という新しい文字列のデータを作り、変数<code>x</code>はその新しいデータへ参照先を変えています。</p>
+<p>このとき、最初にメモリ上へ確保した<code>"before text"</code>という文字列のデータはどこからも参照されなくなっています。
+どこからも参照されなくなった時点で不要になったデータと判断されるためガベージコレクションの回収対象となります。
+その後、任意のタイミングでガベージコレクションによって回収されてメモリ上から解放されます。<sup><a href="#fn_2" id="reffn_2">2</a></sup></p>
+<pre><code class="lang-js"><span class="hljs-keyword">let</span> x = <span class="hljs-string">"before text"</span>;
+<span class="hljs-comment">// 変数`x`に新しいデータを代入する</span>
+x = <span class="hljs-string">"after text"</span>;
+<span class="hljs-comment">// このとき"before text"というデータはどこからも参照されなくなる</span>
+<span class="hljs-comment">// その後、ガベージコレクションによってメモリ上から解放される</span>
+</code></pre>
+<p>次にこのガベージコレクションと関数の関係性について考えてみましょう。
+よくある誤解として「関数の中で作成したデータは、その関数の実行が終了したら解放される」というのがあります。
+関数の中で作成したデータは、その関数の実行が終了した時点で必ずしも解放されるわけではありません。</p>
+<p>具体的に、「関数の実行が終了した際に解放される場合」と「関数の実行が終了しても解放されない場合」の例をそれぞれ見ていきます。</p>
+<p>まずは、関数の実行が終了した際に解放されるデータの例です。</p>
+<p>次のコードでは、<code>printX</code>関数の中で変数<code>x</code>を定義しています。
+この変数<code>x</code>は、<code>printX</code>関数が実行されるたびに定義され、実行終了後にどこからも参照されなくなります。
+どこからも参照されなくなったものは、ガベージコレクションによって回収されてメモリ上から解放されます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">function</span> <span class="hljs-title function_">printX</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-keyword">const</span> x = <span class="hljs-string">"X"</span>;
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(x); <span class="hljs-comment">// =&gt; "X"</span>
+}
+
+<span class="hljs-title function_">printX</span>();
+<span class="hljs-comment">// この時点で`"X"`を参照するものはなくなる -&gt; 解放される</span>
+</code></pre>
+<p>次に、関数の実行が終了しても解放されないデータの例です。</p>
+<p>次のコードでは、<code>createArray</code>関数の中で定義された変数<code>tempArray</code>は、<code>createArray</code>関数の返り値となっています。
+この、関数で定義された変数<code>tempArray</code>は返り値として、別の変数<code>array</code>に代入されています。
+つまり、変数<code>tempArray</code>が参照している配列オブジェクトは、<code>createArray</code>関数の実行終了後も変数<code>array</code>から参照され続けています。
+ひとつでも参照されているならば、そのデータが自動的に解放されることはありません。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">function</span> <span class="hljs-title function_">createArray</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-keyword">const</span> tempArray = [<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>];
+    <span class="hljs-keyword">return</span> tempArray;
+}
+<span class="hljs-keyword">const</span> array = <span class="hljs-title function_">createArray</span>();
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(array); <span class="hljs-comment">// =&gt; [1, 2, 3]</span>
+<span class="hljs-comment">// 変数`array`が`[1, 2, 3]`という値を参照している -&gt; 解放されない</span>
+</code></pre>
+<p>つまり、関数の実行が終了したことと関数内で定義したデータの解放のタイミングは直接関係ないことがわかります。
+そのデータがメモリ上から解放されるかどうかはあくまで、そのデータが参照されているかによって決定されます。</p>
+<h3 id="why-closure-work"><a name="why-closure-work" class="plugin-anchor" href="#why-closure-work"><i class="fa fa-link" aria-hidden="true"></i></a>クロージャーがなぜ動くのか </h3>
+<p>ここまでで「静的スコープ」と「メモリ管理の仕組み」について説明してきました。</p>
+<ul>
+<li>静的スコープ: ある変数がどの値を参照するかは静的に決まる</li>
+<li>メモリ管理の仕組み: 参照されなくなったデータはガベージコレクションにより解放される</li>
+</ul>
+<p>クロージャーとはこの２つの仕組みを利用して、関数内から特定の変数を参照し続けることで関数が状態を持てる仕組みのことを言います。
+<!-- クロージャーは関数閉包と呼ばれることがありますが、関数の内側に変数を閉じ込めることで、まるで関数が状態（変数）を持っているように見えます。 --></p>
+<p>最初にクロージャーの例として紹介した<code>createCounter</code>関数の例を改めて見てみましょう。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> <span class="hljs-title function_">createCounter</span> = (<span class="hljs-params"></span>) =&gt; {
+    <span class="hljs-keyword">let</span> count = <span class="hljs-number">0</span>;
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">increment</span>(<span class="hljs-params"></span>) {
+        <span class="hljs-comment">// `increment`関数は`createCounter`関数のスコープに定義された`変数`count`を参照している</span>
+        count = count + <span class="hljs-number">1</span>;
+        <span class="hljs-keyword">return</span> count;
+    };
+};
+<span class="hljs-comment">// createCounter()の実行結果は、内側で定義されていた`increment`関数</span>
+<span class="hljs-keyword">const</span> myCounter = <span class="hljs-title function_">createCounter</span>();
+<span class="hljs-comment">// myCounter関数の実行結果は`count`の評価結果</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">myCounter</span>()); <span class="hljs-comment">// =&gt; 1</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">myCounter</span>()); <span class="hljs-comment">// =&gt; 2</span>
+</code></pre>
+<p>つまり次のような参照の関係が<code>myCounter</code>変数と<code>count</code>変数の間にはあることがわかります。</p>
+<ul>
+<li><code>myCounter</code>変数は<code>createCounter</code>関数の返り値である<code>increment</code>関数を参照している</li>
+<li><code>myCounter</code>変数は<code>increment</code>関数を経由して<code>count</code>変数を参照している</li>
+<li><code>myCounter</code>変数を実行した後も<code>count</code>変数への参照は保たれている</li>
+</ul>
+<!-- 参照の方向の図 -->
+<blockquote>
+<p><code>myCounter</code> → <code>increment</code> → <code>count</code></p>
+</blockquote>
+<p><code>count</code>変数を参照するものがいるため、<code>count</code>変数は自動的に解放されません。
+そのため<code>count</code>変数の値は保持され続け、<code>myCounter</code>変数を実行するたびに1ずつ大きくなっていきます。</p>
+<p>このように<code>count</code>変数が自動解放されずに保持できているのは「<code>increment</code>関数内から外側の<code>createCounter</code>関数スコープにある<code>count</code>変数を参照している」ためです。
+このような性質のことを<strong>クロージャー</strong>（関数閉包）と呼びます。クロージャーは「静的スコープ」と「参照され続けている変数のデータが保持される」という2つの性質によって成り立っています。</p>
+<p>JavaScriptの関数は静的スコープとメモリ管理という2つの性質を常に持っています。そのため、ある意味ではすべての関数がクロージャーとなりますが、ここでは関数が特定の変数を参照することで関数が状態を持っていることを指します。</p>
+<p>先ほどの例では<code>createCounter</code>関数を実行するたびに、それぞれ<code>count</code>と<code>increment</code>関数が定義されます。そのため、<code>createCounter</code>関数を実行すると、それぞれ別々の<code>increment</code>関数が定義され、別々の<code>count</code>変数を参照します。</p>
+<p>次のように<code>createCounter</code>関数を複数回呼び出してみると、別々の状態を持っていることが確認できます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> <span class="hljs-title function_">createCounter</span> = (<span class="hljs-params"></span>) =&gt; {
+    <span class="hljs-keyword">let</span> count = <span class="hljs-number">0</span>;
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">increment</span>(<span class="hljs-params"></span>) {
+        <span class="hljs-comment">// 変数`count`を参照し続けている</span>
+        count = count + <span class="hljs-number">1</span>;
+        <span class="hljs-keyword">return</span> count;
+    };
+};
+<span class="hljs-comment">// countUpとnewCountUpはそれぞれ別のincrement関数(内側にあるのも別のcount変数)</span>
+<span class="hljs-keyword">const</span> countUp = <span class="hljs-title function_">createCounter</span>();
+<span class="hljs-keyword">const</span> newCountUp = <span class="hljs-title function_">createCounter</span>();
+<span class="hljs-comment">// 参照している関数(オブジェクト)は別であるため===は一致しない</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(countUp === newCountUp);<span class="hljs-comment">// false</span>
+<span class="hljs-comment">// それぞれの状態も別となる</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">countUp</span>()); <span class="hljs-comment">// =&gt; 1</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">newCountUp</span>()); <span class="hljs-comment">// =&gt; 1</span>
+</code></pre>
+<h3 id="closure-usecase"><a name="closure-usecase" class="plugin-anchor" href="#closure-usecase"><i class="fa fa-link" aria-hidden="true"></i></a>クロージャーの用途 </h3>
+<p>クロージャーはさまざまな用途に利用されますが、次のような用途で利用されることが多いです。</p>
+<ul>
+<li>関数に状態を持たせる手段として</li>
+<li>外から参照できない変数を定義する手段として</li>
+<li>グローバル変数を減らす手段として</li>
+<li>高階関数の一部分として</li>
+</ul>
+<p>これらはクロージャーの特徴でもあるので、同時に使われることがあります。</p>
+<p>たとえば次の例では、<code>privateCount</code>という変数を関数の中に定義しています。
+この<code>privateCount</code>変数は、外のグローバルスコープからは直接参照できません。
+外から参照する必要がない変数をクロージャーとなる関数に閉じ込めることで、グローバルに定義する変数を減らせています。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> <span class="hljs-title function_">createCounter</span> = (<span class="hljs-params"></span>) =&gt; {
+    <span class="hljs-comment">// 外のスコープから`privateCount`を直接参照できない</span>
+    <span class="hljs-keyword">let</span> privateCount = <span class="hljs-number">0</span>;
+    <span class="hljs-keyword">return</span> <span class="hljs-function">() =&gt;</span> {
+        privateCount++;
+        <span class="hljs-keyword">return</span> <span class="hljs-string">`<span class="hljs-subst">${privateCount}</span>回目`</span>;
+    };
+};
+<span class="hljs-keyword">const</span> counter = <span class="hljs-title function_">createCounter</span>();
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">counter</span>()); <span class="hljs-comment">// =&gt; "1回目"</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">counter</span>()); <span class="hljs-comment">// =&gt; "2回目"</span>
+</code></pre>
+<p>また、関数を返す関数のことを高階関数と呼びますが、クロージャーの性質を使うことで次のように<code>n</code>より大きいかを判定する高階関数を作れます。
+最初から<code>greaterThan5</code>という関数を定義すればよいのですが、高階関数を使うことで条件を後から定義できるなどの柔軟性があります。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">function</span> <span class="hljs-title function_">greaterThan</span>(<span class="hljs-params">n</span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">function</span>(<span class="hljs-params">m</span>) {
+        <span class="hljs-keyword">return</span> m &gt; n;
+    };
+}
+<span class="hljs-comment">// 5より大きな値かを判定する関数を作成する</span>
+<span class="hljs-keyword">const</span> greaterThan5 = <span class="hljs-title function_">greaterThan</span>(<span class="hljs-number">5</span>);
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">greaterThan5</span>(<span class="hljs-number">4</span>)); <span class="hljs-comment">// =&gt; false</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">greaterThan5</span>(<span class="hljs-number">5</span>)); <span class="hljs-comment">// =&gt; false</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">greaterThan5</span>(<span class="hljs-number">6</span>)); <span class="hljs-comment">// =&gt; true</span>
+</code></pre>
+<!-- textlint-disable -->
+<p>クロージャーは、変数が参照する値が静的に決まる静的スコープという性質とデータは参照されていれば保持されるという2つの性質によって成り立っています。
+<!-- textlint-enable --></p>
+<p>JavaScriptには、関数を短く定義できるArrow Functionや高階関数であるArrayの<code>forEach</code>メソッドなどクロージャーを自然と利用しやすい環境があります。
+関数を理解する上ではクロージャーを理解することが大切です。</p>
+<h3 id="closure-vs-function-object"><a name="closure-vs-function-object" class="plugin-anchor" href="#closure-vs-function-object"><i class="fa fa-link" aria-hidden="true"></i></a>[コラム] 状態を持つ関数オブジェクト </h3>
+<p>JavaScriptでは関数はオブジェクトの一種です。オブジェクトであるため直接プロパティに値を代入できます。
+そのため、クロージャーを使わなくても、次のように関数にプロパティとして状態を持たせることが可能です。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">function</span> <span class="hljs-title function_">countUp</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-comment">// countプロパティを参照して変更する</span>
+    countUp.<span class="hljs-property">count</span> = countUp.<span class="hljs-property">count</span> + <span class="hljs-number">1</span>;
+    <span class="hljs-keyword">return</span> countUp.<span class="hljs-property">count</span>;
+}
+<span class="hljs-comment">// 関数オブジェクトにプロパティとして値を代入する</span>
+countUp.<span class="hljs-property">count</span> = <span class="hljs-number">0</span>;
+<span class="hljs-comment">// 呼び出すごとにcountが更新される</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">countUp</span>()); <span class="hljs-comment">// =&gt; 1</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">countUp</span>()); <span class="hljs-comment">// =&gt; 2</span>
+</code></pre>
+<p>しかし、この方法は推奨されていません。なぜなら、関数の外から<code>count</code>プロパティを変更できるためです。
+関数オブジェクトのプロパティは外からも参照でき、そのプロパティ値は変更できます。
+関数の中でのみ参照可能な状態を扱いたい場合には、それを強制できるクロージャーが有効です。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">function</span> <span class="hljs-title function_">countUp</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-comment">// countプロパティを参照して変更する</span>
+    countUp.<span class="hljs-property">count</span> = countUp.<span class="hljs-property">count</span> + <span class="hljs-number">1</span>;
+    <span class="hljs-keyword">return</span> countUp.<span class="hljs-property">count</span>;
+}
+countUp.<span class="hljs-property">count</span> = <span class="hljs-number">0</span>;
+<span class="hljs-comment">// 呼び出すごとにcountが更新される</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">countUp</span>()); <span class="hljs-comment">// =&gt; 1</span>
+<span class="hljs-comment">// 直接値を変更できてしまう</span>
+countUp.<span class="hljs-property">count</span> = <span class="hljs-number">10</span>;
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">countUp</span>()); <span class="hljs-comment">// =&gt; 11</span>
+</code></pre>
+<h2 id="conclusion"><a name="conclusion" class="plugin-anchor" href="#conclusion"><i class="fa fa-link" aria-hidden="true"></i></a>まとめ </h2>
+<p>この章では関数を中心にスコープについて学びました。</p>
+<ul>
+<li>関数やブロックはスコープを持つ</li>
+<li>スコープはネストできる</li>
+<li>もっとも外側にはグローバルスコープがある</li>
+<li>スコープチェーンは内側から外側のスコープへと順番に変数が定義されているか探す仕組みのこと</li>
+<li><code>var</code>キーワードでの変数宣言や<code>function</code>での関数宣言では巻き上げが発生する</li>
+<li>クロージャーは静的スコープとメモリ管理の仕組みからなる関数が持つ性質</li>
+</ul>
+<blockquote id="fn_1">
+<sup>1</sup>. この仕組みはTemporal Dead Zone（TDZ）と呼ばれます。<a href="#reffn_1" title="Jump back to footnote [1] in the text."> ↩</a>
+</blockquote>
+<blockquote id="fn_2">
+<sup>2</sup>. ECMAScriptの仕様ではガベージコレクションの実装の規定はないため、実装依存の処理となります。<a href="#reffn_2" title="Jump back to footnote [2] in the text."> ↩</a>
+</blockquote>
+</body></html>
+                                
+
+                                </section>
+                            
+                        </div>
+                    </div>
+                
+<footer class="book_footer">
+    <p>Copyright (c) 2016-present <a href="https://github.com/asciidwango/js-primer" target="_blank">jsprimer project</a></p>
+</footer>
+
+            </div>
+
+            
+                
+                <a href="../wrapper-object/" class="navigation navigation-prev " aria-label="Previous page: ラッパーオブジェクト">
+                    <i class="fa fa-angle-left"></i>
+                </a>
+                
+                
+                <a href="../function-this/" class="navigation navigation-next " aria-label="Next page: 関数とthis">
+                    <i class="fa fa-angle-right"></i>
+                </a>
+                
+            
+        
+    </div>
+
+    <script>
+        var gitbook = gitbook || [];
+        gitbook.push(function() {
+            gitbook.page.hasChanged({"page":{"author":"azu","description":"スコープという変数などを参照できる範囲を決める概念を紹介します。ブロックスコープや関数スコープなどがどのような働きをしているのかや複数のスコープが重なったときにどのように変数の参照先が決まるのかを紹介します。また、スコープに関係する動作としてクロージャーという性質を紹介します。","sponsors":[],"title":"関数とスコープ","level":"1.3.18","depth":2,"next":{"title":"関数とthis","level":"1.3.19","depth":2,"path":"basic/function-this/README.md","ref":"./basic/function-this/README.md","articles":[]},"previous":{"title":"ラッパーオブジェクト","level":"1.3.17","depth":2,"path":"basic/wrapper-object/README.md","ref":"./basic/wrapper-object/README.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-search","-lunr","page-toc-button","include-codeblock","anchors","canonical-link","js-console","github-issue-feedback","sandpack"],"root":"./source/","styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"docSearch":{"index":"83I8JIFICQ","apiKey":"9169ce4cd84fcf2376f29d9585c89254"},"github-issue-feedback":{"repo":"asciidwango/js-primer","label":"問題を報告する"},"fontsettings":{"theme":"white","family":"sans","size":2},"js-console":{},"canonical-link":{"baseURL":"https://jsprimer.net"},"highlight":{},"page-toc-button":{"maxTocDepth":2,"minTocSize":2},"include-codeblock":{"check":false,"edit":false,"lang":"","fixlang":false,"template":"./resources/gitbook-plugin-include-codeblock.hbs","theme":"chrome","unindent":false},"sandpack":{},"edit-link":{"base":"https://github.com/asciidwango/js-primer/edit/master/source/","label":"Edit"},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false},"anchors":{}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"IPAexMincho","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"index.md","glossary":"GLOSSARY.md","summary":"README.md"},"variables":{"esversion":"2024","nodeversion":"22.7.0","npmversion":"10.8.2","triplebackticks":"```","console":"<a class=\"gitbook-plugin-js-console\" aria-hidden=\"true\"></a>"},"title":"JavaScript Primer #jsprimer","gitbook":">=3.0.0","description":"JavaScriptの基本的な書き方からアプリケーションの作成などのユースケースを学ぶための入門書です"},"file":{"path":"basic/function-scope/README.md","mtime":"2025-05-18T21:58:17.823Z","type":"markdown"},"gitbook":{"version":"6.0.2","time":"2025-05-18T21:58:35.597Z"},"basePath":"../..","book":{"language":""}});
+        });
+    </script>
+</div>
+
+        
+    <noscript>
+        <style>
+            .honkit-cloak {
+                display: block !important;
+            }
+        </style>
+    </noscript>
+    <script>
+        // Restore sidebar state as critical path for prevent layout shift
+        function __init__getSidebarState(defaultValue){
+            var baseKey = "";
+            var key = baseKey + ":sidebar";
+            try {
+                var value = localStorage[key];
+                if (value === undefined) {
+                    return defaultValue;
+                }
+                var parsed = JSON.parse(value);
+                return parsed == null ? defaultValue : parsed;
+            } catch (e) {
+                return defaultValue;
+            }
+        }
+        function __init__restoreLastSidebarState() {
+            var isMobile = window.matchMedia("(max-width: 600px)").matches;
+            if (isMobile) {
+                // Init last state if not mobile
+                return;
+            }
+            var sidebarState = __init__getSidebarState(true);
+            var book = document.querySelector(".book");
+            // Show sidebar if it enabled
+            if (sidebarState && book) {
+                book.classList.add("without-animation", "with-summary");
+            }
+        }
+
+        try {
+            __init__restoreLastSidebarState();
+        } finally {
+            var book = document.querySelector(".book");
+            book.classList.remove("honkit-cloak");
+        }
+    </script>
+    <script src="../../gitbook/gitbook.js"></script>
+    <script src="../../gitbook/theme.js"></script>
+    
+        
+        <script src="../../gitbook/gitbook-plugin-page-toc-button/plugin.js"></script>
+        
+    
+        
+        <script src="../../gitbook/gitbook-plugin-js-console/console-ui.js"></script>
+        
+    
+        
+        <script src="../../gitbook/gitbook-plugin-github-issue-feedback/plugin.js"></script>
+        
+    
+        
+        <script src="../../gitbook/honkit-plugin-sandpack/honkit-plugin-sandpack.js"></script>
+        
+    
+        
+        <script src="../../gitbook/@honkit/honkit-plugin-fontsettings/fontsettings.js"></script>
+        
+    
+
+    </body>
+</html>
+

@@ -1,0 +1,2144 @@
+
+<!DOCTYPE HTML>
+<html lang="" >
+    <head>
+        <meta charset="UTF-8">
+        <title>データ型とリテラル · JavaScript Primer #jsprimer</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="description" content="JavaScriptの値の種類にあたるデータ型についてを紹介します。データ型には大きく分けてプリミティブ型とオブジェクトがあり、それぞれのデータ型を簡単なコード例とともに紹介していきます。一部のデータ型にはリテラルというデータ型を簡単に記述するための構文が用意されており、リテラルについても合わせて紹介していきます。">
+        <meta name="generator" content="HonKit 6.0.2">
+        
+        
+        
+    
+    <link rel="stylesheet" href="../../gitbook/style.css">
+
+    
+            
+                
+                <link rel="stylesheet" href="../../gitbook/gitbook-plugin-page-toc-button/plugin.css">
+                
+            
+                
+                <link rel="stylesheet" href="../../gitbook/gitbook-plugin-anchors/plugin.css">
+                
+            
+                
+                <link rel="stylesheet" href="../../gitbook/@honkit/honkit-plugin-highlight/website.css">
+                
+            
+                
+                <link rel="stylesheet" href="../../gitbook/@honkit/honkit-plugin-fontsettings/website.css">
+                
+            
+        
+
+    
+
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+         
+    
+    
+    
+    <meta name="HandheldFriendly" content="true"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../gitbook/images/apple-touch-icon-precomposed-152.png">
+    <link rel="shortcut icon" href="../../gitbook/images/favicon.ico" type="image/x-icon">
+
+    
+    <link rel="next" href="../operator/" />
+    
+    
+    <link rel="prev" href="../read-eval-print/" />
+    
+
+    <link rel="canonical" href="https://jsprimer.net/basic/data-type/">
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-DWY0DLHWB6"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+
+    gtag("js", new Date());
+
+    gtag("config", "G-DWY0DLHWB6");
+</script>
+<script type="module">
+    // コンソールUIでコード実行したらイベントとして送信する
+    const onExecuteCode = (scriptType) => {
+        gtag("event", "execute_code", {
+            "event_category": "console",
+            "event_label": "execute_code",
+            "script_type": scriptType || "unknown"
+        });
+    };
+    let observer;
+    const observeEvalEvent = () => {
+        if (observer) {
+            observer.disconnect();
+        }
+        const callback = function(mutationsList) {
+            for (const mutation of mutationsList) {
+                const mirrorConsole = Array.from(mutation.addedNodes).find(node => Boolean(node.dataset.mirrorConsole));
+                if (mirrorConsole) {
+                    return onExecuteCode(mirrorConsole.dataset.mirrorConsole);
+                }
+            }
+        };
+        observer = new MutationObserver(callback);
+        observer.observe(document.body, { childList: true });
+    };
+    const eventMap = new WeakMap();
+    // 問題を報告ボタンを押したらイベントとして送信する
+    const onClickIssueReport = () => {
+        console.log("click_issue_report");
+        gtag("event", "click_issue_report", {
+            "event_category": "contribution",
+            "event_label": "click_issue_report"
+        });
+    };
+    const observeIssueReport = () => {
+        const targetButton = document.querySelector(".gitbook-plugin-github-issue-feedback");
+        // すでにイベントが登録されていたら何もしない
+        if (eventMap.has(targetButton)) {
+            return;
+        }
+        if (targetButton) {
+            targetButton.addEventListener("click", onClickIssueReport);
+            eventMap.set(targetButton, onClickIssueReport);
+        }
+    };
+    window.addEventListener("DOMContentLoaded", function() {
+        gitbook.events.on("page.change", function() {
+            observeEvalEvent();
+            observeIssueReport();
+        });
+    });
+
+</script>
+<meta name="google-site-verification" content="bMotEbgYwkzA3k4PkuyK_NUdz0bKh-Phz0oUwNmRSVo"/>
+<style>
+    /*
+     * Disable antialias
+     */
+    * {
+        -webkit-font-smoothing: initial !important
+    }
+
+    body {
+        text-rendering: initial !important;
+        font-smoothing: initial !important;
+    }
+
+    /* deny access chapter */
+    .summary li.chapter > span {
+        cursor: not-allowed;
+        opacity: .3;
+    }
+
+    /* console ui */
+
+    .mirror-console-attach-button-wrapper {
+        margin-top: -1.275em;
+        margin-bottom: 1.275em
+    }
+
+    .mirror-console-wrapper {
+        margin-top: 1.275em;
+        margin-bottom: 1.275em
+    }
+
+    /* file name for codeblock */
+    .code-filename {
+        background-color: #eee;
+        display: inline-block;
+        padding: 2px 8px;
+        line-height: inherit;
+        margin-bottom: 0px !important;
+    }
+
+    /* Markdown */
+    /* Support horizon scroll */
+    /* https://stackoverflow.com/questions/17770257/scrolling-tables-horizontally-without-wrapping-them-in-div */
+    .markdown-section table {
+        max-width: 100%;
+        overflow-x: auto;
+        display: block;
+    }
+    .markdown-section sup,
+    .markdown-section sub {
+        font-size: 75%;
+    }
+
+    .book_footer {
+        text-align: center;
+        color: #000000;
+        background: #ddd;
+        font-size: 16px;
+        margin-top: 16px;
+        padding: 16px;
+    }
+
+    /* github-issue-feedback */
+    .gitbook-plugin-github-issue-feedback {
+        background-color: #333;
+        color: #fff;
+        opacity: 0.8;
+        padding: 4px;
+        margin-right: 24px;
+        margin-bottom: 4px;
+        border-radius: 6px;
+    }
+
+    .gitbook-plugin-github-issue-feedback:hover {
+        opacity: 1;
+    }
+
+    /* Hide footer on mobile */
+    /* Use navigation width */
+    @media (max-width: 1240px) {
+        .book_footer {
+            display: none;
+        }
+    }
+
+    .navigation {
+        min-width: 50px;
+    }
+
+    @media (min-width: 1240px) {
+        .honkit-plugin-sandpack {
+            width: calc(100% + 180px);
+            margin: 0 0 1em -90px;
+        }
+    }
+
+    .honkit-plugin-sandpack, .honkit-plugin-sandpack--buttonContainer {
+        margin-bottom: 1em;
+    }
+
+</style>
+<meta name="theme-color" content="#ffffff">
+<link rel="manifest" href="../../manifest.json">
+<script defer async>
+    // unregister old service worker(remove workbox)
+    // https://github.com/asciidwango/js-primer/pull/1701
+    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for (const registration of registrations) {
+            registration.unregister();
+        }
+    }).catch(function(err) {
+        console.error(new Error("Can not getRegistrations", {
+            cause: err
+        }));
+    });
+</script>
+
+    </head>
+    <body>
+        
+<div class="book honkit-cloak">
+    <div class="book-summary">
+        
+            
+            
+                <nav role="navigation">
+                
+
+
+<ul class="summary">
+    
+    
+
+    
+
+    
+        
+        
+    
+        <li class="chapter " data-level="1.1" data-path="../../">
+            
+                <a href="../../">
+            
+                    
+                    この書籍について
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2" data-path="../../intro/">
+            
+                <a href="../../intro/">
+            
+                    
+                    はじめに
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.2.1" data-path="../../intro/authors/">
+            
+                <a href="../../intro/authors/">
+            
+                    
+                    著者紹介
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.2" data-path="../../intro/sponsors/">
+            
+                <a href="../../intro/sponsors/">
+            
+                    
+                    JavaScript Primerスポンサー
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.3" data-path="../../intro/preparation/">
+            
+                <a href="../../intro/preparation/">
+            
+                    
+                    読みはじめる前の事前準備
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.4" data-path="../../intro/feedback/">
+            
+                <a href="../../intro/feedback/">
+            
+                    
+                    文章の間違いに気づいたら
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3" data-path="../">
+            
+                <a href="../">
+            
+                    
+                    第一部: 基本文法
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.3.1" data-path="../introduction/">
+            
+                <a href="../introduction/">
+            
+                    
+                    JavaScriptとは
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.2" data-path="../comments/">
+            
+                <a href="../comments/">
+            
+                    
+                    コメント
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.3" data-path="../variables/">
+            
+                <a href="../variables/">
+            
+                    
+                    変数と宣言
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.4" data-path="../read-eval-print/">
+            
+                <a href="../read-eval-print/">
+            
+                    
+                    値の評価と表示
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter active" data-level="1.3.5" data-path="./">
+            
+                <a href="./">
+            
+                    
+                    データ型とリテラル
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.6" data-path="../operator/">
+            
+                <a href="../operator/">
+            
+                    
+                    演算子
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.7" data-path="../implicit-coercion/">
+            
+                <a href="../implicit-coercion/">
+            
+                    
+                    暗黙的な型変換
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.8" data-path="../function-declaration/">
+            
+                <a href="../function-declaration/">
+            
+                    
+                    関数と宣言
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.9" data-path="../statement-expression/">
+            
+                <a href="../statement-expression/">
+            
+                    
+                    文と式
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.10" data-path="../condition/">
+            
+                <a href="../condition/">
+            
+                    
+                    条件分岐
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.11" data-path="../loop/">
+            
+                <a href="../loop/">
+            
+                    
+                    ループと反復処理
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.12" data-path="../object/">
+            
+                <a href="../object/">
+            
+                    
+                    オブジェクト
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.13" data-path="../prototype-object/">
+            
+                <a href="../prototype-object/">
+            
+                    
+                    プロトタイプオブジェクト
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.14" data-path="../array/">
+            
+                <a href="../array/">
+            
+                    
+                    配列
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.15" data-path="../string/">
+            
+                <a href="../string/">
+            
+                    
+                    文字列
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.16" data-path="../string-unicode/">
+            
+                <a href="../string-unicode/">
+            
+                    
+                    文字列とUnicode
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.17" data-path="../wrapper-object/">
+            
+                <a href="../wrapper-object/">
+            
+                    
+                    ラッパーオブジェクト
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.18" data-path="../function-scope/">
+            
+                <a href="../function-scope/">
+            
+                    
+                    関数とスコープ
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.19" data-path="../function-this/">
+            
+                <a href="../function-this/">
+            
+                    
+                    関数とthis
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.20" data-path="../class/">
+            
+                <a href="../class/">
+            
+                    
+                    クラス
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.21" data-path="../error-try-catch/">
+            
+                <a href="../error-try-catch/">
+            
+                    
+                    例外処理
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.22" data-path="../async/">
+            
+                <a href="../async/">
+            
+                    
+                    非同期処理:Promise/Async Function
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.23" data-path="../map-and-set/">
+            
+                <a href="../map-and-set/">
+            
+                    
+                    Map/Set
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.24" data-path="../json/">
+            
+                <a href="../json/">
+            
+                    
+                    JSON
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.25" data-path="../date/">
+            
+                <a href="../date/">
+            
+                    
+                    Date
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.26" data-path="../math/">
+            
+                <a href="../math/">
+            
+                    
+                    Math
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.27" data-path="../module/">
+            
+                <a href="../module/">
+            
+                    
+                    ECMAScriptモジュール
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.28" data-path="../ecmascript/">
+            
+                <a href="../ecmascript/">
+            
+                    
+                    ECMAScript
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.29" data-path="../other-parts/">
+            
+                <a href="../other-parts/">
+            
+                    
+                    第一部: おわりに
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4" data-path="../../use-case/">
+            
+                <a href="../../use-case/">
+            
+                    
+                    第二部: 応用編（ユースケース）
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.4.1" data-path="../../use-case/setup-local-env/">
+            
+                <a href="../../use-case/setup-local-env/">
+            
+                    
+                    アプリケーション開発の準備
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.2" data-path="../../use-case/ajaxapp/">
+            
+                <a href="../../use-case/ajaxapp/">
+            
+                    
+                    Ajax通信
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.4.2.1" data-path="../../use-case/ajaxapp/entrypoint/">
+            
+                <a href="../../use-case/ajaxapp/entrypoint/">
+            
+                    
+                    エントリーポイント
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.2.2" data-path="../../use-case/ajaxapp/http/">
+            
+                <a href="../../use-case/ajaxapp/http/">
+            
+                    
+                    HTTP通信
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.2.3" data-path="../../use-case/ajaxapp/display/">
+            
+                <a href="../../use-case/ajaxapp/display/">
+            
+                    
+                    データを表示する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.2.4" data-path="../../use-case/ajaxapp/promise/">
+            
+                <a href="../../use-case/ajaxapp/promise/">
+            
+                    
+                    Promiseを活用する
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3" data-path="../../use-case/nodecli/">
+            
+                <a href="../../use-case/nodecli/">
+            
+                    
+                    Node.jsでCLIアプリ
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.4.3.1" data-path="../../use-case/nodecli/helloworld/">
+            
+                <a href="../../use-case/nodecli/helloworld/">
+            
+                    
+                    Node.jsでHello World
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3.2" data-path="../../use-case/nodecli/argument-parse/">
+            
+                <a href="../../use-case/nodecli/argument-parse/">
+            
+                    
+                    コマンドライン引数を処理する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3.3" data-path="../../use-case/nodecli/read-file/">
+            
+                <a href="../../use-case/nodecli/read-file/">
+            
+                    
+                    ファイルを読み込む
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3.4" data-path="../../use-case/nodecli/md-to-html/">
+            
+                <a href="../../use-case/nodecli/md-to-html/">
+            
+                    
+                    MarkdownをHTMLに変換する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3.5" data-path="../../use-case/nodecli/refactor-and-unittest/">
+            
+                <a href="../../use-case/nodecli/refactor-and-unittest/">
+            
+                    
+                    ユニットテストを記述する
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4" data-path="../../use-case/todoapp/">
+            
+                <a href="../../use-case/todoapp/">
+            
+                    
+                    Todoアプリ
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.4.4.1" data-path="../../use-case/todoapp/entrypoint/">
+            
+                <a href="../../use-case/todoapp/entrypoint/">
+            
+                    
+                    エントリーポイント
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.2" data-path="../../use-case/todoapp/app-structure/">
+            
+                <a href="../../use-case/todoapp/app-structure/">
+            
+                    
+                    アプリの構成要素
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.3" data-path="../../use-case/todoapp/form-event/">
+            
+                <a href="../../use-case/todoapp/form-event/">
+            
+                    
+                    Todoアイテムの追加を実装する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.4" data-path="../../use-case/todoapp/event-model/">
+            
+                <a href="../../use-case/todoapp/event-model/">
+            
+                    
+                    イベントとモデル
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.5" data-path="../../use-case/todoapp/update-delete/">
+            
+                <a href="../../use-case/todoapp/update-delete/">
+            
+                    
+                    Todoアイテムの更新と削除を実装する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.6" data-path="../../use-case/todoapp/final/">
+            
+                <a href="../../use-case/todoapp/final/">
+            
+                    
+                    Todoアプリのリファクタリング
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5" data-path="../../appendix/links/">
+            
+                <a href="../../appendix/links/">
+            
+                    
+                    付録: 参考リンク集
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.6" data-path="../../cheatsheet/">
+            
+                <a href="../../cheatsheet/">
+            
+                    
+                    付録: JavaScriptチートシート
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.7" data-path="../../outro/">
+            
+                <a href="../../outro/">
+            
+                    
+                    おわりに
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+    
+
+    <li class="divider"></li>
+
+    <li>
+        <a href="https://github.com/honkit/honkit" target="blank" class="gitbook-link">
+            Published with HonKit
+        </a>
+    </li>
+</ul>
+
+
+                </nav>
+            
+        
+    </div>
+
+    <div class="book-body">
+        
+            <div class="body-inner">
+                
+                    
+
+<!-- Header -->
+<meta name="keywords" content="JavaScript,ECMAScript,JS,入門,チュートリアル,書籍,本,無料,Node.js,ブラウザ"/>
+<link rel="author" href="https://www.hatena.ne.jp/efcl/"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsearch.js@2/dist/cdn/docsearch.min.css"/>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/docsearch.js@2/dist/cdn/docsearch.min.js"></script>
+<!-- OGP -->
+<meta property="og:title" content="JavaScript Primer - 迷わないための入門書"/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://jsprimer.net/"/>
+<meta property="og:image" content="https://jsprimer.net/landing/img/cover-optimized.jpg"/>
+<meta property="og:site_name" content="JavaScript Primer"/>
+<meta property="og:description" content="JavaScript Primerは、JavaScriptの基礎から応用までを一貫して学べる入門書です。"/>
+<style>
+    .book-header {
+        display: flex;
+        flex-direction: row;
+        background-color: #333;
+    }
+
+    /* link color */
+    .book-header a {
+        color: #fff;
+    }
+
+    /* hover color */
+    .book-header .btn:hover, .book-header .btn:focus, .book-header a:focus, .book-header a:hover {
+        color: hsla(0, 0%, 100%, 0.75) !important;
+    }
+
+    /* Mobile header fixed */
+    @media (max-width: 768px) {
+        /* Headerを固定する */
+        .book-header {
+            position: fixed;
+            width: 100%;
+        }
+
+        /* Icon only */
+        .book-header-title-img {
+            margin: auto 18px auto 0 !important;
+        }
+
+        .book-header-title-h {
+            display: none;
+        }
+
+        /* Header分のズレを入れる */
+        .page-wrapper {
+            padding-top: 60px;
+        }
+
+        /* github-issue-feedbackを非表示にする */
+        .gitbook-plugin-github-issue-feedback {
+            display: none;
+        }
+    }
+
+    /* Dynamic created by GitBook*/
+    .btn.pull-left.js-toolbar-action {
+        order: 1;
+    }
+
+    .book-header-title {
+        order: 2;
+        display: inline-flex;
+        flex-direction: row;
+        color: #fff;
+    }
+
+    .book-header-title:hover {
+        color: hsla(0, 0%, 100%, 0.75);
+    }
+
+    .book-header-title-img {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        margin: auto 10px auto 0;
+    }
+
+    .book-header-title-h {
+        font-size: 20px;
+        margin: auto;
+        padding: 0;
+    }
+
+    .header-center {
+        order: 3;
+        display: inline-flex;
+        flex-direction: column;
+        justify-content: center;
+        /* self */
+        flex-grow: 1;
+        flex-shrink: 0;
+        flex-basis: auto;
+    }
+
+    .header-right {
+        order: 4;
+        display: inline-flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        /* icon size */
+        font-size: 24px;
+    }
+
+    .amazon-link, .github-link {
+        color: #fff;
+        /* Padding and make Vertical */
+        display: inline-flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding-left: 4px;
+        padding-right: 4px;
+    }
+
+    /* Desktop */
+    @media (min-width: 768px) {
+        .header-center {
+            align-items: center;
+        }
+
+        .header-right {
+            margin-right: 24px;
+        }
+    }
+
+    /* DocSearch */
+    @media (max-width: 768px) {
+        .algolia-autocomplete .ds-dropdown-menu {
+            max-width: calc(100vw - 32px) !important;
+            min-width: calc(100vw - 32px) !important;
+            width: calc(100vw - 32px) !important;
+            /* negative margin
+              This is absolute element
+              */
+            margin-left: -32px !important;
+        }
+
+        .algolia-autocomplete .algolia-docsearch-suggestion--content {
+            width: 100% !important;
+            padding-left: 0 !important;
+        }
+
+        .algolia-autocomplete .algolia-docsearch-suggestion--content:before {
+            display: none !important;
+        }
+
+        .algolia-autocomplete .algolia-docsearch-suggestion--subcategory-column {
+            display: none !important;
+        }
+
+        .algolia-autocomplete.algolia-autocomplete-right .ds-dropdown-menu {
+            right: inherit !important
+        }
+
+        .algolia-autocomplete.algolia-autocomplete-right .ds-dropdown-menu::before {
+            right: 50%;
+        }
+
+        .sbx-custom {
+            width: 92px !important;
+            padding: initial !important;
+        }
+
+        .amazon-link {
+            display: none;
+        }
+    }
+
+    /* SearchBox */
+    .searchbarWrapper {
+        height: 50px;
+    }
+
+
+    .sbx-custom {
+        display: inline-block;
+        position: relative;
+        min-width: 150px;
+        width: 300px;
+        max-width: 300px;
+        height: 33px;
+        white-space: nowrap;
+        box-sizing: border-box;
+        font-size: 14px;
+    }
+
+    .sbx-custom__wrapper {
+        width: 100%;
+        height: 100%;
+    }
+
+    .sbx-custom__input {
+        display: inline-block;
+        -webkit-transition: box-shadow .4s ease, background .4s ease;
+        transition: box-shadow .4s ease, background .4s ease;
+        border: 0;
+        border-radius: 5px;
+        box-shadow: inset 0 0 0 2px #CCCCCC;
+        background: #FFFFFF;
+        padding: 0 27px 0 33px;
+        width: 100%;
+        height: 100%;
+        vertical-align: middle;
+        white-space: normal;
+        font-size: inherit;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+    }
+
+    .sbx-custom__input::-webkit-search-decoration, .sbx-custom__input::-webkit-search-cancel-button, .sbx-custom__input::-webkit-search-results-button, .sbx-custom__input::-webkit-search-results-decoration {
+        display: none;
+    }
+
+    .sbx-custom__input:hover {
+        box-shadow: inset 0 0 0 2px #b3b3b3;
+    }
+
+    .sbx-custom__input:focus, .sbx-custom__input:active {
+        outline: 0;
+        box-shadow: inset 0 0 0 2px #4B54DE;
+        background: #FFFFFF;
+    }
+
+    .sbx-custom__input::-webkit-input-placeholder {
+        color: #BBBBBB;
+    }
+
+    .sbx-custom__input::-moz-placeholder {
+        color: #BBBBBB;
+    }
+
+    .sbx-custom__input:-ms-input-placeholder {
+        color: #BBBBBB;
+    }
+
+    .sbx-custom__input::placeholder {
+        color: #BBBBBB;
+    }
+
+    .sbx-custom__submit {
+        position: absolute;
+        top: 0;
+        right: inherit;
+        left: 0;
+        margin: 0;
+        border: 0;
+        border-radius: 4px 0 0 4px;
+        background-color: rgba(255, 255, 255, 0);
+        padding: 0;
+        width: 33px;
+        height: 100%;
+        vertical-align: middle;
+        text-align: center;
+        font-size: inherit;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+    .sbx-custom__submit::before {
+        display: inline-block;
+        margin-right: -4px;
+        height: 100%;
+        vertical-align: middle;
+        content: '';
+    }
+
+    .sbx-custom__submit:hover, .sbx-custom__submit:active {
+        cursor: pointer;
+    }
+
+    .sbx-custom__submit:focus {
+        outline: 0;
+    }
+
+    .sbx-custom__submit svg {
+        width: 17px;
+        height: 17px;
+        vertical-align: middle;
+        fill: #3A33D1;
+    }
+
+    .sbx-custom__reset {
+        display: none;
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        margin: 0;
+        border: 0;
+        background: none;
+        cursor: pointer;
+        padding: 0;
+        font-size: inherit;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        fill: rgba(0, 0, 0, 0.5);
+    }
+
+    .sbx-custom__reset:focus {
+        outline: 0;
+    }
+
+    .sbx-custom__reset svg {
+        display: block;
+        margin: 4px;
+        width: 17px;
+        height: 17px;
+    }
+
+    .sbx-custom__input:valid ~ .sbx-custom__reset {
+        display: block;
+        -webkit-animation-name: sbx-reset-in;
+        animation-name: sbx-reset-in;
+        -webkit-animation-duration: .15s;
+        animation-duration: .15s;
+    }
+
+    @-webkit-keyframes sbx-reset-in {
+        0% {
+            -webkit-transform: translate3d(-20%, 0, 0);
+            transform: translate3d(-20%, 0, 0);
+            opacity: 0;
+        }
+        100% {
+            -webkit-transform: none;
+            transform: none;
+            opacity: 1;
+        }
+    }
+
+    @keyframes sbx-reset-in {
+        0% {
+            -webkit-transform: translate3d(-20%, 0, 0);
+            transform: translate3d(-20%, 0, 0);
+            opacity: 0;
+        }
+        100% {
+            -webkit-transform: none;
+            transform: none;
+            opacity: 1;
+        }
+    }
+</style>
+<div class="book-header" role="navigation">
+    
+    <a class="book-header-title" href="../..">
+        <img class="book-header-title-img" alt="JavaScript Primer"
+             src="../../gitbook/icons/icon-128x128.png"/>
+        <h2 class="book-header-title-h" title="JavaScript Primer - 迷わないための入門書">JavaScript Primer</h2>
+    </a>
+    <div class="searchbarWrapper header-center">
+        <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+            <symbol xmlns="http://www.w3.org/2000/svg" id="sbx-icon-search-8" viewBox="0 0 40 40">
+                <path d="M16 32c8.835 0 16-7.165 16-16 0-8.837-7.165-16-16-16C7.162 0 0 7.163 0 16c0 8.835 7.163 16 16 16zm0-5.76c5.654 0 10.24-4.586 10.24-10.24 0-5.656-4.586-10.24-10.24-10.24-5.656 0-10.24 4.584-10.24 10.24 0 5.654 4.584 10.24 10.24 10.24zM28.156 32.8c-1.282-1.282-1.278-3.363.002-4.643 1.282-1.284 3.365-1.28 4.642-.003l6.238 6.238c1.282 1.282 1.278 3.363-.002 4.643-1.283 1.283-3.366 1.28-4.643.002l-6.238-6.238z"
+                      fill-rule="evenodd"></path>
+            </symbol>
+            <symbol xmlns="http://www.w3.org/2000/svg" id="sbx-icon-clear-5" viewBox="0 0 20 20">
+                <path d="M10 20c5.523 0 10-4.477 10-10S15.523 0 10 0 0 4.477 0 10s4.477 10 10 10zm1.35-10.123l3.567 3.568-1.225 1.226-3.57-3.568-3.567 3.57-1.226-1.227 3.568-3.568-3.57-3.57 1.227-1.224 3.568 3.568 3.57-3.567 1.224 1.225-3.568 3.57zM10 18.272c4.568 0 8.272-3.704 8.272-8.272S14.568 1.728 10 1.728 1.728 5.432 1.728 10 5.432 18.272 10 18.272z"
+                      fill-rule="evenodd"></path>
+            </symbol>
+        </svg>
+
+        <form novalidate="novalidate" onsubmit="return false;" class="searchbox sbx-custom">
+            <div role="search" class="sbx-custom__wrapper">
+                <input name="search" placeholder="Search words" autocomplete="off" required="required"
+                       class="sbx-custom__input" type="search">
+                <button type="submit" title="Submit your search query." class="sbx-custom__submit">
+                    <svg role="img" aria-label="Search">
+                        <use xlink:href="#sbx-icon-search-8"></use>
+                    </svg>
+                </button>
+                <button type="reset" title="Clear the search query." class="sbx-custom__reset">
+                    <svg role="img" aria-label="Reset">
+                        <use xlink:href="#sbx-icon-clear-5"></use>
+                    </svg>
+                </button>
+            </div>
+        </form>
+    </div>
+    <div class="header-right">
+        <!-- Icon: https://www.iconfinder.com/iconsets/circle-payment -->
+        <a class="amazon-link" title="Amazon: JavaScript Primer 改訂2版 迷わないための入門書"
+           href="https://www.amazon.co.jp/dp/4048931105/" target="_blank"><img
+                width="22"
+                height="22"
+                style="margin: 1px;"
+                src="../../gitbook/icons/amazon-icon.png" alt=""></a>
+        <a class="github-link" title="GitHub: asciidwango/js-primer" href="https://github.com/asciidwango/js-primer"
+           target="_blank"><i
+                class="fa fa-github fa-fw"></i></a>
+    </div>
+</div>
+
+<script defer>
+    // focus on search box
+    document.querySelector(".searchbox [type=\"reset\"]").addEventListener("click", function() {
+        this.parentNode.querySelector("input").focus();
+    });
+    // init DocSearch
+    var search = docsearch({
+        apiKey: "fd28ebaba94be0c39fb9fa1b2fed4f23", // use a SEARCH-ONLY api key here
+        indexName: "asciidwango",
+        inputSelector: ".sbx-custom__input",
+        debug: false // set to `true` if you want to inspect the dropdown menu's CSS
+    });
+</script>
+<script>
+    window.addEventListener("DOMContentLoaded", function() {
+        gitbook.events.on("page.change", function() {
+            setTimeout(() => console.clear(), 1000);
+        });
+    });
+</script>
+
+
+
+
+
+                    <div class="page-wrapper" tabindex="-1" role="main">
+                        <div class="page-inner">
+                            
+                                <section class="normal markdown-section">
+                                
+<style>
+    .page-sponsors {
+        background: #fafafa;
+    }
+    .page-sponsors .page-sponsors-list {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 0;
+        padding: 1em 0;
+        list-style: none;
+        gap: 8px;
+    }
+    .page-sponsors-footer {
+        text-align: center;
+        padding: 0;
+        margin: 0;
+    }
+</style>
+<div class="page-sponsors">
+
+    <div class="page-sponsors-footer">
+        JavaScript Primerの<a href="https://jsprimer.net/intro/sponsors/">スポンサーを募集中</a>
+    </div>
+
+</div>
+
+                                <html><head></head><body><h1 id="data-type-and-literal"><a name="data-type-and-literal" class="plugin-anchor" href="#data-type-and-literal"><i class="fa fa-link" aria-hidden="true"></i></a>データ型とリテラル </h1>
+<h2 id="data-type"><a name="data-type" class="plugin-anchor" href="#data-type"><i class="fa fa-link" aria-hidden="true"></i></a>データ型 </h2>
+<p>JavaScriptは動的型付け言語に分類される言語であるため、静的型付け言語のような<strong>変数の型</strong>はありません。
+しかし、文字列、数値、真偽値といった<strong>値の型</strong>は存在します。
+これらの値の型のことを<strong>データ型</strong>と呼びます。</p>
+<p>データ型を大きく分けると、<strong>プリミティブ型</strong>と<strong>オブジェクト</strong>の2つに分類されます。</p>
+<p>プリミティブ型（基本型）は、真偽値や数値などの基本的な値の型のことです。
+プリミティブ型の値は、一度作成したらその値自体を変更できないというイミュータブル（immutable）の特性を持ちます。
+JavaScriptでは、文字列も一度作成したら変更できないイミュータブルの特性を持ち、プリミティブ型の一種として扱われます。</p>
+<p>一方、プリミティブ型ではないものをオブジェクト（複合型）と呼び、
+オブジェクトは複数のプリミティブ型の値またはオブジェクトからなる集合です。
+オブジェクトは、一度作成した後もその値自体を変更できるためミュータブル（mutable）の特性を持ちます。
+オブジェクトは、値そのものではなく値への参照を経由して操作されるため、参照型のデータとも言います。</p>
+<p>データ型を細かく見ていくと、7つのプリミティブ型とオブジェクトからなります。</p>
+<ul>
+<li>プリミティブ型（基本型）<ul>
+<li>真偽値（Boolean）: <code>true</code>または<code>false</code>のデータ型</li>
+<li>数値（Number）: <code>42</code> や <code>3.14159</code> などの数値のデータ型</li>
+<li>巨大な整数（BigInt）: ES2020から追加された<code>9007199254740992n</code>などの任意精度の整数のデータ型</li>
+<li>文字列（String）: <code>"JavaScript"</code> などの文字列のデータ型</li>
+<li>undefined: 値が未定義であることを意味するデータ型</li>
+<li>null: 値が存在しないことを意味するデータ型</li>
+<li>シンボル（Symbol）: ES2015から追加された一意で不変な値のデータ型</li>
+</ul>
+</li>
+<li>オブジェクト（複合型）<ul>
+<li>プリミティブ型以外のデータ</li>
+<li>オブジェクト、配列、関数、クラス、正規表現、Dateなど</li>
+</ul>
+</li>
+</ul>
+<p>プリミティブ型でないものは、オブジェクトであると覚えていれば問題ありません。</p>
+<p><code>typeof</code>演算子を使うことで、次のようにデータ型を調べることができます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-keyword">typeof</span> <span class="hljs-literal">true</span>);<span class="hljs-comment">// =&gt; "boolean"</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-keyword">typeof</span> <span class="hljs-number">42</span>); <span class="hljs-comment">// =&gt; "number"</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-keyword">typeof</span> <span class="hljs-number">9007199254740992n</span>); <span class="hljs-comment">// =&gt; "bigint"</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-keyword">typeof</span> <span class="hljs-string">"JavaScript"</span>); <span class="hljs-comment">// =&gt; "string"</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-keyword">typeof</span> <span class="hljs-title class_">Symbol</span>(<span class="hljs-string">"シンボル"</span>));<span class="hljs-comment">// =&gt; "symbol"</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-keyword">typeof</span> <span class="hljs-literal">undefined</span>); <span class="hljs-comment">// =&gt; "undefined"</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-keyword">typeof</span> <span class="hljs-literal">null</span>); <span class="hljs-comment">// =&gt; "object"</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-keyword">typeof</span> [<span class="hljs-string">"配列"</span>]); <span class="hljs-comment">// =&gt; "object"</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-keyword">typeof</span> { <span class="hljs-string">"key"</span>: <span class="hljs-string">"value"</span> }); <span class="hljs-comment">// =&gt; "object"</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-keyword">typeof</span> <span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) {}); <span class="hljs-comment">// =&gt; "function"</span>
+</code></pre>
+<p>プリミティブ型の値は、それぞれ<code>typeof</code>演算子の評価結果として、その値のデータ型を返します。
+一方で、オブジェクトに分類される値は<code>"object"</code>となります。</p>
+<p>配列(<code>[]</code>)とオブジェクト(<code>{}</code>)は、どちらも<code>"object"</code>という判定結果になります。
+そのため、<code>typeof</code>演算子ではオブジェクトの詳細な種類を正しく判定することはできません。
+ただし、関数はオブジェクトの中でも特別扱いされているため、<code>typeof</code>演算子の評価結果は<code>"function"</code>となります。
+また、<code>typeof null</code>が<code>"object"</code>となるのは、歴史的経緯のある仕様のバグ<sup><a href="#fn_1" id="reffn_1">1</a></sup>です。</p>
+<p>このことからもわかるように<code>typeof</code>演算子は、プリミティブ型またはオブジェクトかを判別するものです。
+<code>typeof</code>演算子では、オブジェクトの詳細な種類を判定できないことは、覚えておくとよいでしょう。
+各オブジェクトの判定方法については、それぞれのオブジェクトの章で見ていきます。</p>
+<h2 id="literal"><a name="literal" class="plugin-anchor" href="#literal"><i class="fa fa-link" aria-hidden="true"></i></a>リテラル </h2>
+<p>プリミティブ型の値や一部のオブジェクトは、<strong>リテラル</strong>を使うことで簡単に定義できるようになっています。</p>
+<p>リテラルとはプログラム上で数値や文字列など、データ型の値を直接記述できるように構文として定義されたものです。
+たとえば、<code>"</code>と<code>"</code>で囲んだ範囲が文字列リテラルで、これは文字列型のデータを表現しています。</p>
+<p>次のコードでは、<code>"こんにちは"</code>という文字列型のデータを初期値に持つ変数<code>str</code>を定義しています。</p>
+<pre><code class="lang-js"><span class="hljs-comment">// "と"で囲んだ範囲が文字列リテラル</span>
+<span class="hljs-keyword">const</span> str = <span class="hljs-string">"こんにちは"</span>;
+</code></pre>
+<p>リテラル表現がない場合は、その値を作る関数に引数を渡して作成する形になります。
+そのような冗長な表現を避ける方法として、よく利用される主要なデータ型にはリテラルが用意されています。</p>
+<p>次の5つのプリミティブ型は、それぞれリテラル表現を持っています。</p>
+<ul>
+<li>真偽値</li>
+<li>数値</li>
+<li>BigInt</li>
+<li>文字列</li>
+<li>null</li>
+</ul>
+<p>また、オブジェクトの中でもよく利用されるものに関してはリテラル表現が用意されています。</p>
+<ul>
+<li>オブジェクト</li>
+<li>配列</li>
+<li>正規表現</li>
+</ul>
+<p>これらのリテラルについて、まずはプリミティブ型から順番に見ていきます。</p>
+<h3 id="boolean"><a name="boolean" class="plugin-anchor" href="#boolean"><i class="fa fa-link" aria-hidden="true"></i></a>真偽値（Boolean）</h3>
+<p>真偽値には<code>true</code>と<code>false</code>のリテラルがあります。
+それぞれは<code>true</code>と<code>false</code>の値を返すリテラルで、見た目どおりの意味となります。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-literal">true</span>; <span class="hljs-comment">// =&gt; true</span>
+<span class="hljs-literal">false</span>; <span class="hljs-comment">// =&gt; false</span>
+</code></pre>
+<h3 id="number"><a name="number" class="plugin-anchor" href="#number"><i class="fa fa-link" aria-hidden="true"></i></a>数値（Number）</h3>
+<p>数値には<code>42</code>のような整数リテラルと<code>3.14159</code>のような浮動小数点数リテラルがあります。</p>
+<p>これらのリテラルで表現できる数値は<a href="https://ja.wikipedia.org/wiki/IEEE_754" target="_blank">IEEE 754</a>の倍精度浮動小数として扱われます。
+倍精度浮動小数では64ビットで数値を表現します。
+64ビットのうち52ビットを数字の格納のために使い、11ビットを小数点の位置に使い、残りの1ビットはプラスとマイナスの符号です。
+そのため、正確に扱える数値の最大値は<code>2^53-1</code>（2の53乗から1引いた値）となります。</p>
+<h4 id="integer-literal"><a name="integer-literal" class="plugin-anchor" href="#integer-literal"><i class="fa fa-link" aria-hidden="true"></i></a>整数リテラル </h4>
+<p>整数リテラルには次の4種類があります。</p>
+<!-- textlint-disable preset-ja-technical-writing/no-doubled-joshi -->
+<ul>
+<li>10進数: 数字の組み合わせ<ul>
+<li>ただし、複数の数字を組み合わせた際に、先頭を<code>0</code>から開始すると8進数として扱われる場合があります</li>
+<li>例）<code>0</code>、<code>2</code>、<code>10</code></li>
+</ul>
+</li>
+<li>2進数: <code>0b</code>（または<code>0B</code>）の後ろに、<code>0</code>または<code>1</code>の数字の組み合わせ<ul>
+<li>例）<code>0b0</code>、<code>0b10</code>、<code>0b1010</code></li>
+</ul>
+</li>
+<li>8進数: <code>0o</code>（または<code>0O</code>）の後ろに、<code>0</code>から<code>7</code>までの数字の組み合わせ<ul>
+<li><code>0o</code> は数字のゼロと小文字アルファベットの<code>o</code></li>
+<li>例）<code>0o644</code>、<code>0o777</code></li>
+</ul>
+</li>
+<li>16進数: <code>0x</code>（または<code>0X</code>）の後ろに、<code>0</code>から<code>9</code>までの数字と<code>a</code>から<code>f</code>または<code>A</code>から<code>F</code>のアルファベットの組み合わせ<ul>
+<li>アルファベットの大文字・小文字の違いは値には影響しません</li>
+<li>例）<code>0x30A2</code>、<code>0xEEFF</code></li>
+</ul>
+</li>
+</ul>
+<!-- textlint-enable preset-ja-technical-writing/no-doubled-joshi -->
+<p>0から9の数字のみで書かれた数値は、10進数として扱われます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-number">1</span>); <span class="hljs-comment">// =&gt; 1</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-number">10</span>); <span class="hljs-comment">// =&gt; 10</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-number">255</span>); <span class="hljs-comment">// =&gt; 255</span>
+</code></pre>
+<p><code>0b</code>からはじまる2進数リテラルは、ビットを表現するのによく利用されています。
+<code>b</code>は2進数を表すbinaryを意味しています。</p>
+<!-- 具体的な言及はないけどSyntaxを参照: https://tc39.es/ecma262/#prod-BinaryIntegerLiteral -->
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-number">0b1111</span>); <span class="hljs-comment">// =&gt; 15</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-number">0b10000000000</span>); <span class="hljs-comment">// =&gt; 1024</span>
+</code></pre>
+<p><code>0o</code>からはじまる8進数リテラルは、ファイルのパーミッションを表現するのによく利用されています。
+<code>o</code>は8進数を表すoctalを意味しています。</p>
+<!-- https://tc39.es/ecma262/#prod-OctalIntegerLiteral -->
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-number">0o644</span>);  <span class="hljs-comment">// =&gt; 420</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-number">0o777</span>);  <span class="hljs-comment">// =&gt; 511</span>
+</code></pre>
+<p>次のように、<code>0</code>からはじまり、<code>0</code>から<code>7</code>の数字を組み合わせた場合も8進数として扱われます。
+しかし、この表記は10進数と紛らわしいものであったため、ES2015で<code>0o</code>の8進数リテラルが新たに導入されました。
+また、strict modeではこの書き方は例外が発生するため、次のような8進数の書き方は避けるべきです（詳細は「<a href="../introduction/">JavaScriptとは</a>」の<a href="../introduction/#strict-mode">strict mode</a>を参照）。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-javascript"><span class="hljs-comment">// 非推奨な8進数の書き方</span>
+<span class="hljs-comment">// strict modeは例外が発生</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-number">0644</span>);  <span class="hljs-comment">// =&gt; 420</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-number">0777</span>);  <span class="hljs-comment">// =&gt; 511</span>
+</code></pre>
+<p><code>0x</code>からはじまる16進数リテラルは、文字のコードポイントやRGB値の表現などに利用されています。
+<code>x</code>は16進数を表すhexを意味しています。</p>
+<!-- https://tc39.es/ecma262/#prod-HexIntegerLiteral -->
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-number">0xFF</span>); <span class="hljs-comment">// =&gt; 255</span>
+<span class="hljs-comment">// 小文字で書いても意味は同じ</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-number">0xff</span>); <span class="hljs-comment">// =&gt; 255</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-number">0x30A2</span>); <span class="hljs-comment">// =&gt; 12450</span>
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>名前</th>
+<th>表記例</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>10進数</td>
+<td>42</td>
+<td>数値</td>
+</tr>
+<tr>
+<td>2進数</td>
+<td>0b0001</td>
+<td>ビット演算など</td>
+</tr>
+<tr>
+<td>8進数</td>
+<td>0o777</td>
+<td>ファイルのパーミッションなど</td>
+</tr>
+<tr>
+<td>16進数</td>
+<td>0xEEFF</td>
+<td>文字のコードポイント、RGB値など</td>
+</tr>
+</tbody>
+</table>
+<h4 id="floating-point-number-literal"><a name="floating-point-number-literal" class="plugin-anchor" href="#floating-point-number-literal"><i class="fa fa-link" aria-hidden="true"></i></a>浮動小数点数リテラル </h4>
+<p>浮動小数点数をリテラルとして書く場合には、次の2種類の表記が利用できます。</p>
+<ul>
+<li><code>3.14159</code> のような <code>.</code>（ドット）を含んだ数値</li>
+<li><code>2e8</code> のような <code>e</code> または <code>E</code> を含んだ数値</li>
+</ul>
+<p><code>0</code>からはじまる浮動小数点数は、<code>0</code>を省略して書くことができます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-number">.123</span>; <span class="hljs-comment">// =&gt; 0.123</span>
+</code></pre>
+<p>しかし、JavaScriptでは<code>.</code>をオブジェクトにおいて利用する機会が多いため、
+<code>0</code>からはじまる場合でも省略せずに書いたほうが意図しない挙動を減らせるでしょう。</p>
+<blockquote>
+<p><strong>Note</strong> 変数名を数字からはじめることができないのは、数値リテラルと衝突してしまうからです。</p>
+</blockquote>
+<p><code>e</code>は指数（exponent）を意味する記号で、<code>e</code>のあとには指数部の値を書きます。
+たとえば、<code>2e8</code>は2×10の8乗となるので、10進数で表すと<code>200000000</code>となります。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-number">2e8</span>; <span class="hljs-comment">// =&gt; 200000000</span>
+</code></pre>
+<h3 id="bigint-literal"><a name="bigint-literal" class="plugin-anchor" href="#bigint-literal"><i class="fa fa-link" aria-hidden="true"></i></a>[ES2020] BigInt </h3>
+<p>JavaScriptでは、<code>1</code>や<code>3.14159</code>などの数値リテラルは<a href="https://ja.wikipedia.org/wiki/IEEE_754" target="_blank">IEEE 754</a>で定義された倍精度浮動小数となります。
+倍精度浮動小数で正確に扱える数値の最大値は<code>2^53-1</code>（2の53乗から1引いた値である<code>9007199254740991</code>）です。
+この数値リテラルで安全に表せる最大の数値は<code>Number.MAX_SAFE_INTEGER</code>として定義されています。</p>
+<pre><code class="lang-js"><span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title class_">Number</span>.<span class="hljs-property">MAX_SAFE_INTEGER</span>); <span class="hljs-comment">// =&gt; 9007199254740991</span>
+</code></pre>
+<p>数値リテラルで<code>2^53-1</code>（<code>9007199254740991</code>）よりも大きな値を表現したり計算すると間違った結果となる場合があります。</p>
+<p>この問題を解決するために、ES2020では<code>BigInt</code>という新しい整数型のデータ型とリテラルが追加されました。
+数値リテラルは倍精度浮動小数（64ビット）で数値を扱うのに対して、BigIntでは任意の精度の整数を扱えます。
+そのため、BigIntでは<code>2^53-1</code>（<code>9007199254740991</code>）よりも大きな整数を正しく表現できます。</p>
+<p>BigIntリテラルは、数値の後ろに<code>n</code>をつけます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-number">1n</span>); <span class="hljs-comment">// =&gt; 1n</span>
+<span class="hljs-comment">// 2^53-1より大きな値も扱える</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-number">9007199254740992n</span>); <span class="hljs-comment">// =&gt; 9007199254740992n</span>
+</code></pre>
+<p>BigIntは整数を扱うデータ型であるため、次のように小数点を含めた場合は構文エラーとなります。</p>
+<!-- textlint-disable -->
+<!-- doctest:SyntaxError -->
+<pre><code class="lang-js"><span class="hljs-number">1.</span><span class="hljs-number">2n</span>; <span class="hljs-comment">// =&gt; SyntaxError</span>
+</code></pre>
+<!-- textlint-enable -->
+<h3 id="numeric-separators"><a name="numeric-separators" class="plugin-anchor" href="#numeric-separators"><i class="fa fa-link" aria-hidden="true"></i></a>[ES2021] Numeric Separators </h3>
+<p>数値が大きくなるほど、桁数の見間違いなどが発生しやすくなります。
+次のコードは、1兆を数値リテラルで書いていますが、桁数を読み取りにくいです。</p>
+<pre><code class="lang-js"><span class="hljs-number">1000000000000</span>;
+</code></pre>
+<p>ES2021から、数値リテラル内の区切り文字として<code>_</code>を追加できるNumeric Separatorsがサポートされています。
+Numeric Separatorsは、数値リテラル内では区切り文字として<code>_</code>が追加できます。
+次のコードも、1兆を数値リテラルで書いています。数値リテラルを評価する際に<code>_</code>は単純に無視されるため同じ意味となります。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-number">1_000_000_000_000</span>;
+</code></pre>
+<p>Numeric Separatorsは数値リテラルである整数、浮動小数点、BigIntのリテラル内でのみ利用できます。
+また、<code>_</code>はリテラルの先頭や数値の最後に追加することはできません。</p>
+<!-- textlint-disable -->
+<!-- doctest:SyntaxError -->
+<pre><code class="lang-js">_123; <span class="hljs-comment">// 変数として評価される</span>
+<span class="hljs-number">3.</span>_14; <span class="hljs-comment">// =&gt; SyntaxError</span>
+0x52_; <span class="hljs-comment">// =&gt; SyntaxError</span>
+1234n_; <span class="hljs-comment">// =&gt; SyntaxError</span>
+</code></pre>
+<!-- textlint-enable -->
+<h3 id="string"><a name="string" class="plugin-anchor" href="#string"><i class="fa fa-link" aria-hidden="true"></i></a>文字列（String）</h3>
+<p>文字列リテラル共通のルールとして、同じ記号で囲んだ内容を文字列として扱います。
+文字列リテラルとして次の3種類のリテラルがありますが、その評価結果はすべて同じ<code>"文字列"</code>になります。</p>
+<!-- textlint-disable eslint -->
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">"文字列"</span>); <span class="hljs-comment">// =&gt; "文字列"</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">'文字列'</span>); <span class="hljs-comment">// =&gt; "文字列"</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">`文字列`</span>); <span class="hljs-comment">// =&gt; "文字列"</span>
+</code></pre>
+<!-- textlint-enable eslint -->
+<h4 id="double-quote-and-single-quote"><a name="double-quote-and-single-quote" class="plugin-anchor" href="#double-quote-and-single-quote"><i class="fa fa-link" aria-hidden="true"></i></a>ダブルクォートとシングルクォート </h4>
+<p><code>"</code>（ダブルクォート）と<code>'</code>（シングルクォート）はまったく同じ意味となります。
+PHPやRubyなどとは違い、どちらのリテラルでも評価結果は同じとなります。</p>
+<p>文字列リテラルは同じ記号で囲む必要があるため、次のように文字列の中に同じ記号が出現した場合は、
+<code>\'</code>のように<code>\</code>（バックスラッシュ）を使ってエスケープしなければなりません。</p>
+<!-- textlint-disable eslint -->
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-string">'8 o\'clock'</span>; <span class="hljs-comment">// =&gt; "8 o'clock"</span>
+</code></pre>
+<!-- textlint-enable eslint -->
+<p>また、文字列内部に出現しない別のクォート記号を使うことで、エスケープをせずに書くこともできます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-string">"8 o'clock"</span>; <span class="hljs-comment">// =&gt; "8 o'clock"</span>
+</code></pre>
+<p>ダブルクォートとシングルクォートどちらも、改行をそのままでは入力できません。
+次のように改行を含んだ文字列は定義できないため、構文エラー（<code>SyntaxError</code>）となります。</p>
+<pre><code class="lang-javascript"><span class="hljs-string">"複数行の
+文字列を
+入れたい"</span>; <span class="hljs-comment">// =&gt; SyntaxError: "" string literal contains an unescaped line break</span>
+</code></pre>
+<p>改行の代わりに改行記号のエスケープシーケンス（<code>\n</code>）を使うことで複数行の文字列を書くことができます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-string">"複数行の\n文字列を\n入れたい"</span>;
+</code></pre>
+<p>シングルクォートとダブルクォートの文字列リテラルに改行を入れるには、エスケープシーケンスを使わないといけません。
+これに対してES2015から導入されたテンプレートリテラルでは、複数行の文字列を直感的に書くことができます。</p>
+<h4 id="template-literal"><a name="template-literal" class="plugin-anchor" href="#template-literal"><i class="fa fa-link" aria-hidden="true"></i></a>[ES2015] テンプレートリテラル </h4>
+<!-- textlint-disable ja-technical-writing/sentence-length -->
+<p>テンプレートリテラルは、<code>`</code>（バッククォート）で囲んだ範囲を文字列とするリテラルです。
+テンプレートリテラルでは、複数行の文字列を改行記号のエスケープシーケンス（<code>\n</code>）を使わずにそのまま書くことができます。</p>
+<!-- textlint-enable ja-technical-writing/sentence-length -->
+<p>複数行の文字列も<code>`</code>で囲めば、そのまま書くことができます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-string">`複数行の
+文字列を
+入れたい`</span>; <span class="hljs-comment">// =&gt; "複数行の\n文字列を\n入れたい"</span>
+</code></pre>
+<p>また、名前のとおりテンプレートのような機能も持っています。
+テンプレートリテラル内で<code>${変数名}</code>と書いた場合に、その変数の値を埋め込むことができます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> str = <span class="hljs-string">"文字列"</span>;
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">`これは<span class="hljs-subst">${str}</span>です`</span>); <span class="hljs-comment">// =&gt; "これは文字列です"</span>
+</code></pre>
+<p>テンプレートリテラルも他の文字列リテラルと同様に同じリテラル記号を内包したい場合は、<code>\</code>を使ってエスケープする必要があります。</p>
+<!-- textlint-disable eslint -->
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-string">`This is \`code\``</span>;<span class="hljs-comment">// =&gt; "This is `code`"</span>
+</code></pre>
+<!-- textlint-enable eslint -->
+<h3 id="null-literal"><a name="null-literal" class="plugin-anchor" href="#null-literal"><i class="fa fa-link" aria-hidden="true"></i></a>nullリテラル </h3>
+<p>nullリテラルは<code>null</code>値を返すリテラルです。
+<code>null</code>は「値がない」ということを表現する値です。</p>
+<p>次のように、未定義の変数を参照した場合は、
+参照できないため<code>ReferenceError</code>の例外が投げられます。</p>
+<!-- doctest: ReferenceError -->
+<pre><code class="lang-js">foo;<span class="hljs-comment">// "ReferenceError: foo is not defined"</span>
+</code></pre>
+<p><code>foo</code>には値がないということを表現したい場合は、
+<code>null</code>値を代入することで、<code>null</code>値を持つ<code>foo</code>という変数を定義できます。
+これにより、<code>foo</code>を値がない変数として定義し、参照できるようになります。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> foo = <span class="hljs-literal">null</span>;
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(foo); <span class="hljs-comment">// =&gt; null</span>
+</code></pre>
+<h2 id="undefined-is-not-literal"><a name="undefined-is-not-literal" class="plugin-anchor" href="#undefined-is-not-literal"><i class="fa fa-link" aria-hidden="true"></i></a>[コラム] undefinedはリテラルではない </h2>
+<p>プリミティブ型として紹介した<code>undefined</code>はリテラルではありません。
+<code>undefined</code>はただのグローバル変数で、<code>undefined</code>という値を持っているだけです。</p>
+<p>次のように、<code>undefined</code>はただのグローバル変数であるため、同じ<code>undefined</code>という名前のローカル変数を宣言できます。</p>
+<!-- textlint-disable eslint -->
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">function</span> <span class="hljs-title function_">fn</span>(<span class="hljs-params"></span>){
+    <span class="hljs-keyword">const</span> <span class="hljs-literal">undefined</span> = <span class="hljs-string">"独自の未定義値"</span>; <span class="hljs-comment">// undefinedという名前の変数をエラーなく定義できる</span>
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-literal">undefined</span>); <span class="hljs-comment">// =&gt; "独自の未定義値"</span>
+}
+<span class="hljs-title function_">fn</span>();
+</code></pre>
+<!-- textlint-enable eslint -->
+<p>これに対して<code>true</code>、<code>false</code>、<code>null</code>などはグローバル変数ではなくリテラルであるため、同じ名前の変数を定義することはできません。
+リテラルは変数名として利用できない予約語のようなものであるため、再定義しようとすると構文エラー（SyntaxError）となります。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-javascript"><span class="hljs-keyword">let</span> <span class="hljs-literal">null</span>; <span class="hljs-comment">// =&gt; SyntaxError</span>
+</code></pre>
+<p>ここでは、説明のために<code>undefined</code>というローカル変数を宣言しましたが、<code>undefined</code>の再定義は非推奨です。
+無用な混乱を生むだけなので避けるべきです。</p>
+<h3 id="object"><a name="object" class="plugin-anchor" href="#object"><i class="fa fa-link" aria-hidden="true"></i></a>オブジェクトリテラル </h3>
+<p>JavaScriptにおいて、オブジェクトはあらゆるものの基礎となります。
+そのオブジェクトを作成する方法として、オブジェクトリテラルがあります。
+オブジェクトリテラルは<code>{}</code>（中カッコ）を書くことで、新しいオブジェクトを作成できます。</p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> obj = {}; <span class="hljs-comment">// 中身が空のオブジェクトを作成</span>
+</code></pre>
+<p>オブジェクトリテラルはオブジェクトの作成と同時に中身を定義できます。
+オブジェクトのキーと値を<code>:</code>で区切ったものを <code>{}</code> の中に書くことで作成と初期化が同時に行えます。</p>
+<p>次のコードで作成したオブジェクトは <code>key</code> というキー名と <code>"value"</code> という文字列の値を持つオブジェクトを作成しています。
+キー名には、文字列またはSymbolを指定し、値にはプリミティブ型の値からオブジェクトまで何でも入れることができます。</p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> obj = {
+    <span class="hljs-string">"key"</span>: <span class="hljs-string">"value"</span>
+};
+</code></pre>
+<p>このとき、オブジェクトが持つキーのことをプロパティ名と呼びます。
+この場合、 <code>obj</code>というオブジェクトは<code>key</code>というプロパティを持っていると言います。</p>
+<p><code>obj</code>の<code>key</code>プロパティを参照するには、<code>.</code>（ドット）でつないで参照する方法と、
+<code>[]</code>（ブラケット）で参照する方法があります。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> obj = {
+    <span class="hljs-string">"key"</span>: <span class="hljs-string">"value"</span>
+};
+<span class="hljs-comment">// ドット記法</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(obj.<span class="hljs-property">key</span>); <span class="hljs-comment">// =&gt; "value"</span>
+<span class="hljs-comment">// ブラケット記法</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(obj[<span class="hljs-string">"key"</span>]); <span class="hljs-comment">// =&gt; "value"</span>
+</code></pre>
+<p>ドット記法では、プロパティ名が変数名と同じく識別子である必要があります。
+そのため、次のように識別子として利用できないプロパティ名はドット記法として書くことができません。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-Js"><span class="hljs-comment">// プロパティ名は文字列の"123"</span>
+<span class="hljs-keyword">const</span> object = {
+    <span class="hljs-string">"123"</span>: <span class="hljs-string">"value"</span>
+};
+<span class="hljs-comment">// OK: ブラケット記法では、文字列として書くことができる</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(object[<span class="hljs-string">"123"</span>]); <span class="hljs-comment">// =&gt; "value"</span>
+<span class="hljs-comment">// NG: ドット記法では、数値からはじまる識別子は利用できない</span>
+object<span class="hljs-number">.123</span>
+</code></pre>
+<p>オブジェクトはとても重要で、これから紹介する配列や正規表現もこのオブジェクトが元となっています。
+詳細は「<a href="../object/">オブジェクト</a>」の章で解説します。
+ここでは、オブジェクトリテラル（<code>{</code>と<code>}</code>）が出てきたら、新しいオブジェクトを作成しているんだなと思ってください。</p>
+<h3 id="array"><a name="array" class="plugin-anchor" href="#array"><i class="fa fa-link" aria-hidden="true"></i></a>配列リテラル </h3>
+<p>オブジェクトリテラルと並んで、よく使われるリテラルとして配列リテラルがあります。
+配列リテラルは<code>[</code>と<code>]</code>で値をカンマ区切りで囲み、その値を持つArrayオブジェクトを作成します。
+配列（Arrayオブジェクト）とは、複数の値に順序をつけて格納できるオブジェクトの一種です。</p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> emptyArray = []; <span class="hljs-comment">// 空の配列を作成</span>
+<span class="hljs-keyword">const</span> array = [<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>]; <span class="hljs-comment">// 値を持った配列を作成</span>
+</code></pre>
+<!-- textlint-disable prh -->
+<p>配列は<code>0</code>からはじまるインデックス（添字）に、対応した値を保持しています。
+作成した配列の要素を取得するには、配列に対して<code>array[index]</code>という構文で指定したインデックスの値を参照できます。</p>
+<!-- textlint-enable prh -->
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> array = [<span class="hljs-string">"index:0"</span>, <span class="hljs-string">"index:1"</span>, <span class="hljs-string">"index:2"</span>];
+<span class="hljs-comment">// 0番目の要素を参照</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(array[<span class="hljs-number">0</span>]); <span class="hljs-comment">// =&gt; "index:0"</span>
+<span class="hljs-comment">// 1番目の要素を参照</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(array[<span class="hljs-number">1</span>]); <span class="hljs-comment">// =&gt; "index:1"</span>
+</code></pre>
+<p>配列についての詳細は「<a href="../array/">配列</a>」の章で解説します。</p>
+<h3 id="regexp-literal"><a name="regexp-literal" class="plugin-anchor" href="#regexp-literal"><i class="fa fa-link" aria-hidden="true"></i></a>正規表現リテラル </h3>
+<p>JavaScriptは正規表現をリテラルで書くことができます。
+正規表現リテラルは<code>/</code>（スラッシュ）と<code>/</code>（スラッシュ）で正規表現のパターン文字列を囲みます。
+正規表現のパターン内では、<code>+</code>などの特定の記号や<code>\</code>（バックスラッシュ）からはじまる特殊文字が特別な意味を持ちます。</p>
+<p>次のコードでは、数字にマッチする特殊文字である<code>\d</code>を使い、1文字以上の数字にマッチする正規表現をリテラルで表現しています。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> numberRegExp = <span class="hljs-regexp">/\d+/</span>; <span class="hljs-comment">// 1文字以上の数字にマッチする正規表現</span>
+<span class="hljs-comment">// `numberRegExp`の正規表現が文字列"123"にマッチするかをテストする</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(numberRegExp.<span class="hljs-title function_">test</span>(<span class="hljs-string">"123"</span>)); <span class="hljs-comment">// =&gt; true</span>
+</code></pre>
+<p><code>RegExp</code>コンストラクタを使うことで、文字列から正規表現オブジェクトを作成できます。
+しかし、特殊文字の二重エスケープが必要になり直感的に書くことが難しくなります。</p>
+<p>正規表現オブジェクトについて詳しくは、「<a href="../string/">文字列</a>」の章で紹介します。</p>
+<h2 id="primitive-and-wrapper-object"><a name="primitive-and-wrapper-object" class="plugin-anchor" href="#primitive-and-wrapper-object"><i class="fa fa-link" aria-hidden="true"></i></a>プリミティブ型とオブジェクト </h2>
+<!--　textlint-disable preset-ja-technical-writing/max-ten -->
+<p>プリミティブ型は基本的にリテラルで表現しますが、真偽値（Boolean）、数値（Number）、文字列（String）はそれぞれオブジェクトとして表現する方法もあります。
+これらはプリミティブ型の値をラップしたようなオブジェクトであるため<strong>ラッパーオブジェクト</strong>と呼ばれます。</p>
+<p>ラッパーオブジェクトは、<code>new</code>演算子と対応するコンストラクタ関数を利用して作成できます。
+たとえば、文字列のプリミティブ型に対応するコンストラクタ関数は<code>String</code>となります。</p>
+<p>次のコードでは、<code>String</code>のラッパーオブジェクトを作成しています。
+ラッパーオブジェクトは、名前のとおりオブジェクトの一種であるため<code>typeof</code>演算子の結果も<code>"object"</code>です。
+また、オブジェクトであるため<code>length</code>プロパティなどのオブジェクトが持つプロパティを参照できます。</p>
+<!-- textlint-enable -->
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// 文字列をラップしたStringラッパーオブジェクト</span>
+<span class="hljs-keyword">const</span> str = <span class="hljs-keyword">new</span> <span class="hljs-title class_">String</span>(<span class="hljs-string">"文字列"</span>);
+<span class="hljs-comment">// ラッパーオブジェクトは"object"型のデータ</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-keyword">typeof</span> str); <span class="hljs-comment">// =&gt; "object"</span>
+<span class="hljs-comment">// Stringオブジェクトの`length`プロパティは文字列の長さを返す</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(str.<span class="hljs-property">length</span>); <span class="hljs-comment">// =&gt; 3</span>
+</code></pre>
+<p>しかし、明示的にラッパーオブジェクトを使うべき理由はありません。
+なぜなら、JavaScriptではプリミティブ型のデータに対してもオブジェクトのように参照できる仕組みがあるためです。
+次のコードでは、プリミティブ型の文字列データに対しても<code>length</code>プロパティへアクセスできています。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// プリミティブ型の文字列データ</span>
+<span class="hljs-keyword">const</span> str = <span class="hljs-string">"文字列"</span>;
+<span class="hljs-comment">// プリミティブ型の文字列は"string"型のデータ</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-keyword">typeof</span> str); <span class="hljs-comment">// =&gt; "string"</span>
+<span class="hljs-comment">// プリミティブ型の文字列も`length`プロパティを参照できる</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(str.<span class="hljs-property">length</span>); <span class="hljs-comment">// =&gt; 3</span>
+</code></pre>
+<p>これは、プリミティブ型のデータのプロパティへアクセスする際に、対応するラッパーオブジェクトへ暗黙的に変換してからプロパティへアクセスするためです。
+また、ラッパーオブジェクトを明示的に作成するには、リテラルに比べて冗長な書き方が必要になります。
+このように、ラッパーオブジェクトを明示的に作成する必要はないため、常にリテラルでプリミティブ型のデータを表現することを推奨します。</p>
+<p>このラッパーオブジェクトへの暗黙的な型変換の仕組みについては「<a href="../wrapper-object/">ラッパーオブジェクト</a>」の章で解説します。
+現時点では、プリミティブ型のデータであってもオブジェクトのようにプロパティ（メソッドなども含む）を参照できるということだけを知っていれば問題ありません。</p>
+<h2 id="data-type-summary"><a name="data-type-summary" class="plugin-anchor" href="#data-type-summary"><i class="fa fa-link" aria-hidden="true"></i></a>まとめ </h2>
+<p>この章では、データ型とリテラルについて学びました。</p>
+<ul>
+<li>7種類のプリミティブ型とオブジェクトがある</li>
+<li>リテラルはデータ型の値を直接記述できる構文として定義されたもの</li>
+<li>プリミティブ型の真偽値、数値、BigInt、文字列、nullはリテラル表現がある</li>
+<li>オブジェクト型のオブジェクト、配列、正規表現にはリテラル表現がある</li>
+<li>プリミティブ型のデータでもプロパティアクセスができる</li>
+</ul>
+<!--
+
+## 参考 {#reference-for-data-type}
+
+- [11.6.2 Reserved Words](http://www.ecma-international.org/ecma-262/7.0/#prod-ReservedWord "Reserved Words")
+- [11.8.3.1Static Semantics: MV](http://www.ecma-international.org/ecma-262/7.0/#sec-static-semantics-mv "11.8.3.1Static Semantics: MV")
+- [no-undefined - Rules - ESLint - Pluggable JavaScript linter](http://eslint.org/docs/rules/no-undefined "no-undefined - Rules - ESLint - Pluggable JavaScript linter")
+    - `undefined`の宣言を禁止するESLintルール
+
+-->
+<blockquote id="fn_1">
+<sup>1</sup>. JavaScriptが最初にNetscapeで実装された際に<code>typeof null === "object"</code>となるバグがありました。このバグを修正するとすでにこの挙動に依存しているコードが壊れるため、修正が見送られ現在の挙動が仕様となりました。 詳しくは<a href="https://2ality.com/2013/10/typeof-null.html" target="_blank">https://2ality.com/2013/10/typeof-null.html</a>を参照。<a href="#reffn_1" title="Jump back to footnote [1] in the text."> ↩</a>
+</blockquote>
+</body></html>
+                                
+
+                                </section>
+                            
+                        </div>
+                    </div>
+                
+<footer class="book_footer">
+    <p>Copyright (c) 2016-present <a href="https://github.com/asciidwango/js-primer" target="_blank">jsprimer project</a></p>
+</footer>
+
+            </div>
+
+            
+                
+                <a href="../read-eval-print/" class="navigation navigation-prev " aria-label="Previous page: 値の評価と表示">
+                    <i class="fa fa-angle-left"></i>
+                </a>
+                
+                
+                <a href="../operator/" class="navigation navigation-next " aria-label="Next page: 演算子">
+                    <i class="fa fa-angle-right"></i>
+                </a>
+                
+            
+        
+    </div>
+
+    <script>
+        var gitbook = gitbook || [];
+        gitbook.push(function() {
+            gitbook.page.hasChanged({"page":{"author":"azu","description":"JavaScriptの値の種類にあたるデータ型についてを紹介します。データ型には大きく分けてプリミティブ型とオブジェクトがあり、それぞれのデータ型を簡単なコード例とともに紹介していきます。一部のデータ型にはリテラルというデータ型を簡単に記述するための構文が用意されており、リテラルについても合わせて紹介していきます。","sponsors":[],"title":"データ型とリテラル","level":"1.3.5","depth":2,"next":{"title":"演算子","level":"1.3.6","depth":2,"path":"basic/operator/README.md","ref":"./basic/operator/README.md","articles":[]},"previous":{"title":"値の評価と表示","level":"1.3.4","depth":2,"path":"basic/read-eval-print/README.md","ref":"./basic/read-eval-print/README.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-search","-lunr","page-toc-button","include-codeblock","anchors","canonical-link","js-console","github-issue-feedback","sandpack"],"root":"./source/","styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"docSearch":{"index":"83I8JIFICQ","apiKey":"9169ce4cd84fcf2376f29d9585c89254"},"github-issue-feedback":{"repo":"asciidwango/js-primer","label":"問題を報告する"},"fontsettings":{"theme":"white","family":"sans","size":2},"js-console":{},"canonical-link":{"baseURL":"https://jsprimer.net"},"highlight":{},"page-toc-button":{"maxTocDepth":2,"minTocSize":2},"include-codeblock":{"check":false,"edit":false,"lang":"","fixlang":false,"template":"./resources/gitbook-plugin-include-codeblock.hbs","theme":"chrome","unindent":false},"sandpack":{},"edit-link":{"base":"https://github.com/asciidwango/js-primer/edit/master/source/","label":"Edit"},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false},"anchors":{}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"IPAexMincho","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"index.md","glossary":"GLOSSARY.md","summary":"README.md"},"variables":{"esversion":"2024","nodeversion":"22.7.0","npmversion":"10.8.2","triplebackticks":"```","console":"<a class=\"gitbook-plugin-js-console\" aria-hidden=\"true\"></a>"},"title":"JavaScript Primer #jsprimer","gitbook":">=3.0.0","description":"JavaScriptの基本的な書き方からアプリケーションの作成などのユースケースを学ぶための入門書です"},"file":{"path":"basic/data-type/README.md","mtime":"2025-05-18T21:58:17.821Z","type":"markdown"},"gitbook":{"version":"6.0.2","time":"2025-05-18T21:58:35.597Z"},"basePath":"../..","book":{"language":""}});
+        });
+    </script>
+</div>
+
+        
+    <noscript>
+        <style>
+            .honkit-cloak {
+                display: block !important;
+            }
+        </style>
+    </noscript>
+    <script>
+        // Restore sidebar state as critical path for prevent layout shift
+        function __init__getSidebarState(defaultValue){
+            var baseKey = "";
+            var key = baseKey + ":sidebar";
+            try {
+                var value = localStorage[key];
+                if (value === undefined) {
+                    return defaultValue;
+                }
+                var parsed = JSON.parse(value);
+                return parsed == null ? defaultValue : parsed;
+            } catch (e) {
+                return defaultValue;
+            }
+        }
+        function __init__restoreLastSidebarState() {
+            var isMobile = window.matchMedia("(max-width: 600px)").matches;
+            if (isMobile) {
+                // Init last state if not mobile
+                return;
+            }
+            var sidebarState = __init__getSidebarState(true);
+            var book = document.querySelector(".book");
+            // Show sidebar if it enabled
+            if (sidebarState && book) {
+                book.classList.add("without-animation", "with-summary");
+            }
+        }
+
+        try {
+            __init__restoreLastSidebarState();
+        } finally {
+            var book = document.querySelector(".book");
+            book.classList.remove("honkit-cloak");
+        }
+    </script>
+    <script src="../../gitbook/gitbook.js"></script>
+    <script src="../../gitbook/theme.js"></script>
+    
+        
+        <script src="../../gitbook/gitbook-plugin-page-toc-button/plugin.js"></script>
+        
+    
+        
+        <script src="../../gitbook/gitbook-plugin-js-console/console-ui.js"></script>
+        
+    
+        
+        <script src="../../gitbook/gitbook-plugin-github-issue-feedback/plugin.js"></script>
+        
+    
+        
+        <script src="../../gitbook/honkit-plugin-sandpack/honkit-plugin-sandpack.js"></script>
+        
+    
+        
+        <script src="../../gitbook/@honkit/honkit-plugin-fontsettings/fontsettings.js"></script>
+        
+    
+
+    </body>
+</html>
+

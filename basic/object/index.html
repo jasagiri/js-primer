@@ -1,0 +1,2388 @@
+
+<!DOCTYPE HTML>
+<html lang="" >
+    <head>
+        <meta charset="UTF-8">
+        <title>オブジェクト · JavaScript Primer #jsprimer</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="description" content="JavaScriptのObjectはオブジェクトの基礎となるものです。オブジェクトとプロパティの作成、更新、削除などの基本的な操作について紹介します。">
+        <meta name="generator" content="HonKit 6.0.2">
+        
+        
+        
+    
+    <link rel="stylesheet" href="../../gitbook/style.css">
+
+    
+            
+                
+                <link rel="stylesheet" href="../../gitbook/gitbook-plugin-page-toc-button/plugin.css">
+                
+            
+                
+                <link rel="stylesheet" href="../../gitbook/gitbook-plugin-anchors/plugin.css">
+                
+            
+                
+                <link rel="stylesheet" href="../../gitbook/@honkit/honkit-plugin-highlight/website.css">
+                
+            
+                
+                <link rel="stylesheet" href="../../gitbook/@honkit/honkit-plugin-fontsettings/website.css">
+                
+            
+        
+
+    
+
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+         
+    
+    
+    
+    <meta name="HandheldFriendly" content="true"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../gitbook/images/apple-touch-icon-precomposed-152.png">
+    <link rel="shortcut icon" href="../../gitbook/images/favicon.ico" type="image/x-icon">
+
+    
+    <link rel="next" href="../prototype-object/" />
+    
+    
+    <link rel="prev" href="../loop/" />
+    
+
+    <link rel="canonical" href="https://jsprimer.net/basic/object/">
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-DWY0DLHWB6"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+
+    gtag("js", new Date());
+
+    gtag("config", "G-DWY0DLHWB6");
+</script>
+<script type="module">
+    // コンソールUIでコード実行したらイベントとして送信する
+    const onExecuteCode = (scriptType) => {
+        gtag("event", "execute_code", {
+            "event_category": "console",
+            "event_label": "execute_code",
+            "script_type": scriptType || "unknown"
+        });
+    };
+    let observer;
+    const observeEvalEvent = () => {
+        if (observer) {
+            observer.disconnect();
+        }
+        const callback = function(mutationsList) {
+            for (const mutation of mutationsList) {
+                const mirrorConsole = Array.from(mutation.addedNodes).find(node => Boolean(node.dataset.mirrorConsole));
+                if (mirrorConsole) {
+                    return onExecuteCode(mirrorConsole.dataset.mirrorConsole);
+                }
+            }
+        };
+        observer = new MutationObserver(callback);
+        observer.observe(document.body, { childList: true });
+    };
+    const eventMap = new WeakMap();
+    // 問題を報告ボタンを押したらイベントとして送信する
+    const onClickIssueReport = () => {
+        console.log("click_issue_report");
+        gtag("event", "click_issue_report", {
+            "event_category": "contribution",
+            "event_label": "click_issue_report"
+        });
+    };
+    const observeIssueReport = () => {
+        const targetButton = document.querySelector(".gitbook-plugin-github-issue-feedback");
+        // すでにイベントが登録されていたら何もしない
+        if (eventMap.has(targetButton)) {
+            return;
+        }
+        if (targetButton) {
+            targetButton.addEventListener("click", onClickIssueReport);
+            eventMap.set(targetButton, onClickIssueReport);
+        }
+    };
+    window.addEventListener("DOMContentLoaded", function() {
+        gitbook.events.on("page.change", function() {
+            observeEvalEvent();
+            observeIssueReport();
+        });
+    });
+
+</script>
+<meta name="google-site-verification" content="bMotEbgYwkzA3k4PkuyK_NUdz0bKh-Phz0oUwNmRSVo"/>
+<style>
+    /*
+     * Disable antialias
+     */
+    * {
+        -webkit-font-smoothing: initial !important
+    }
+
+    body {
+        text-rendering: initial !important;
+        font-smoothing: initial !important;
+    }
+
+    /* deny access chapter */
+    .summary li.chapter > span {
+        cursor: not-allowed;
+        opacity: .3;
+    }
+
+    /* console ui */
+
+    .mirror-console-attach-button-wrapper {
+        margin-top: -1.275em;
+        margin-bottom: 1.275em
+    }
+
+    .mirror-console-wrapper {
+        margin-top: 1.275em;
+        margin-bottom: 1.275em
+    }
+
+    /* file name for codeblock */
+    .code-filename {
+        background-color: #eee;
+        display: inline-block;
+        padding: 2px 8px;
+        line-height: inherit;
+        margin-bottom: 0px !important;
+    }
+
+    /* Markdown */
+    /* Support horizon scroll */
+    /* https://stackoverflow.com/questions/17770257/scrolling-tables-horizontally-without-wrapping-them-in-div */
+    .markdown-section table {
+        max-width: 100%;
+        overflow-x: auto;
+        display: block;
+    }
+    .markdown-section sup,
+    .markdown-section sub {
+        font-size: 75%;
+    }
+
+    .book_footer {
+        text-align: center;
+        color: #000000;
+        background: #ddd;
+        font-size: 16px;
+        margin-top: 16px;
+        padding: 16px;
+    }
+
+    /* github-issue-feedback */
+    .gitbook-plugin-github-issue-feedback {
+        background-color: #333;
+        color: #fff;
+        opacity: 0.8;
+        padding: 4px;
+        margin-right: 24px;
+        margin-bottom: 4px;
+        border-radius: 6px;
+    }
+
+    .gitbook-plugin-github-issue-feedback:hover {
+        opacity: 1;
+    }
+
+    /* Hide footer on mobile */
+    /* Use navigation width */
+    @media (max-width: 1240px) {
+        .book_footer {
+            display: none;
+        }
+    }
+
+    .navigation {
+        min-width: 50px;
+    }
+
+    @media (min-width: 1240px) {
+        .honkit-plugin-sandpack {
+            width: calc(100% + 180px);
+            margin: 0 0 1em -90px;
+        }
+    }
+
+    .honkit-plugin-sandpack, .honkit-plugin-sandpack--buttonContainer {
+        margin-bottom: 1em;
+    }
+
+</style>
+<meta name="theme-color" content="#ffffff">
+<link rel="manifest" href="../../manifest.json">
+<script defer async>
+    // unregister old service worker(remove workbox)
+    // https://github.com/asciidwango/js-primer/pull/1701
+    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for (const registration of registrations) {
+            registration.unregister();
+        }
+    }).catch(function(err) {
+        console.error(new Error("Can not getRegistrations", {
+            cause: err
+        }));
+    });
+</script>
+
+    </head>
+    <body>
+        
+<div class="book honkit-cloak">
+    <div class="book-summary">
+        
+            
+            
+                <nav role="navigation">
+                
+
+
+<ul class="summary">
+    
+    
+
+    
+
+    
+        
+        
+    
+        <li class="chapter " data-level="1.1" data-path="../../">
+            
+                <a href="../../">
+            
+                    
+                    この書籍について
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2" data-path="../../intro/">
+            
+                <a href="../../intro/">
+            
+                    
+                    はじめに
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.2.1" data-path="../../intro/authors/">
+            
+                <a href="../../intro/authors/">
+            
+                    
+                    著者紹介
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.2" data-path="../../intro/sponsors/">
+            
+                <a href="../../intro/sponsors/">
+            
+                    
+                    JavaScript Primerスポンサー
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.3" data-path="../../intro/preparation/">
+            
+                <a href="../../intro/preparation/">
+            
+                    
+                    読みはじめる前の事前準備
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.4" data-path="../../intro/feedback/">
+            
+                <a href="../../intro/feedback/">
+            
+                    
+                    文章の間違いに気づいたら
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3" data-path="../">
+            
+                <a href="../">
+            
+                    
+                    第一部: 基本文法
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.3.1" data-path="../introduction/">
+            
+                <a href="../introduction/">
+            
+                    
+                    JavaScriptとは
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.2" data-path="../comments/">
+            
+                <a href="../comments/">
+            
+                    
+                    コメント
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.3" data-path="../variables/">
+            
+                <a href="../variables/">
+            
+                    
+                    変数と宣言
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.4" data-path="../read-eval-print/">
+            
+                <a href="../read-eval-print/">
+            
+                    
+                    値の評価と表示
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.5" data-path="../data-type/">
+            
+                <a href="../data-type/">
+            
+                    
+                    データ型とリテラル
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.6" data-path="../operator/">
+            
+                <a href="../operator/">
+            
+                    
+                    演算子
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.7" data-path="../implicit-coercion/">
+            
+                <a href="../implicit-coercion/">
+            
+                    
+                    暗黙的な型変換
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.8" data-path="../function-declaration/">
+            
+                <a href="../function-declaration/">
+            
+                    
+                    関数と宣言
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.9" data-path="../statement-expression/">
+            
+                <a href="../statement-expression/">
+            
+                    
+                    文と式
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.10" data-path="../condition/">
+            
+                <a href="../condition/">
+            
+                    
+                    条件分岐
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.11" data-path="../loop/">
+            
+                <a href="../loop/">
+            
+                    
+                    ループと反復処理
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter active" data-level="1.3.12" data-path="./">
+            
+                <a href="./">
+            
+                    
+                    オブジェクト
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.13" data-path="../prototype-object/">
+            
+                <a href="../prototype-object/">
+            
+                    
+                    プロトタイプオブジェクト
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.14" data-path="../array/">
+            
+                <a href="../array/">
+            
+                    
+                    配列
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.15" data-path="../string/">
+            
+                <a href="../string/">
+            
+                    
+                    文字列
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.16" data-path="../string-unicode/">
+            
+                <a href="../string-unicode/">
+            
+                    
+                    文字列とUnicode
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.17" data-path="../wrapper-object/">
+            
+                <a href="../wrapper-object/">
+            
+                    
+                    ラッパーオブジェクト
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.18" data-path="../function-scope/">
+            
+                <a href="../function-scope/">
+            
+                    
+                    関数とスコープ
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.19" data-path="../function-this/">
+            
+                <a href="../function-this/">
+            
+                    
+                    関数とthis
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.20" data-path="../class/">
+            
+                <a href="../class/">
+            
+                    
+                    クラス
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.21" data-path="../error-try-catch/">
+            
+                <a href="../error-try-catch/">
+            
+                    
+                    例外処理
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.22" data-path="../async/">
+            
+                <a href="../async/">
+            
+                    
+                    非同期処理:Promise/Async Function
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.23" data-path="../map-and-set/">
+            
+                <a href="../map-and-set/">
+            
+                    
+                    Map/Set
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.24" data-path="../json/">
+            
+                <a href="../json/">
+            
+                    
+                    JSON
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.25" data-path="../date/">
+            
+                <a href="../date/">
+            
+                    
+                    Date
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.26" data-path="../math/">
+            
+                <a href="../math/">
+            
+                    
+                    Math
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.27" data-path="../module/">
+            
+                <a href="../module/">
+            
+                    
+                    ECMAScriptモジュール
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.28" data-path="../ecmascript/">
+            
+                <a href="../ecmascript/">
+            
+                    
+                    ECMAScript
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.29" data-path="../other-parts/">
+            
+                <a href="../other-parts/">
+            
+                    
+                    第一部: おわりに
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4" data-path="../../use-case/">
+            
+                <a href="../../use-case/">
+            
+                    
+                    第二部: 応用編（ユースケース）
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.4.1" data-path="../../use-case/setup-local-env/">
+            
+                <a href="../../use-case/setup-local-env/">
+            
+                    
+                    アプリケーション開発の準備
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.2" data-path="../../use-case/ajaxapp/">
+            
+                <a href="../../use-case/ajaxapp/">
+            
+                    
+                    Ajax通信
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.4.2.1" data-path="../../use-case/ajaxapp/entrypoint/">
+            
+                <a href="../../use-case/ajaxapp/entrypoint/">
+            
+                    
+                    エントリーポイント
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.2.2" data-path="../../use-case/ajaxapp/http/">
+            
+                <a href="../../use-case/ajaxapp/http/">
+            
+                    
+                    HTTP通信
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.2.3" data-path="../../use-case/ajaxapp/display/">
+            
+                <a href="../../use-case/ajaxapp/display/">
+            
+                    
+                    データを表示する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.2.4" data-path="../../use-case/ajaxapp/promise/">
+            
+                <a href="../../use-case/ajaxapp/promise/">
+            
+                    
+                    Promiseを活用する
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3" data-path="../../use-case/nodecli/">
+            
+                <a href="../../use-case/nodecli/">
+            
+                    
+                    Node.jsでCLIアプリ
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.4.3.1" data-path="../../use-case/nodecli/helloworld/">
+            
+                <a href="../../use-case/nodecli/helloworld/">
+            
+                    
+                    Node.jsでHello World
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3.2" data-path="../../use-case/nodecli/argument-parse/">
+            
+                <a href="../../use-case/nodecli/argument-parse/">
+            
+                    
+                    コマンドライン引数を処理する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3.3" data-path="../../use-case/nodecli/read-file/">
+            
+                <a href="../../use-case/nodecli/read-file/">
+            
+                    
+                    ファイルを読み込む
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3.4" data-path="../../use-case/nodecli/md-to-html/">
+            
+                <a href="../../use-case/nodecli/md-to-html/">
+            
+                    
+                    MarkdownをHTMLに変換する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3.5" data-path="../../use-case/nodecli/refactor-and-unittest/">
+            
+                <a href="../../use-case/nodecli/refactor-and-unittest/">
+            
+                    
+                    ユニットテストを記述する
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4" data-path="../../use-case/todoapp/">
+            
+                <a href="../../use-case/todoapp/">
+            
+                    
+                    Todoアプリ
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.4.4.1" data-path="../../use-case/todoapp/entrypoint/">
+            
+                <a href="../../use-case/todoapp/entrypoint/">
+            
+                    
+                    エントリーポイント
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.2" data-path="../../use-case/todoapp/app-structure/">
+            
+                <a href="../../use-case/todoapp/app-structure/">
+            
+                    
+                    アプリの構成要素
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.3" data-path="../../use-case/todoapp/form-event/">
+            
+                <a href="../../use-case/todoapp/form-event/">
+            
+                    
+                    Todoアイテムの追加を実装する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.4" data-path="../../use-case/todoapp/event-model/">
+            
+                <a href="../../use-case/todoapp/event-model/">
+            
+                    
+                    イベントとモデル
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.5" data-path="../../use-case/todoapp/update-delete/">
+            
+                <a href="../../use-case/todoapp/update-delete/">
+            
+                    
+                    Todoアイテムの更新と削除を実装する
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4.6" data-path="../../use-case/todoapp/final/">
+            
+                <a href="../../use-case/todoapp/final/">
+            
+                    
+                    Todoアプリのリファクタリング
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5" data-path="../../appendix/links/">
+            
+                <a href="../../appendix/links/">
+            
+                    
+                    付録: 参考リンク集
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.6" data-path="../../cheatsheet/">
+            
+                <a href="../../cheatsheet/">
+            
+                    
+                    付録: JavaScriptチートシート
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.7" data-path="../../outro/">
+            
+                <a href="../../outro/">
+            
+                    
+                    おわりに
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+    
+
+    <li class="divider"></li>
+
+    <li>
+        <a href="https://github.com/honkit/honkit" target="blank" class="gitbook-link">
+            Published with HonKit
+        </a>
+    </li>
+</ul>
+
+
+                </nav>
+            
+        
+    </div>
+
+    <div class="book-body">
+        
+            <div class="body-inner">
+                
+                    
+
+<!-- Header -->
+<meta name="keywords" content="JavaScript,ECMAScript,JS,入門,チュートリアル,書籍,本,無料,Node.js,ブラウザ"/>
+<link rel="author" href="https://www.hatena.ne.jp/efcl/"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsearch.js@2/dist/cdn/docsearch.min.css"/>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/docsearch.js@2/dist/cdn/docsearch.min.js"></script>
+<!-- OGP -->
+<meta property="og:title" content="JavaScript Primer - 迷わないための入門書"/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://jsprimer.net/"/>
+<meta property="og:image" content="https://jsprimer.net/landing/img/cover-optimized.jpg"/>
+<meta property="og:site_name" content="JavaScript Primer"/>
+<meta property="og:description" content="JavaScript Primerは、JavaScriptの基礎から応用までを一貫して学べる入門書です。"/>
+<style>
+    .book-header {
+        display: flex;
+        flex-direction: row;
+        background-color: #333;
+    }
+
+    /* link color */
+    .book-header a {
+        color: #fff;
+    }
+
+    /* hover color */
+    .book-header .btn:hover, .book-header .btn:focus, .book-header a:focus, .book-header a:hover {
+        color: hsla(0, 0%, 100%, 0.75) !important;
+    }
+
+    /* Mobile header fixed */
+    @media (max-width: 768px) {
+        /* Headerを固定する */
+        .book-header {
+            position: fixed;
+            width: 100%;
+        }
+
+        /* Icon only */
+        .book-header-title-img {
+            margin: auto 18px auto 0 !important;
+        }
+
+        .book-header-title-h {
+            display: none;
+        }
+
+        /* Header分のズレを入れる */
+        .page-wrapper {
+            padding-top: 60px;
+        }
+
+        /* github-issue-feedbackを非表示にする */
+        .gitbook-plugin-github-issue-feedback {
+            display: none;
+        }
+    }
+
+    /* Dynamic created by GitBook*/
+    .btn.pull-left.js-toolbar-action {
+        order: 1;
+    }
+
+    .book-header-title {
+        order: 2;
+        display: inline-flex;
+        flex-direction: row;
+        color: #fff;
+    }
+
+    .book-header-title:hover {
+        color: hsla(0, 0%, 100%, 0.75);
+    }
+
+    .book-header-title-img {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        margin: auto 10px auto 0;
+    }
+
+    .book-header-title-h {
+        font-size: 20px;
+        margin: auto;
+        padding: 0;
+    }
+
+    .header-center {
+        order: 3;
+        display: inline-flex;
+        flex-direction: column;
+        justify-content: center;
+        /* self */
+        flex-grow: 1;
+        flex-shrink: 0;
+        flex-basis: auto;
+    }
+
+    .header-right {
+        order: 4;
+        display: inline-flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        /* icon size */
+        font-size: 24px;
+    }
+
+    .amazon-link, .github-link {
+        color: #fff;
+        /* Padding and make Vertical */
+        display: inline-flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding-left: 4px;
+        padding-right: 4px;
+    }
+
+    /* Desktop */
+    @media (min-width: 768px) {
+        .header-center {
+            align-items: center;
+        }
+
+        .header-right {
+            margin-right: 24px;
+        }
+    }
+
+    /* DocSearch */
+    @media (max-width: 768px) {
+        .algolia-autocomplete .ds-dropdown-menu {
+            max-width: calc(100vw - 32px) !important;
+            min-width: calc(100vw - 32px) !important;
+            width: calc(100vw - 32px) !important;
+            /* negative margin
+              This is absolute element
+              */
+            margin-left: -32px !important;
+        }
+
+        .algolia-autocomplete .algolia-docsearch-suggestion--content {
+            width: 100% !important;
+            padding-left: 0 !important;
+        }
+
+        .algolia-autocomplete .algolia-docsearch-suggestion--content:before {
+            display: none !important;
+        }
+
+        .algolia-autocomplete .algolia-docsearch-suggestion--subcategory-column {
+            display: none !important;
+        }
+
+        .algolia-autocomplete.algolia-autocomplete-right .ds-dropdown-menu {
+            right: inherit !important
+        }
+
+        .algolia-autocomplete.algolia-autocomplete-right .ds-dropdown-menu::before {
+            right: 50%;
+        }
+
+        .sbx-custom {
+            width: 92px !important;
+            padding: initial !important;
+        }
+
+        .amazon-link {
+            display: none;
+        }
+    }
+
+    /* SearchBox */
+    .searchbarWrapper {
+        height: 50px;
+    }
+
+
+    .sbx-custom {
+        display: inline-block;
+        position: relative;
+        min-width: 150px;
+        width: 300px;
+        max-width: 300px;
+        height: 33px;
+        white-space: nowrap;
+        box-sizing: border-box;
+        font-size: 14px;
+    }
+
+    .sbx-custom__wrapper {
+        width: 100%;
+        height: 100%;
+    }
+
+    .sbx-custom__input {
+        display: inline-block;
+        -webkit-transition: box-shadow .4s ease, background .4s ease;
+        transition: box-shadow .4s ease, background .4s ease;
+        border: 0;
+        border-radius: 5px;
+        box-shadow: inset 0 0 0 2px #CCCCCC;
+        background: #FFFFFF;
+        padding: 0 27px 0 33px;
+        width: 100%;
+        height: 100%;
+        vertical-align: middle;
+        white-space: normal;
+        font-size: inherit;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+    }
+
+    .sbx-custom__input::-webkit-search-decoration, .sbx-custom__input::-webkit-search-cancel-button, .sbx-custom__input::-webkit-search-results-button, .sbx-custom__input::-webkit-search-results-decoration {
+        display: none;
+    }
+
+    .sbx-custom__input:hover {
+        box-shadow: inset 0 0 0 2px #b3b3b3;
+    }
+
+    .sbx-custom__input:focus, .sbx-custom__input:active {
+        outline: 0;
+        box-shadow: inset 0 0 0 2px #4B54DE;
+        background: #FFFFFF;
+    }
+
+    .sbx-custom__input::-webkit-input-placeholder {
+        color: #BBBBBB;
+    }
+
+    .sbx-custom__input::-moz-placeholder {
+        color: #BBBBBB;
+    }
+
+    .sbx-custom__input:-ms-input-placeholder {
+        color: #BBBBBB;
+    }
+
+    .sbx-custom__input::placeholder {
+        color: #BBBBBB;
+    }
+
+    .sbx-custom__submit {
+        position: absolute;
+        top: 0;
+        right: inherit;
+        left: 0;
+        margin: 0;
+        border: 0;
+        border-radius: 4px 0 0 4px;
+        background-color: rgba(255, 255, 255, 0);
+        padding: 0;
+        width: 33px;
+        height: 100%;
+        vertical-align: middle;
+        text-align: center;
+        font-size: inherit;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+    .sbx-custom__submit::before {
+        display: inline-block;
+        margin-right: -4px;
+        height: 100%;
+        vertical-align: middle;
+        content: '';
+    }
+
+    .sbx-custom__submit:hover, .sbx-custom__submit:active {
+        cursor: pointer;
+    }
+
+    .sbx-custom__submit:focus {
+        outline: 0;
+    }
+
+    .sbx-custom__submit svg {
+        width: 17px;
+        height: 17px;
+        vertical-align: middle;
+        fill: #3A33D1;
+    }
+
+    .sbx-custom__reset {
+        display: none;
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        margin: 0;
+        border: 0;
+        background: none;
+        cursor: pointer;
+        padding: 0;
+        font-size: inherit;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        fill: rgba(0, 0, 0, 0.5);
+    }
+
+    .sbx-custom__reset:focus {
+        outline: 0;
+    }
+
+    .sbx-custom__reset svg {
+        display: block;
+        margin: 4px;
+        width: 17px;
+        height: 17px;
+    }
+
+    .sbx-custom__input:valid ~ .sbx-custom__reset {
+        display: block;
+        -webkit-animation-name: sbx-reset-in;
+        animation-name: sbx-reset-in;
+        -webkit-animation-duration: .15s;
+        animation-duration: .15s;
+    }
+
+    @-webkit-keyframes sbx-reset-in {
+        0% {
+            -webkit-transform: translate3d(-20%, 0, 0);
+            transform: translate3d(-20%, 0, 0);
+            opacity: 0;
+        }
+        100% {
+            -webkit-transform: none;
+            transform: none;
+            opacity: 1;
+        }
+    }
+
+    @keyframes sbx-reset-in {
+        0% {
+            -webkit-transform: translate3d(-20%, 0, 0);
+            transform: translate3d(-20%, 0, 0);
+            opacity: 0;
+        }
+        100% {
+            -webkit-transform: none;
+            transform: none;
+            opacity: 1;
+        }
+    }
+</style>
+<div class="book-header" role="navigation">
+    
+    <a class="book-header-title" href="../..">
+        <img class="book-header-title-img" alt="JavaScript Primer"
+             src="../../gitbook/icons/icon-128x128.png"/>
+        <h2 class="book-header-title-h" title="JavaScript Primer - 迷わないための入門書">JavaScript Primer</h2>
+    </a>
+    <div class="searchbarWrapper header-center">
+        <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+            <symbol xmlns="http://www.w3.org/2000/svg" id="sbx-icon-search-8" viewBox="0 0 40 40">
+                <path d="M16 32c8.835 0 16-7.165 16-16 0-8.837-7.165-16-16-16C7.162 0 0 7.163 0 16c0 8.835 7.163 16 16 16zm0-5.76c5.654 0 10.24-4.586 10.24-10.24 0-5.656-4.586-10.24-10.24-10.24-5.656 0-10.24 4.584-10.24 10.24 0 5.654 4.584 10.24 10.24 10.24zM28.156 32.8c-1.282-1.282-1.278-3.363.002-4.643 1.282-1.284 3.365-1.28 4.642-.003l6.238 6.238c1.282 1.282 1.278 3.363-.002 4.643-1.283 1.283-3.366 1.28-4.643.002l-6.238-6.238z"
+                      fill-rule="evenodd"></path>
+            </symbol>
+            <symbol xmlns="http://www.w3.org/2000/svg" id="sbx-icon-clear-5" viewBox="0 0 20 20">
+                <path d="M10 20c5.523 0 10-4.477 10-10S15.523 0 10 0 0 4.477 0 10s4.477 10 10 10zm1.35-10.123l3.567 3.568-1.225 1.226-3.57-3.568-3.567 3.57-1.226-1.227 3.568-3.568-3.57-3.57 1.227-1.224 3.568 3.568 3.57-3.567 1.224 1.225-3.568 3.57zM10 18.272c4.568 0 8.272-3.704 8.272-8.272S14.568 1.728 10 1.728 1.728 5.432 1.728 10 5.432 18.272 10 18.272z"
+                      fill-rule="evenodd"></path>
+            </symbol>
+        </svg>
+
+        <form novalidate="novalidate" onsubmit="return false;" class="searchbox sbx-custom">
+            <div role="search" class="sbx-custom__wrapper">
+                <input name="search" placeholder="Search words" autocomplete="off" required="required"
+                       class="sbx-custom__input" type="search">
+                <button type="submit" title="Submit your search query." class="sbx-custom__submit">
+                    <svg role="img" aria-label="Search">
+                        <use xlink:href="#sbx-icon-search-8"></use>
+                    </svg>
+                </button>
+                <button type="reset" title="Clear the search query." class="sbx-custom__reset">
+                    <svg role="img" aria-label="Reset">
+                        <use xlink:href="#sbx-icon-clear-5"></use>
+                    </svg>
+                </button>
+            </div>
+        </form>
+    </div>
+    <div class="header-right">
+        <!-- Icon: https://www.iconfinder.com/iconsets/circle-payment -->
+        <a class="amazon-link" title="Amazon: JavaScript Primer 改訂2版 迷わないための入門書"
+           href="https://www.amazon.co.jp/dp/4048931105/" target="_blank"><img
+                width="22"
+                height="22"
+                style="margin: 1px;"
+                src="../../gitbook/icons/amazon-icon.png" alt=""></a>
+        <a class="github-link" title="GitHub: asciidwango/js-primer" href="https://github.com/asciidwango/js-primer"
+           target="_blank"><i
+                class="fa fa-github fa-fw"></i></a>
+    </div>
+</div>
+
+<script defer>
+    // focus on search box
+    document.querySelector(".searchbox [type=\"reset\"]").addEventListener("click", function() {
+        this.parentNode.querySelector("input").focus();
+    });
+    // init DocSearch
+    var search = docsearch({
+        apiKey: "fd28ebaba94be0c39fb9fa1b2fed4f23", // use a SEARCH-ONLY api key here
+        indexName: "asciidwango",
+        inputSelector: ".sbx-custom__input",
+        debug: false // set to `true` if you want to inspect the dropdown menu's CSS
+    });
+</script>
+<script>
+    window.addEventListener("DOMContentLoaded", function() {
+        gitbook.events.on("page.change", function() {
+            setTimeout(() => console.clear(), 1000);
+        });
+    });
+</script>
+
+
+
+
+
+                    <div class="page-wrapper" tabindex="-1" role="main">
+                        <div class="page-inner">
+                            
+                                <section class="normal markdown-section">
+                                
+<style>
+    .page-sponsors {
+        background: #fafafa;
+    }
+    .page-sponsors .page-sponsors-list {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 0;
+        padding: 1em 0;
+        list-style: none;
+        gap: 8px;
+    }
+    .page-sponsors-footer {
+        text-align: center;
+        padding: 0;
+        margin: 0;
+    }
+</style>
+<div class="page-sponsors">
+
+    <div class="page-sponsors-footer">
+        JavaScript Primerの<a href="https://jsprimer.net/intro/sponsors/">スポンサーを募集中</a>
+    </div>
+
+</div>
+
+                                <html><head></head><body><h1 id="object"><a name="object" class="plugin-anchor" href="#object"><i class="fa fa-link" aria-hidden="true"></i></a>オブジェクト </h1>
+<p>オブジェクトはプロパティの集合です。プロパティとは名前（キー）と値（バリュー）が対になったものです。
+プロパティのキーには文字列または<code>Symbol</code>が利用でき、値には任意のデータを指定できます。
+また、1つのオブジェクトは複数のプロパティを持てるため、1つのオブジェクトで多種多様な値を表現できます。</p>
+<p>今までも登場してきた、配列や関数などもオブジェクトの一種です。
+JavaScriptには、あらゆるオブジェクトの元となる<code>Object</code>というビルトインオブジェクトがあります。
+ビルトインオブジェクトは、実行環境にあらかじめ定義されているオブジェクトのことです。
+<code>Object</code>というビルトインオブジェクトはECMAScriptの仕様で定義されているため、あらゆるJavaScriptの実行環境で利用できます。</p>
+<!-- Note: ビルトインオブジェクト
+
+- あくまでECMAScriptの定義にあるビルトインオブジェクトをビルトインオブジェクトという
+- https://tc39.es/ecma262/#sec-built-in-object
+
+ -->
+<p>この章では、オブジェクトの作成や扱い方、<code>Object</code>というビルトインオブジェクトについて見ていきます。</p>
+<h2 id="create-object"><a name="create-object" class="plugin-anchor" href="#create-object"><i class="fa fa-link" aria-hidden="true"></i></a>オブジェクトを作成する </h2>
+<p>オブジェクトを作成するには、オブジェクトリテラル（<code>{}</code>）を利用します。</p>
+<pre><code class="lang-js"><span class="hljs-comment">// プロパティを持たない空のオブジェクトを作成</span>
+<span class="hljs-keyword">const</span> obj = {};
+</code></pre>
+<p>オブジェクトリテラルでは、初期値としてプロパティを持つオブジェクトを作成できます。
+プロパティは、オブジェクトリテラル（<code>{}</code>）の中にキーと値を<code>:</code>（コロン）で区切って記述します。</p>
+<pre><code class="lang-js"><span class="hljs-comment">// プロパティを持つオブジェクトを定義する</span>
+<span class="hljs-keyword">const</span> obj = {
+    <span class="hljs-comment">// キー: 値</span>
+    <span class="hljs-string">"key"</span>: <span class="hljs-string">"value"</span>
+};
+</code></pre>
+<p>オブジェクトリテラルのプロパティ名（キー）はクォート（<code>"</code>や<code>'</code>）を省略できます。
+そのため、次のように書いても同じです。</p>
+<pre><code class="lang-js"><span class="hljs-comment">// プロパティ名（キー）はクォートを省略することが可能</span>
+<span class="hljs-keyword">const</span> obj = {
+    <span class="hljs-comment">// キー: 値</span>
+    <span class="hljs-attr">key</span>: <span class="hljs-string">"value"</span>
+};
+</code></pre>
+<p>ただし、変数名として利用できないプロパティ名はクォート（<code>"</code>や<code>'</code>）で囲む必要があります。
+次の<code>my-prop</code>というプロパティ名は、変数名として利用できない<code>-</code>が含まれているため定義できません（「<a href="../variables/" title="変数と宣言">変数と宣言</a>」の章の「<a href="../variables/#variable-name">変数名に使える名前のルール </a>」を参照）</p>
+<pre><code class="lang-javascript"><span class="hljs-keyword">const</span> object = {
+    <span class="hljs-comment">// キー: 値</span>
+    my-<span class="hljs-attr">prop</span>: <span class="hljs-string">"value"</span> <span class="hljs-comment">// NG</span>
+};
+</code></pre>
+<p><code>my-prop</code>というプロパティ名を定義する場合は、クォート（<code>"</code>や<code>'</code>）で囲む必要があります。</p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> obj = {
+    <span class="hljs-comment">// キー: 値</span>
+    <span class="hljs-string">"my-prop"</span>: <span class="hljs-string">"value"</span> <span class="hljs-comment">// OK</span>
+};
+</code></pre>
+<p>オブジェクトリテラルでは複数のプロパティ（キーと値の組み合わせ）を持つオブジェクトも作成できます。
+複数のプロパティを定義するには、それぞれのプロパティを<code>,</code>（カンマ）で区切ります。</p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> color = {
+    <span class="hljs-comment">// それぞれのプロパティは`,`で区切る</span>
+    <span class="hljs-attr">red</span>: <span class="hljs-string">"red"</span>,
+    <span class="hljs-attr">green</span>: <span class="hljs-string">"green"</span>,
+    <span class="hljs-attr">blue</span>: <span class="hljs-string">"blue"</span>
+};
+</code></pre>
+<p>プロパティの値に変数名を指定すれば、そのキーは指定した変数を参照します。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> name = <span class="hljs-string">"名前"</span>;
+<span class="hljs-comment">// `name`というプロパティ名で`name`の変数を値に設定したオブジェクト</span>
+<span class="hljs-keyword">const</span> obj = {
+    <span class="hljs-attr">name</span>: name
+};
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(obj); <span class="hljs-comment">// =&gt; { name: "名前" }</span>
+</code></pre>
+<p>またES2015からは、プロパティ名と値に指定する変数名が同じ場合は<code>{ name }</code>のように省略して書けます。
+次のコードは、プロパティ名<code>name</code>に変数<code>name</code>を値にしたプロパティを設定しています。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> name = <span class="hljs-string">"名前"</span>;
+<span class="hljs-comment">// `name`というプロパティ名で`name`の変数を値に設定したオブジェクト</span>
+<span class="hljs-keyword">const</span> obj = {
+    name
+};
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(obj); <span class="hljs-comment">// =&gt; { name: "名前" }</span>
+</code></pre>
+<p>この省略記法は、モジュールや分割代入においても共通した表現です。
+そのため、<code>{}</code>の中でプロパティ名が単独で書かれている場合は、この省略記法を利用していることに注意してください。</p>
+<h3 id="object-instance-object"><a name="object-instance-object" class="plugin-anchor" href="#object-instance-object"><i class="fa fa-link" aria-hidden="true"></i></a><code>{}</code>は<code>Object</code>のインスタンスオブジェクト </h3>
+<p><code>Object</code>はJavaScriptのビルトインオブジェクトです。
+オブジェクトリテラル（<code>{}</code>）は、このビルトインオブジェクトである<code>Object</code>を元にして新しいオブジェクトを作成するための構文です。</p>
+<!-- textlint-disable no-js-function-paren -->
+<p>オブジェクトリテラル以外の方法として、<code>new</code>演算子を使うことで、<code>Object</code>から新しいオブジェクトを作成できます。
+次のコードでは、<code>new Object()</code>でオブジェクトを作成していますが、これは空のオブジェクトリテラルと同じ意味です。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// プロパティを持たない空のオブジェクトを作成</span>
+<span class="hljs-comment">// = `Object`からインスタンスオブジェクトを作成</span>
+<span class="hljs-keyword">const</span> obj = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>();
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(obj); <span class="hljs-comment">// =&gt; {}</span>
+</code></pre>
+<p>オブジェクトリテラルのほうが明らかに簡潔で、プロパティの初期値も指定できるため、<code>new Object()</code>を使う利点はありません。</p>
+<p><code>new Object()</code>でオブジェクトを作成することは、「<code>Object</code>のインスタンスオブジェクトを作成する」と言います。
+しかしながら、<code>Object</code>やインスタンスオブジェクトなどややこしい言葉の使い分けが必要となってしまいます。
+そのため、この書籍ではオブジェクトリテラルと<code>new Object</code>どちらの方法であっても、単に「オブジェクトを作成する」と呼びます。</p>
+<p>オブジェクトリテラルは、<code>Object</code>から新しいインスタンスオブジェクトを作成していることを意識しておくとよいでしょう。</p>
+<!-- textlint-enable no-js-function-paren -->
+<h2 id="property-access"><a name="property-access" class="plugin-anchor" href="#property-access"><i class="fa fa-link" aria-hidden="true"></i></a>プロパティへのアクセス </h2>
+<p>オブジェクトのプロパティにアクセスする方法として、ドット記法（<code>.</code>）を使う方法とブラケット記法（<code>[]</code>）があります。
+それぞれの記法でプロパティ名を指定すると、その名前を持ったプロパティの値を参照できます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> obj = {
+    <span class="hljs-attr">key</span>: <span class="hljs-string">"value"</span>
+};
+<span class="hljs-comment">// ドット記法で参照</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(obj.<span class="hljs-property">key</span>); <span class="hljs-comment">// =&gt; "value"</span>
+<span class="hljs-comment">// ブラケット記法で参照</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(obj[<span class="hljs-string">"key"</span>]); <span class="hljs-comment">// =&gt; "value"</span>
+</code></pre>
+<p>ドット記法（<code>.</code>）では、プロパティ名が変数名と同じく識別子の命名規則を満たす必要があります（「<a href="../variables/" title="変数と宣言">変数と宣言</a>」の章の「<a href="../variables/#variable-name">変数名に使える名前のルール </a>」を参照）。</p>
+<pre><code class="lang-javascript">obj.<span class="hljs-property">key</span>; <span class="hljs-comment">// OK</span>
+<span class="hljs-comment">// プロパティ名が数字から始まる識別子は利用できない</span>
+obj<span class="hljs-number">.123</span>; <span class="hljs-comment">// NG</span>
+<span class="hljs-comment">// プロパティ名にハイフンを含む識別子は利用できない</span>
+obj.<span class="hljs-property">my</span>-prop; <span class="hljs-comment">// NG</span>
+</code></pre>
+<p>一方、ブラケット記法では、<code>[</code>と<code>]</code>の間に任意の式を書けます。
+そのため、識別子の命名規則とは関係なく、任意の文字列をプロパティ名として指定できます。
+ただし、プロパティ名は文字列へと暗黙的に変換されることに注意してください。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> obj = {
+    <span class="hljs-attr">key</span>: <span class="hljs-string">"value"</span>,
+    <span class="hljs-number">123</span>: <span class="hljs-number">456</span>,
+    <span class="hljs-string">"my-key"</span>: <span class="hljs-string">"my-value"</span>
+};
+
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(obj[<span class="hljs-string">"key"</span>]); <span class="hljs-comment">// =&gt; "value"</span>
+<span class="hljs-comment">// プロパティ名が数字からはじまる識別子も利用できる</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(obj[<span class="hljs-number">123</span>]); <span class="hljs-comment">// =&gt; 456</span>
+<span class="hljs-comment">// プロパティ名は暗黙的に文字列に変換されているため、次も同じプロパティを参照している</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(obj[<span class="hljs-string">"123"</span>]); <span class="hljs-comment">// =&gt; 456</span>
+<span class="hljs-comment">// プロパティ名にハイフンを含む識別子も利用できる</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(obj[<span class="hljs-string">"my-key"</span>]); <span class="hljs-comment">// =&gt; "my-value"</span>
+</code></pre>
+<p>また、ブラケット記法ではプロパティ名に変数も利用できます。
+次のコードでは、プロパティ名に<code>myLang</code>という変数をブラケット記法で指定しています。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> languages = {
+    <span class="hljs-attr">ja</span>: <span class="hljs-string">"日本語"</span>,
+    <span class="hljs-attr">en</span>: <span class="hljs-string">"英語"</span>
+};
+<span class="hljs-keyword">const</span> myLang = <span class="hljs-string">"ja"</span>;
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(languages[myLang]); <span class="hljs-comment">// =&gt; "日本語"</span>
+</code></pre>
+<p>ドット記法ではプロパティ名に変数は利用できないため、プロパティ名に変数を指定したい場合はブラケット記法を利用します。
+基本的には簡潔なドット記法（<code>.</code>）を使い、ドット記法で書けない場合はブラケット記法（<code>[]</code>）を使うとよいでしょう。</p>
+<h2 id="object-destructuring"><a name="object-destructuring" class="plugin-anchor" href="#object-destructuring"><i class="fa fa-link" aria-hidden="true"></i></a>[ES2015] オブジェクトと分割代入 </h2>
+<p>同じオブジェクトのプロパティに何度もアクセスする場合に、何度も<code>オブジェクト.プロパティ名</code>と書くと冗長となりやすいです。
+そのため、短い名前で利用できるように、そのプロパティを変数として定義し直すことがあります。</p>
+<p>次のコードでは、変数<code>ja</code>と<code>en</code>を定義し、その初期値として<code>languages</code>オブジェクトのプロパティを代入しています。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> languages = {
+    <span class="hljs-attr">ja</span>: <span class="hljs-string">"日本語"</span>,
+    <span class="hljs-attr">en</span>: <span class="hljs-string">"英語"</span>
+};
+<span class="hljs-keyword">const</span> ja = languages.<span class="hljs-property">ja</span>;
+<span class="hljs-keyword">const</span> en = languages.<span class="hljs-property">en</span>;
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(ja); <span class="hljs-comment">// =&gt; "日本語"</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(en); <span class="hljs-comment">// =&gt; "英語"</span>
+</code></pre>
+<p>このようにオブジェクトのプロパティを変数として定義し直すときには、分割代入（Destructuring assignment）が利用できます。</p>
+<p>オブジェクトの分割代入では、左辺にオブジェクトリテラルのような構文で変数名を定義します。
+右辺のオブジェクトから対応するプロパティ名が、左辺で定義した変数に代入されます。</p>
+<p>次のコードでは、先ほどのコードと同じように<code>languages</code>オブジェクトから<code>ja</code>と<code>en</code>プロパティを取り出して変数として定義しています。
+代入演算子のオペランドとして左辺と右辺それぞれに<code>ja</code>と<code>en</code>と書いていたのが、分割代入では一箇所に書くことができます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> languages = {
+    <span class="hljs-attr">ja</span>: <span class="hljs-string">"日本語"</span>,
+    <span class="hljs-attr">en</span>: <span class="hljs-string">"英語"</span>
+};
+<span class="hljs-keyword">const</span> { ja, en } = languages;
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(ja); <span class="hljs-comment">// =&gt; "日本語"</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(en); <span class="hljs-comment">// =&gt; "英語"</span>
+</code></pre>
+<h2 id="add-property"><a name="add-property" class="plugin-anchor" href="#add-property"><i class="fa fa-link" aria-hidden="true"></i></a>プロパティの追加 </h2>
+<p>オブジェクトは、一度作成した後もその値自体を変更できるというミュータブル（mutable）の特性を持ちます。
+そのため、作成したオブジェクトに対して、後からプロパティを追加できます。</p>
+<p>プロパティの追加方法は単純で、作成したいプロパティ名へ値を代入するだけです。
+そのとき、オブジェクトに指定したプロパティが存在しないなら、自動的にプロパティが作成されます。</p>
+<p>プロパティの追加はドット記法、ブラケット記法どちらでも可能です。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// 空のオブジェクト</span>
+<span class="hljs-keyword">const</span> obj = {};
+<span class="hljs-comment">// `key`プロパティを追加して値を代入</span>
+obj.<span class="hljs-property">key</span> = <span class="hljs-string">"value"</span>;
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(obj.<span class="hljs-property">key</span>); <span class="hljs-comment">// =&gt; "value"</span>
+</code></pre>
+<p>先ほども紹介したように、ドット記法は変数の識別子として利用可能なプロパティ名しか利用できません。</p>
+<p>一方、ブラケット記法は<code>object[式]</code>の<code>式</code>の評価結果を文字列にしたものをプロパティ名として利用できます。
+そのため、次のものをプロパティ名として扱う場合にはブラケット記法を利用します。</p>
+<ul>
+<li>変数</li>
+<li>変数の識別子として扱えない文字列</li>
+<li>Symbol</li>
+</ul>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> key = <span class="hljs-string">"key-string"</span>;
+<span class="hljs-keyword">const</span> obj = {};
+<span class="hljs-comment">// `key`の評価結果 "key-string" をプロパティ名に利用</span>
+obj[key] = <span class="hljs-string">"value of key"</span>;
+<span class="hljs-comment">// 取り出すときも同じく`key`変数を利用</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(obj[key]); <span class="hljs-comment">// =&gt; "value of key"</span>
+</code></pre>
+<p>ブラケット記法を用いたプロパティ定義は、オブジェクトリテラルの中でも利用できます。
+オブジェクトリテラル内でのブラケット記法を使ったプロパティ名は<strong>Computed property names</strong>と呼ばれます。
+Computed property namesはES2015から導入された記法ですが、<code>式</code>の評価結果をプロパティ名に使う点はブラケット記法と同じです。</p>
+<p>次のコードでは、Computed property namesを使い<code>key</code>変数の評価結果である<code>"key-string"</code>をプロパティ名にしています。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> key = <span class="hljs-string">"key-string"</span>;
+<span class="hljs-comment">// Computed Propertyで`key`の評価結果 "key-string" をプロパティ名に利用</span>
+<span class="hljs-keyword">const</span> obj = {
+    [key]: <span class="hljs-string">"value"</span>
+};
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(obj[key]); <span class="hljs-comment">// =&gt; "value"</span>
+</code></pre>
+<p>JavaScriptのオブジェクトは、作成後にプロパティが変更可能というmutableの特性を持つことを紹介しました。
+そのため、関数が受け取ったオブジェクトに対して、勝手にプロパティを追加できてしまいます。</p>
+<p>次のコードは、<code>changeProperty</code>関数が引数として受け取ったオブジェクトにプロパティを追加している悪い例です。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">function</span> <span class="hljs-title function_">changeProperty</span>(<span class="hljs-params">obj</span>) {
+    obj.<span class="hljs-property">key</span> = <span class="hljs-string">"value"</span>;
+    <span class="hljs-comment">// いろいろな処理...</span>
+}
+<span class="hljs-keyword">const</span> obj = {};
+<span class="hljs-title function_">changeProperty</span>(obj); <span class="hljs-comment">// objのプロパティを変更している</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(obj.<span class="hljs-property">key</span>); <span class="hljs-comment">// =&gt; "value"</span>
+</code></pre>
+<p>このように、プロパティを初期化時以外に追加してしまうと、そのオブジェクトがどのようなプロパティを持っているかがわかりにくくなります。
+そのため、できる限り作成後に新しいプロパティは追加しないほうがよいでしょう。
+オブジェクトの作成時のオブジェクトリテラルの中でプロパティを定義することを推奨します。</p>
+<h3 id="remove-property"><a name="remove-property" class="plugin-anchor" href="#remove-property"><i class="fa fa-link" aria-hidden="true"></i></a>プロパティの削除 </h3>
+<p>オブジェクトのプロパティを削除するには<code>delete</code>演算子を利用します。
+削除したいプロパティを<code>delete</code>演算子の右辺に指定して、プロパティを削除できます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> obj = {
+    <span class="hljs-attr">key1</span>: <span class="hljs-string">"value1"</span>,
+    <span class="hljs-attr">key2</span>: <span class="hljs-string">"value2"</span>
+};
+<span class="hljs-comment">// key1プロパティを削除</span>
+<span class="hljs-keyword">delete</span> obj.<span class="hljs-property">key1</span>;
+<span class="hljs-comment">// key1プロパティが削除されている</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(obj); <span class="hljs-comment">// =&gt; { "key2": "value2" }</span>
+</code></pre>
+<h3 id="const-and-object"><a name="const-and-object" class="plugin-anchor" href="#const-and-object"><i class="fa fa-link" aria-hidden="true"></i></a>[コラム] constで定義したオブジェクトは変更可能 </h3>
+<p>先ほどのコード例で、<code>const</code>で宣言したオブジェクトのプロパティがエラーなく変更できていることがわかります。
+次のコードを実行してみると、値であるオブジェクトのプロパティが変更できていることがわかります。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> obj = { <span class="hljs-attr">key</span>: <span class="hljs-string">"value"</span> };
+obj.<span class="hljs-property">key</span> = <span class="hljs-string">"Hi!"</span>; <span class="hljs-comment">// constで定義したオブジェクト(`obj`)が変更できる</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(obj.<span class="hljs-property">key</span>); <span class="hljs-comment">// =&gt; "Hi!"</span>
+</code></pre>
+<p>JavaScriptの<code>const</code>は値を固定するのではなく、変数への再代入を防ぐためのものです。
+そのため、次のような<code>obj</code>変数への再代入は防げますが、変数に代入された値であるオブジェクトの変更は防げません（「<a href="../variables/" title="変数と宣言">変数と宣言</a>」の<a href="../variables/#const">const</a>を参照）。</p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> obj = { <span class="hljs-attr">key</span>: <span class="hljs-string">"value"</span> };
+obj = {}; <span class="hljs-comment">// =&gt; TypeError</span>
+</code></pre>
+<p>作成したオブジェクトのプロパティの変更を防止するには<code>Object.freeze</code>静的メソッドを利用する必要があります。
+<code>Object.freeze</code>はオブジェクトを凍結します。凍結されたオブジェクトでプロパティの追加や変更をすると例外が発生するようになります。</p>
+<p>ただし、<code>Object.freeze</code>静的メソッドを利用する場合は必ずstrict modeと合わせて使います（詳細は「<a href="../introduction/">JavaScriptとは</a>」の<a href="../introduction/#strict-mode">strict mode</a>を参照）。
+strict modeではない場合は、凍結されたオブジェクトのプロパティを変更しても例外が発生せずに単純に無視されます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-javascript"><span class="hljs-meta">"use strict"</span>;
+<span class="hljs-keyword">const</span> object = <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">freeze</span>({ <span class="hljs-attr">key</span>: <span class="hljs-string">"value"</span> });
+<span class="hljs-comment">// freezeしたオブジェクトにプロパティを追加や変更できない</span>
+object.<span class="hljs-property">key</span> = <span class="hljs-string">"value"</span>; <span class="hljs-comment">// =&gt; TypeError: "key" is read-only</span>
+</code></pre>
+<h2 id="confirm-property"><a name="confirm-property" class="plugin-anchor" href="#confirm-property"><i class="fa fa-link" aria-hidden="true"></i></a>プロパティの存在を確認する </h2>
+<p>JavaScriptでは、存在しないプロパティに対してアクセスした場合に例外ではなく<code>undefined</code>を返します。
+次のコードは、<code>obj</code>には存在しない<code>notFound</code>プロパティにアクセスしているため、<code>undefined</code>という値が返ってきます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> obj = {};
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(obj.<span class="hljs-property">notFound</span>); <span class="hljs-comment">// =&gt; undefined</span>
+</code></pre>
+<p>このように、JavaScriptでは存在しないプロパティへアクセスした場合に例外が発生しません。
+プロパティ名を間違えた場合に単に<code>undefined</code>という値を返すため、間違いに気づきにくいという問題があります。</p>
+<p>次のようにプロパティ名を間違えていた場合にも、例外が発生しません。
+さらにプロパティ名をネストしてアクセスした場合に、初めて例外が発生します。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> widget = {
+    <span class="hljs-attr">window</span>: {
+        <span class="hljs-attr">title</span>: <span class="hljs-string">"ウィジェットのタイトル"</span>
+    }
+};
+<span class="hljs-comment">// `window`を`windw`と間違えているが、例外は発生しない</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(widget.<span class="hljs-property">windw</span>); <span class="hljs-comment">// =&gt; undefined</span>
+<span class="hljs-comment">// さらにネストした場合に、例外が発生する</span>
+<span class="hljs-comment">// `undefined.title`と書いたのと同じ意味となるため</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(widget.<span class="hljs-property">windw</span>.<span class="hljs-property">title</span>); <span class="hljs-comment">// =&gt; TypeError: widget.windw is undefined</span>
+<span class="hljs-comment">// 例外が発生した文以降は実行されません</span>
+</code></pre>
+<p><code>undefined</code>や<code>null</code>はオブジェクトではないため、存在しないプロパティへアクセスすると例外が発生してしまいます。
+あるオブジェクトがあるプロパティを持っているかを確認する方法として、次の4つがあります。</p>
+<ul>
+<li><code>undefined</code>との比較</li>
+<li><code>in</code>演算子</li>
+<li><code>Object.hasOwn</code>静的メソッド<sup>[ES2022]</sup></li>
+<li><code>Object.prototype.hasOwnProperty</code>メソッド</li>
+</ul>
+<h3 id="compare-to-undefined"><a name="compare-to-undefined" class="plugin-anchor" href="#compare-to-undefined"><i class="fa fa-link" aria-hidden="true"></i></a>プロパティの存在確認: undefinedとの比較 </h3>
+<p>存在しないプロパティへアクセスした場合に<code>undefined</code>を返すため、実際にプロパティアクセスすることでも判定できそうです。
+次のコードでは、<code>key</code>プロパティの値が<code>undefined</code>ではないという条件式で、プロパティが存在するかを判定しています。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> obj = {
+    <span class="hljs-attr">key</span>: <span class="hljs-string">"value"</span>
+};
+<span class="hljs-comment">// `key`プロパティが`undefined`ではないなら、プロパティが存在する?</span>
+<span class="hljs-keyword">if</span> (obj.<span class="hljs-property">key</span> !== <span class="hljs-literal">undefined</span>) {
+    <span class="hljs-comment">// `key`プロパティが存在する?ときの処理</span>
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">"`key`プロパティの値は`undefined`ではない"</span>);
+}
+</code></pre>
+<p>しかし、この方法はプロパティの値が<code>undefined</code>であった場合に、プロパティそのものが存在するかを区別できないという問題があります。
+次のコードでは、<code>key</code>プロパティの値が<code>undefined</code>であるため、プロパティが存在しているにもかかわらずif文の中は実行されません。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> obj = {
+    <span class="hljs-attr">key</span>: <span class="hljs-literal">undefined</span>
+};
+<span class="hljs-comment">// `key`プロパティの値が`undefined`である場合</span>
+<span class="hljs-keyword">if</span> (obj.<span class="hljs-property">key</span> !== <span class="hljs-literal">undefined</span>) {
+    <span class="hljs-comment">// この行は実行されません</span>
+}
+</code></pre>
+<p>このような問題があるため、プロパティが存在するかを判定するには<code>in</code>演算子か<code>Object.hasOwn</code>静的メソッドを利用します。</p>
+<h3 id="in-operator"><a name="in-operator" class="plugin-anchor" href="#in-operator"><i class="fa fa-link" aria-hidden="true"></i></a>プロパティの存在確認: in演算子を使う </h3>
+<p><code>in</code>演算子は、指定したオブジェクト上に指定したプロパティがあるかを判定し真偽値を返します。</p>
+<!-- doctest:disable -->
+<pre><code class="lang-js"><span class="hljs-string">"プロパティ名"</span> <span class="hljs-keyword">in</span> オブジェクト; <span class="hljs-comment">// true or false</span>
+</code></pre>
+<p>次のコードでは<code>obj</code>に<code>key</code>プロパティが存在するかを判定しています。
+<code>in</code>演算子は、プロパティの値は関係なく、プロパティが存在した場合に<code>true</code>を返します。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> obj = { <span class="hljs-attr">key</span>: <span class="hljs-literal">undefined</span> };
+<span class="hljs-comment">// `key`プロパティを持っているならtrue</span>
+<span class="hljs-keyword">if</span> (<span class="hljs-string">"key"</span> <span class="hljs-keyword">in</span> obj) {
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">"`key`プロパティは存在する"</span>);
+}
+</code></pre>
+<h3 id="object-hasown-method"><a name="object-hasown-method" class="plugin-anchor" href="#object-hasown-method"><i class="fa fa-link" aria-hidden="true"></i></a>[ES2022] プロパティの存在確認: <code>Object.hasOwn</code>静的メソッド </h3>
+<p><code>Object.hasOwn</code>静的メソッドは、対象のオブジェクトが指定したプロパティを持っているかを判定できます。
+この<code>Object.hasOwn</code>静的メソッドの引数には、オブジェクトとオブジェクトが持っているかを確認したいプロパティ名を渡します。</p>
+<!-- doctest:disable -->
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> obj = {};
+<span class="hljs-comment">// objが"プロパティ名"を持っているかを確認する</span>
+<span class="hljs-title class_">Object</span>.<span class="hljs-title function_">hasOwn</span>(obj, <span class="hljs-string">"プロパティ名"</span>); <span class="hljs-comment">// true or false</span>
+</code></pre>
+<p>次のコードでは<code>obj</code>に<code>key</code>プロパティが存在するかを判定しています。
+<code>Object.hasOwn</code>静的メソッドも、プロパティの値は関係なく、オブジェクトが指定したプロパティを持っている場合に<code>true</code>を返します。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a>
+<!-- doctest:meta:{ "ECMAScript": "2022" } --></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> obj = { <span class="hljs-attr">key</span>: <span class="hljs-literal">undefined</span> };
+<span class="hljs-comment">// `obj`が`key`プロパティを持っているならtrueとなる</span>
+<span class="hljs-keyword">if</span> (<span class="hljs-title class_">Object</span>.<span class="hljs-title function_">hasOwn</span>(obj, <span class="hljs-string">"key"</span>)) {
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">"`obj`は`key`プロパティを持っている"</span>);
+}
+</code></pre>
+<p><code>in</code>演算子と<code>Object.hasOwn</code>静的メソッドは同じ結果を返していますが、厳密には動作が異なるケースもあります。
+この動作の違いを知るにはまずプロトタイプオブジェクトという特殊なオブジェクトについて理解する必要があります。
+そのため、<code>in</code>演算子と<code>Object.hasOwn</code>静的メソッドの違いについては、次の章の「<a href="../prototype-object/" title="クラス">プロトタイプオブジェクト</a>」で詳しく解説します。</p>
+<h3 id="hasOwnProperty-method"><a name="hasOwnProperty-method" class="plugin-anchor" href="#hasOwnProperty-method"><i class="fa fa-link" aria-hidden="true"></i></a>プロパティの存在確認: <code>Object.prototype.hasOwnProperty</code>メソッド </h3>
+<p><code>Object.hasOwn</code>静的メソッドはES2022で導入されたメソッドです。
+ES2022より前では、<code>Object.prototype.hasOwnProperty</code>メソッドというよく似たメソッドが利用されていました。
+<code>hasOwnProperty</code>メソッドは、<code>Object.hasOwn</code>静的メソッドとよく似ていますが、オブジェクトのインスタンスから呼び出す点が異なります。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> obj = { <span class="hljs-attr">key</span>: <span class="hljs-literal">undefined</span> };
+<span class="hljs-comment">// `obj`が`key`プロパティを持っているならtrueとなる</span>
+<span class="hljs-keyword">if</span> (obj.<span class="hljs-title function_">hasOwnProperty</span>(<span class="hljs-string">"key"</span>)) {
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">"`obj`は`key`プロパティを持っている"</span>);
+}
+</code></pre>
+<p>しかし、<code>hasOwnProperty</code>メソッドには欠点があるため、<code>Object.hasOwn</code>静的メソッドが利用できる状況では使う理由はありません。
+この欠点もプロトタイプオブジェクトに関係するため、次の章の「<a href="../prototype-object/" title="クラス">プロトタイプオブジェクト</a>」で詳しく解説します。</p>
+<h2 id="optional-chaining-operator"><a name="optional-chaining-operator" class="plugin-anchor" href="#optional-chaining-operator"><i class="fa fa-link" aria-hidden="true"></i></a>[ES2020] Optional chaining演算子（<code>?.</code>） </h2>
+<p>プロパティの存在を確認する方法として4つの方法を紹介しました。
+プロパティが存在するかが重要な場合は、基本的には<code>in</code>演算子または<code>Object.hasOwn</code>静的メソッドを使います。</p>
+<p>しかし、最終的に取得したいものがプロパティの値であるならば、if文で<code>undefined</code>と比較しても問題ありません。
+なぜなら、値を取得したい場合には、プロパティが存在するかどうかとプロパティの値が<code>undefined</code>かどうかの違いを区別する意味はないためです。</p>
+<p>次のコードでは、<code>widget.window.title</code>プロパティに値が定義されているなら(<code>undefined</code>ではないなら)、そのプロパティの値をコンソールに表示しています。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">function</span> <span class="hljs-title function_">printWidgetTitle</span>(<span class="hljs-params">widget</span>) {
+    <span class="hljs-comment">// 例外を避けるために`widget`のプロパティの存在を順番に確認してから、値を表示している</span>
+    <span class="hljs-keyword">if</span> (widget.<span class="hljs-property">window</span> !== <span class="hljs-literal">undefined</span> &amp;&amp; widget.<span class="hljs-property">window</span>.<span class="hljs-property">title</span> !== <span class="hljs-literal">undefined</span>) {
+        <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">`ウィジェットのタイトルは<span class="hljs-subst">${widget.<span class="hljs-variable language_">window</span>.title}</span>です`</span>);
+    } <span class="hljs-keyword">else</span> {
+        <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">"ウィジェットのタイトルは未定義です"</span>);
+    }
+}
+<span class="hljs-comment">// タイトルが定義されているwidget</span>
+<span class="hljs-title function_">printWidgetTitle</span>({
+    <span class="hljs-attr">window</span>: {
+        <span class="hljs-attr">title</span>: <span class="hljs-string">"Book Viewer"</span>
+    }
+});
+<span class="hljs-comment">// タイトルが未定義のwidget</span>
+<span class="hljs-title function_">printWidgetTitle</span>({
+    <span class="hljs-comment">// タイトルが定義されてない空のオブジェクト</span>
+});
+</code></pre>
+<p>この<code>widget.window.title</code>のようなネストしたプロパティにアクセスする際には、プロパティの存在を順番に確認してからアクセスする必要があります。
+なぜなら、<code>widget</code>オブジェクトが<code>window</code>プロパティを持っていない場合は<code>undefined</code>という値を返すためです。このときに、さらにネストした<code>widget.window.title</code>プロパティにアクセスすると、<code>undefined.title</code>という参照となり例外が発生してしまいます。</p>
+<p>しかし、プロパティへアクセスするたびに<code>undefined</code>との比較をAND演算子（<code>&amp;&amp;</code>）でつなげて書いていくと冗長です。</p>
+<p>この問題を解決するために、ES2020ではネストしたプロパティの存在確認とアクセスを簡単に行う構文としてOptional chaining演算子（<code>?.</code>）が導入されました。
+Optional chaining演算子（<code>?.</code>）は、ドット記法（<code>.</code>）の代わりに<code>?.</code>をプロパティアクセスに使います。</p>
+<p>Optional chaining演算子（<code>?.</code>）は左辺のオペランドがnullish（<code>null</code>または<code>undefined</code>）の場合は、それ以上評価せずに<code>undefined</code>を返します。一方で、プロパティが存在する場合は、そのプロパティの評価結果を返します。</p>
+<p>つまり、Optional chaining演算子（<code>?.</code>）では、存在しないプロパティへアクセスした場合でも例外ではなく、<code>undefined</code>という値を返します。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a>
+<!-- doctest:meta:{ "ECMAScript": 2020 } --></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> obj = {
+    <span class="hljs-attr">a</span>: {
+        <span class="hljs-attr">b</span>: <span class="hljs-string">"objのaプロパティのbプロパティ"</span>
+    }
+};
+<span class="hljs-comment">// obj.a.b は存在するので、その評価結果を返す</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(obj?.<span class="hljs-property">a</span>?.<span class="hljs-property">b</span>); <span class="hljs-comment">// =&gt; "objのaプロパティのbプロパティ"</span>
+<span class="hljs-comment">// 存在しないプロパティのネストも`undefined`を返す</span>
+<span class="hljs-comment">// ドット記法の場合は例外が発生してしまう</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(obj?.<span class="hljs-property">notFound</span>?.<span class="hljs-property">notFound</span>); <span class="hljs-comment">// =&gt; undefined</span>
+<span class="hljs-comment">// undefinedやnullはnullishなので、`undefined`を返す</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-literal">undefined</span>?.<span class="hljs-property">notFound</span>?.<span class="hljs-property">notFound</span>); <span class="hljs-comment">// =&gt; undefined</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-literal">null</span>?.<span class="hljs-property">notFound</span>?.<span class="hljs-property">notFound</span>); <span class="hljs-comment">// =&gt; undefined</span>
+</code></pre>
+<p>先ほどのウィジェットのタイトルを表示する関数もOptional chaining演算子（<code>?.</code>）を使うと、if文を使わずに書けます。
+次のコードの<code>printWidgetTitle</code>関数では、<code>widget?.window?.title</code>にアクセスできる場合はその評価結果が変数<code>title</code>に入ります。
+プロパティにアクセスできない場合は<code>undefined</code>を返すため、Nullish coalescing演算子(<code>??</code>)によって右辺の<code>"未定義"</code>が変数<code>title</code>のデフォルト値となります。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a>
+<!-- doctest:meta:{ "ECMAScript": 2020 } --></p>
+<pre><code class="lang-js"><span class="hljs-keyword">function</span> <span class="hljs-title function_">printWidgetTitle</span>(<span class="hljs-params">widget</span>) {
+    <span class="hljs-keyword">const</span> title = widget?.<span class="hljs-property">window</span>?.<span class="hljs-property">title</span> ?? <span class="hljs-string">"未定義"</span>;
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">`ウィジェットのタイトルは<span class="hljs-subst">${title}</span>です`</span>);
+}
+<span class="hljs-title function_">printWidgetTitle</span>({
+    <span class="hljs-attr">window</span>: {
+        <span class="hljs-attr">title</span>: <span class="hljs-string">"Book Viewer"</span>
+    }
+}); <span class="hljs-comment">// "ウィジェットのタイトルはBook Viewerです" と出力される</span>
+<span class="hljs-title function_">printWidgetTitle</span>({
+    <span class="hljs-comment">// タイトルが定義されてない空のオブジェクト</span>
+}); <span class="hljs-comment">// "ウィジェットのタイトルは未定義です" と出力される</span>
+</code></pre>
+<p>また、Optional chaining演算子（<code>?.</code>）はブラケット記法（<code>[]</code>）と組み合わせることもできます。
+ブラケット記法の場合も、左辺のオペランドがnullish（<code>null</code>または<code>undefined</code>）の場合は、それ以上評価せずに<code>undefined</code>を返します。一方で、プロパティが存在する場合は、そのプロパティの評価結果を返します。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a>
+<!-- doctest:meta:{ "ECMAScript": 2020 } --></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> languages = {
+    <span class="hljs-attr">ja</span>: {
+        <span class="hljs-attr">hello</span>: <span class="hljs-string">"こんにちは！"</span>
+    },
+    <span class="hljs-attr">en</span>: {
+        <span class="hljs-attr">hello</span>: <span class="hljs-string">"Hello!"</span>
+    }
+};
+<span class="hljs-keyword">const</span> langJapanese = <span class="hljs-string">"ja"</span>;
+<span class="hljs-keyword">const</span> langKorean = <span class="hljs-string">"ko"</span>;
+<span class="hljs-keyword">const</span> messageKey = <span class="hljs-string">"hello"</span>;
+<span class="hljs-comment">// Optional chaining演算子（`?.`）とブラケット記法を組みわせた書き方</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(languages?.[langJapanese]?.[messageKey]); <span class="hljs-comment">// =&gt; "こんにちは！"</span>
+<span class="hljs-comment">// `languages`に`ko`プロパティが定義されていないため、`undefined`を返す</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(languages?.[langKorean]?.[messageKey]); <span class="hljs-comment">// =&gt; undefined</span>
+</code></pre>
+<h2 id="toString-method"><a name="toString-method" class="plugin-anchor" href="#toString-method"><i class="fa fa-link" aria-hidden="true"></i></a><code>toString</code>メソッド </h2>
+<p>オブジェクトの<code>toString</code>メソッドは、オブジェクト自身を文字列化するメソッドです。
+<code>String</code>コンストラクタ関数を使うことでも文字列化できます。
+この2つにはどのような違いがあるのでしょうか？（<code>String</code>コンストラクタ関数については「<a href="../implicit-coercion/#to-string">暗黙的な型変換</a>」を参照）</p>
+<p>実は<code>String</code>コンストラクタ関数は、引数に渡されたオブジェクトの<code>toString</code>メソッドを呼び出しています。
+そのため、<code>String</code>コンストラクタ関数と<code>toString</code>メソッドの結果はどちらも同じになります。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> obj = { <span class="hljs-attr">key</span>: <span class="hljs-string">"value"</span> };
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(obj.<span class="hljs-title function_">toString</span>()); <span class="hljs-comment">// =&gt; "[object Object]"</span>
+<span class="hljs-comment">// `String`コンストラクタ関数は`toString`メソッドを呼んでいる</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title class_">String</span>(obj)); <span class="hljs-comment">// =&gt; "[object Object]"</span>
+</code></pre>
+<p>このことは、オブジェクトに<code>toString</code>メソッドを再定義してみるとわかります。
+独自の<code>toString</code>メソッドを定義したオブジェクトを<code>String</code>コンストラクタ関数で文字列化してみます。
+すると、再定義した<code>toString</code>メソッドの返り値が、<code>String</code>コンストラクタ関数の返り値になることがわかります。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// 独自のtoStringメソッドを定義</span>
+<span class="hljs-keyword">const</span> customObject = {
+    <span class="hljs-title function_">toString</span>(<span class="hljs-params"></span>) {
+        <span class="hljs-keyword">return</span> <span class="hljs-string">"custom value"</span>;
+    }
+};
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title class_">String</span>(customObject)); <span class="hljs-comment">// =&gt; "custom value"</span>
+</code></pre>
+<h2 id="object-property-is-to-string"><a name="object-property-is-to-string" class="plugin-anchor" href="#object-property-is-to-string"><i class="fa fa-link" aria-hidden="true"></i></a>[コラム] オブジェクトのプロパティ名は文字列化される </h2>
+<p>オブジェクトのプロパティへアクセスする際に、指定したプロパティ名は暗黙的に文字列に変換されます。
+ブラケット記法では、オブジェクトをプロパティ名に指定することもできますが、これは意図したようには動作しません。
+なぜなら、オブジェクトを文字列化すると<code>"[object Object]"</code>という文字列になるためです。</p>
+<p>次のコードでは、<code>keyObject1</code>と<code>keyObject2</code>をブラケット記法でプロパティ名に指定しています。
+しかし、<code>keyObject1</code>と<code>keyObject2</code>はどちらも文字列化すると<code>"[object Object]"</code>という同じプロパティ名となります。
+そのため、プロパティは意図せず上書きされてしまいます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> obj = {};
+<span class="hljs-keyword">const</span> keyObject1 = { <span class="hljs-attr">a</span>: <span class="hljs-number">1</span> };
+<span class="hljs-keyword">const</span> keyObject2 = { <span class="hljs-attr">b</span>: <span class="hljs-number">2</span> };
+<span class="hljs-comment">// どちらも同じプロパティ名（"[object Object]"）に代入している</span>
+obj[keyObject1] = <span class="hljs-string">"1"</span>;
+obj[keyObject2] = <span class="hljs-string">"2"</span>;
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(obj); <span class="hljs-comment">//  { "[object Object]": "2" }</span>
+</code></pre>
+<p>唯一の例外として、Symbolだけは文字列化されずにオブジェクトのプロパティ名として扱えます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> obj = {};
+<span class="hljs-comment">// Symbolは例外的に文字列化されず扱える</span>
+<span class="hljs-keyword">const</span> symbolKey1 = <span class="hljs-title class_">Symbol</span>(<span class="hljs-string">"シンボル1"</span>);
+<span class="hljs-keyword">const</span> symbolKey2 = <span class="hljs-title class_">Symbol</span>(<span class="hljs-string">"シンボル2"</span>);
+obj[symbolKey1] = <span class="hljs-string">"1"</span>;
+obj[symbolKey2] = <span class="hljs-string">"2"</span>;
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(obj[symbolKey1]); <span class="hljs-comment">// =&gt; "1"</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(obj[symbolKey2]); <span class="hljs-comment">// =&gt; "2"</span>
+</code></pre>
+<p>基本的にはオブジェクトのプロパティ名は文字列として扱われることを覚えておくとよいでしょう。
+また、<code>Map</code>というビルトインオブジェクトはオブジェクトをキーとして扱えます（詳細は「<a href="../map-and-set/">Map/Set</a>」の章で解説します）。
+そのため、オブジェクトをキーに指定したい場合は<code>Map</code>を利用します。</p>
+<!-- 仕様: ToPropertyKeyによって文字列化されている
+
+- https://github.com/asciidwango/js-primer/pull/854
+- https://tc39.es/ecma262/#sec-topropertykey
+
+ -->
+<h2 id="static-method"><a name="static-method" class="plugin-anchor" href="#static-method"><i class="fa fa-link" aria-hidden="true"></i></a>オブジェクトの静的メソッド </h2>
+<p>最後にビルトインオブジェクトである<code>Object</code>の静的メソッドについて見ていきましょう。
+<strong>静的メソッド</strong>（スタティックメソッド）とは、インスタンスの元となるオブジェクトから呼び出せるメソッドのことです。</p>
+<p>Objectの<code>toString</code>メソッドなどは、<code>Object</code>のインスタンスオブジェクトから呼び出すメソッドでした。
+これに対して、<code>Object.hasOwn</code>静的メソッドのような静的メソッドは<code>Object</code>そのものに実装されているメソッドです。</p>
+<p>ここでは、オブジェクトの処理でよく利用されるいくつかの<strong>静的メソッド</strong>を紹介します。</p>
+<h3 id="enumeration"><a name="enumeration" class="plugin-anchor" href="#enumeration"><i class="fa fa-link" aria-hidden="true"></i></a>オブジェクトの列挙 </h3>
+<p>最初に紹介したように、オブジェクトはプロパティの集合です。
+そのオブジェクトのプロパティを列挙する方法として、次の3つの静的メソッドがあります。</p>
+<ul>
+<li><code>Object.keys</code>静的メソッド: オブジェクトのプロパティ名の配列にして返す</li>
+<li><code>Object.values</code>静的メソッド<sup>[ES2017]</sup>: オブジェクトの値の配列にして返す</li>
+<li><code>Object.entries</code>静的メソッド<sup>[ES2017]</sup>: オブジェクトのプロパティ名と値の配列の配列を返す</li>
+</ul>
+<p>それぞれ、オブジェクトのキー、値、キーと値の組み合わせを配列にして返します。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a>
+<!-- doctest:meta:{ "ECMAScript": "2017" } --></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> obj = {
+    <span class="hljs-string">"one"</span>: <span class="hljs-number">1</span>,
+    <span class="hljs-string">"two"</span>: <span class="hljs-number">2</span>,
+    <span class="hljs-string">"three"</span>: <span class="hljs-number">3</span>
+};
+<span class="hljs-comment">// `Object.keys`はキーを列挙した配列を返す</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title class_">Object</span>.<span class="hljs-title function_">keys</span>(obj)); <span class="hljs-comment">// =&gt; ["one", "two", "three"]</span>
+<span class="hljs-comment">// `Object.values`は値を列挙した配列を返す</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title class_">Object</span>.<span class="hljs-title function_">values</span>(obj)); <span class="hljs-comment">// =&gt; [1, 2, 3]</span>
+<span class="hljs-comment">// `Object.entries`は[キー, 値]の配列を返す</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title class_">Object</span>.<span class="hljs-title function_">entries</span>(obj)); <span class="hljs-comment">// =&gt; [["one", 1], ["two", 2], ["three", 3]]</span>
+</code></pre>
+<p>これらのプロパティを列挙する静的メソッドと配列の<code>forEach</code>メソッドなどを組み合わせれば、プロパティに対して反復処理ができます。
+次のコードでは、<code>Object.keys</code>静的メソッドで取得したプロパティ名の一覧をコンソールへ出力しています。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> obj = {
+    <span class="hljs-string">"one"</span>: <span class="hljs-number">1</span>,
+    <span class="hljs-string">"two"</span>: <span class="hljs-number">2</span>,
+    <span class="hljs-string">"three"</span>: <span class="hljs-number">3</span>
+};
+<span class="hljs-keyword">const</span> keys = <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">keys</span>(obj);
+keys.<span class="hljs-title function_">forEach</span>(<span class="hljs-function"><span class="hljs-params">key</span> =&gt;</span> {
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(key);
+});
+<span class="hljs-comment">// 次の値が順番に出力される</span>
+<span class="hljs-comment">// "one"</span>
+<span class="hljs-comment">// "two"</span>
+<span class="hljs-comment">// "three"</span>
+</code></pre>
+<h3 id="copy-and-merge"><a name="copy-and-merge" class="plugin-anchor" href="#copy-and-merge"><i class="fa fa-link" aria-hidden="true"></i></a>オブジェクトのマージと複製 </h3>
+<p><code>Object.assign</code>静的メソッド<sup>[ES2015]</sup>は、あるオブジェクトを別のオブジェクトに代入（assign）できます。
+このメソッドを使うことで、オブジェクトの複製やオブジェクト同士のマージができます。</p>
+<p><code>Object.assign</code>静的メソッドは、<code>target</code>オブジェクトに対して、1つ以上の<code>sources</code>オブジェクトを指定します。
+<code>sources</code>オブジェクト自身が持つ列挙可能なプロパティを第一引数の<code>target</code>オブジェクトに対してコピーします。
+<code>Object.assign</code>静的メソッドの返り値は、<code>target</code>オブジェクトになります。</p>
+<!-- doctest:disable -->
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> obj = <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">assign</span>(target, ...sources);
+</code></pre>
+<h4 id="merge"><a name="merge" class="plugin-anchor" href="#merge"><i class="fa fa-link" aria-hidden="true"></i></a>オブジェクトのマージ </h4>
+<p>具体的なオブジェクトのマージの例を見ていきます。</p>
+<p>次のコードでは、新しく作った空のオブジェクトを<code>target</code>にしています。
+この空のオブジェクト（<code>target</code>）に<code>objectA</code>と<code>objectB</code>をマージしたものが、<code>Object.assign</code>静的メソッドの返り値となります。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> objectA = { <span class="hljs-attr">a</span>: <span class="hljs-string">"a"</span> };
+<span class="hljs-keyword">const</span> objectB = { <span class="hljs-attr">b</span>: <span class="hljs-string">"b"</span> };
+<span class="hljs-keyword">const</span> merged = <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">assign</span>({}, objectA, objectB);
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(merged); <span class="hljs-comment">// =&gt; { a: "a", b: "b" }</span>
+</code></pre>
+<p>第一引数には空のオブジェクトではなく、既存のオブジェクトも指定できます。
+第一引数に既存のオブジェクトを指定した場合は、そのオブジェクトのプロパティが変更されます。</p>
+<p>次のコードでは、第一引数に指定された<code>objectA</code>に対してプロパティが追加されています。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> objectA = { <span class="hljs-attr">a</span>: <span class="hljs-string">"a"</span> };
+<span class="hljs-keyword">const</span> objectB = { <span class="hljs-attr">b</span>: <span class="hljs-string">"b"</span> };
+<span class="hljs-keyword">const</span> merged = <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">assign</span>(objectA, objectB);
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(merged); <span class="hljs-comment">// =&gt; { a: "a", b: "b" }</span>
+<span class="hljs-comment">// `objectA`が変更されている</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(objectA); <span class="hljs-comment">// =&gt; { a: "a", b: "b" }</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(merged === objectA); <span class="hljs-comment">// =&gt; true</span>
+</code></pre>
+<p>空のオブジェクトを<code>target</code>にすることで、既存のオブジェクトには影響を与えずマージしたオブジェクトを作ることができます。
+そのため、<code>Object.assign</code>静的メソッドの第一引数には、空のオブジェクトリテラルを指定するのが典型的な利用方法です。</p>
+<p>このとき、プロパティ名が重複した場合は、後ろのオブジェクトのプロパティにより上書きされます。
+JavaScriptでは、基本的に処理は先頭から後ろへと順番に行います。
+そのため、空のオブジェクトへ<code>objectA</code>を代入してから、その結果に<code>objectB</code>を代入するという形になります。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// `version`のプロパティ名が被っている</span>
+<span class="hljs-keyword">const</span> objectA = { <span class="hljs-attr">version</span>: <span class="hljs-string">"a"</span> };
+<span class="hljs-keyword">const</span> objectB = { <span class="hljs-attr">version</span>: <span class="hljs-string">"b"</span> };
+<span class="hljs-keyword">const</span> merged = <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">assign</span>({}, objectA, objectB);
+<span class="hljs-comment">// 後ろにある`objectB`のプロパティで上書きされる</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(merged); <span class="hljs-comment">// =&gt; { version: "b" }</span>
+</code></pre>
+<h4 id="object-spread-syntax"><a name="object-spread-syntax" class="plugin-anchor" href="#object-spread-syntax"><i class="fa fa-link" aria-hidden="true"></i></a>[ES2018] オブジェクトのspread構文でのマージ </h4>
+<p>ES2018では、オブジェクトのマージを行うオブジェクトの<code>...</code>（spread構文）が追加されました。
+ES2015で配列の要素を展開する<code>...</code>（spread構文）はサポートされていましたが、オブジェクトに対してもES2018でサポートされました。
+オブジェクトのspread構文は、オブジェクトリテラルの中に指定したオブジェクトのプロパティを展開できます。</p>
+<p>オブジェクトのspread構文は、<code>Object.assign</code>とは異なり必ず新しいオブジェクトを作成します。
+なぜならspread構文はオブジェクトリテラルの中でのみ記述でき、オブジェクトリテラルは新しいオブジェクトを作成するためです。</p>
+<p>次のコードでは<code>objectA</code>と<code>objectB</code>をマージした新しいオブジェクトを返します。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> objectA = { <span class="hljs-attr">a</span>: <span class="hljs-string">"a"</span> };
+<span class="hljs-keyword">const</span> objectB = { <span class="hljs-attr">b</span>: <span class="hljs-string">"b"</span> };
+<span class="hljs-keyword">const</span> merged = {
+    ...objectA,
+    ...objectB
+};
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(merged); <span class="hljs-comment">// =&gt; { a: "a", b: "b" }</span>
+</code></pre>
+<p>プロパティ名が被った場合の優先順位は、後ろにあるオブジェクトが優先されます。
+そのため同じプロパティ名を持つオブジェクトをマージした場合には、後ろにあるオブジェクトによってプロパティが上書きされます。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a>
+<!-- doctest:disable --></p>
+<pre><code class="lang-js"><span class="hljs-comment">// `version`のプロパティ名が被っている</span>
+<span class="hljs-keyword">const</span> objectA = { <span class="hljs-attr">version</span>: <span class="hljs-string">"a"</span> };
+<span class="hljs-keyword">const</span> objectB = { <span class="hljs-attr">version</span>: <span class="hljs-string">"b"</span> };
+<span class="hljs-keyword">const</span> merged = {
+    ...objectA,
+    ...objectB,
+    <span class="hljs-attr">other</span>: <span class="hljs-string">"other"</span>
+};
+<span class="hljs-comment">// 後ろにある`objectB`のプロパティで上書きされる</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(merged); <span class="hljs-comment">// =&gt; { version: "b", other: "other" }</span>
+</code></pre>
+<h4 id="copy"><a name="copy" class="plugin-anchor" href="#copy"><i class="fa fa-link" aria-hidden="true"></i></a>オブジェクトの複製 </h4>
+<!-- textlint-disable preset-ja-technical-writing/max-ten -->
+<!-- Object.assignの引数と、で並び順を合わせるため例外的に許可 -->
+<p>JavaScriptには、オブジェクトを複製する関数は用意されていません。
+しかし、新しく空のオブジェクトを作成し、そこへ既存のオブジェクトのプロパティをコピーすれば、それはオブジェクトの複製をしていると言えます。
+次のように、<code>Object.assign</code>静的メソッドを使うことでオブジェクトを複製できます。</p>
+<!-- textlint-enable preset-ja-technical-writing/max-ten -->
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// 引数の`obj`を浅く複製したオブジェクトを返す</span>
+<span class="hljs-keyword">const</span> <span class="hljs-title function_">shallowClone</span> = (<span class="hljs-params">obj</span>) =&gt; {
+    <span class="hljs-keyword">return</span> <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">assign</span>({}, obj);
+};
+<span class="hljs-keyword">const</span> obj = { <span class="hljs-attr">a</span>: <span class="hljs-string">"a"</span> };
+<span class="hljs-keyword">const</span> cloneObj = <span class="hljs-title function_">shallowClone</span>(obj);
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(cloneObj); <span class="hljs-comment">// =&gt; { a: "a" }</span>
+<span class="hljs-comment">// オブジェクトを複製しているので、異なるオブジェクトとなる</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(obj === cloneObj); <span class="hljs-comment">// =&gt; false</span>
+</code></pre>
+<p>注意点として、<code>Object.assign</code>静的メソッドは<code>sources</code>オブジェクトのプロパティを浅くコピー（shallow copy）する点です。
+shallow copyとは、<code>sources</code>オブジェクトの直下にあるプロパティだけをコピーするということです。
+そのプロパティの値がオブジェクトである場合に、ネストした先のオブジェクトまでも複製するわけではありません。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> <span class="hljs-title function_">shallowClone</span> = (<span class="hljs-params">obj</span>) =&gt; {
+    <span class="hljs-keyword">return</span> <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">assign</span>({}, obj);
+};
+<span class="hljs-keyword">const</span> obj = {
+    <span class="hljs-attr">level</span>: <span class="hljs-number">1</span>,
+    <span class="hljs-attr">nest</span>: {
+        <span class="hljs-attr">level</span>: <span class="hljs-number">2</span>
+    },
+};
+<span class="hljs-keyword">const</span> cloneObj = <span class="hljs-title function_">shallowClone</span>(obj);
+<span class="hljs-comment">// `nest`プロパティのオブジェクトは同じオブジェクトのままになる </span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(cloneObj.<span class="hljs-property">nest</span> === obj.<span class="hljs-property">nest</span>); <span class="hljs-comment">// =&gt; true</span>
+</code></pre>
+<p>逆にプロパティの値までも再帰的に複製してコピーすることを、深いコピー（deep copy）と呼びます。
+deep copyは、再帰的にshallow copyすることで実現できます。
+次のコードでは、<code>deepClone</code>を<code>shallowClone</code>を使うことで実現しています。</p>
+<p><a class="gitbook-plugin-js-console" aria-hidden="true"></a></p>
+<pre><code class="lang-js"><span class="hljs-comment">// 引数の`obj`を浅く複製したオブジェクトを返す</span>
+<span class="hljs-keyword">const</span> <span class="hljs-title function_">shallowClone</span> = (<span class="hljs-params">obj</span>) =&gt; {
+    <span class="hljs-keyword">return</span> <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">assign</span>({}, obj);
+};
+<span class="hljs-comment">// 引数の`obj`を深く複製したオブジェクトを返す</span>
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">deepClone</span>(<span class="hljs-params">obj</span>) {
+    <span class="hljs-keyword">const</span> newObj = <span class="hljs-title function_">shallowClone</span>(obj);
+    <span class="hljs-comment">// プロパティがオブジェクト型であるなら、再帰的に複製する</span>
+    <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">keys</span>(newObj)
+        .<span class="hljs-title function_">filter</span>(<span class="hljs-function"><span class="hljs-params">k</span> =&gt;</span> <span class="hljs-keyword">typeof</span> newObj[k] === <span class="hljs-string">"object"</span>)
+        .<span class="hljs-title function_">forEach</span>(<span class="hljs-function"><span class="hljs-params">k</span> =&gt;</span> newObj[k] = <span class="hljs-title function_">deepClone</span>(newObj[k]));
+    <span class="hljs-keyword">return</span> newObj;
+}
+<span class="hljs-keyword">const</span> obj = {
+    <span class="hljs-attr">level</span>: <span class="hljs-number">1</span>,
+    <span class="hljs-attr">nest</span>: {
+        <span class="hljs-attr">level</span>: <span class="hljs-number">2</span>
+    }
+};
+<span class="hljs-keyword">const</span> cloneObj = <span class="hljs-title function_">deepClone</span>(obj);
+<span class="hljs-comment">// `nest`オブジェクトも再帰的に複製されている</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(cloneObj.<span class="hljs-property">nest</span> === obj.<span class="hljs-property">nest</span>); <span class="hljs-comment">// =&gt; false</span>
+</code></pre>
+<p>このように、JavaScriptのビルトインメソッドは浅い（shallow）実装のみを提供し、深い（deep）実装は提供していないことが多いです。
+言語としては最低限の機能を提供し、より複雑な機能はユーザー側で実装するという形式を取るためです。</p>
+<p>JavaScriptは言語仕様で定義されている機能が最低限であるため、それを補うようにユーザーが作成した小さな機能を持つライブラリが数多く公開されています。
+それらのライブラリはnpmと呼ばれるJavaScriptのパッケージ管理ツールで公開され、JavaScriptのエコシステムを築いています。
+ライブラリの利用については「<a href="../../use-case/nodecli/">ユースケース: Node.jsでCLIアプリケーション</a>」の章で紹介します。</p>
+<h2 id="conclusion"><a name="conclusion" class="plugin-anchor" href="#conclusion"><i class="fa fa-link" aria-hidden="true"></i></a>まとめ </h2>
+<p>この章では、オブジェクトについて学びました。</p>
+<ul>
+<li><code>Object</code>というビルトインオブジェクトがある</li>
+<li><code>{}</code>（オブジェクトリテラル）でのオブジェクトの作成や更新方法</li>
+<li>プロパティの存在を確認するには<code>in</code>演算子か<code>Object.hasOwn</code>静的メソッドを使う</li>
+<li>Optional chaining演算子（<code>?.</code>）はネストしたプロパティの存在確認とアクセスを同時に行う記法</li>
+<li>オブジェクトのインスタンスメソッドと静的メソッド</li>
+</ul>
+<p>JavaScriptの<code>Object</code>は他のオブジェクトのベースとなるオブジェクトです。
+次の「<a href="../prototype-object/" title="クラス">プロトタイプオブジェクト</a>」の章では、<code>Object</code>がどのようにベースとして動作しているのかを見ていきます。</p>
+</body></html>
+                                
+
+                                </section>
+                            
+                        </div>
+                    </div>
+                
+<footer class="book_footer">
+    <p>Copyright (c) 2016-present <a href="https://github.com/asciidwango/js-primer" target="_blank">jsprimer project</a></p>
+</footer>
+
+            </div>
+
+            
+                
+                <a href="../loop/" class="navigation navigation-prev " aria-label="Previous page: ループと反復処理">
+                    <i class="fa fa-angle-left"></i>
+                </a>
+                
+                
+                <a href="../prototype-object/" class="navigation navigation-next " aria-label="Next page: プロトタイプオブジェクト">
+                    <i class="fa fa-angle-right"></i>
+                </a>
+                
+            
+        
+    </div>
+
+    <script>
+        var gitbook = gitbook || [];
+        gitbook.push(function() {
+            gitbook.page.hasChanged({"page":{"author":"azu","description":"JavaScriptのObjectはオブジェクトの基礎となるものです。オブジェクトとプロパティの作成、更新、削除などの基本的な操作について紹介します。","sponsors":[],"title":"オブジェクト","level":"1.3.12","depth":2,"next":{"title":"プロトタイプオブジェクト","level":"1.3.13","depth":2,"path":"basic/prototype-object/README.md","ref":"./basic/prototype-object/README.md","articles":[]},"previous":{"title":"ループと反復処理","level":"1.3.11","depth":2,"path":"basic/loop/README.md","ref":"./basic/loop/README.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-search","-lunr","page-toc-button","include-codeblock","anchors","canonical-link","js-console","github-issue-feedback","sandpack"],"root":"./source/","styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"docSearch":{"index":"83I8JIFICQ","apiKey":"9169ce4cd84fcf2376f29d9585c89254"},"github-issue-feedback":{"repo":"asciidwango/js-primer","label":"問題を報告する"},"fontsettings":{"theme":"white","family":"sans","size":2},"js-console":{},"canonical-link":{"baseURL":"https://jsprimer.net"},"highlight":{},"page-toc-button":{"maxTocDepth":2,"minTocSize":2},"include-codeblock":{"check":false,"edit":false,"lang":"","fixlang":false,"template":"./resources/gitbook-plugin-include-codeblock.hbs","theme":"chrome","unindent":false},"sandpack":{},"edit-link":{"base":"https://github.com/asciidwango/js-primer/edit/master/source/","label":"Edit"},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false},"anchors":{}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"IPAexMincho","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"index.md","glossary":"GLOSSARY.md","summary":"README.md"},"variables":{"esversion":"2024","nodeversion":"22.7.0","npmversion":"10.8.2","triplebackticks":"```","console":"<a class=\"gitbook-plugin-js-console\" aria-hidden=\"true\"></a>"},"title":"JavaScript Primer #jsprimer","gitbook":">=3.0.0","description":"JavaScriptの基本的な書き方からアプリケーションの作成などのユースケースを学ぶための入門書です"},"file":{"path":"basic/object/README.md","mtime":"2025-05-18T21:58:17.828Z","type":"markdown"},"gitbook":{"version":"6.0.2","time":"2025-05-18T21:58:35.597Z"},"basePath":"../..","book":{"language":""}});
+        });
+    </script>
+</div>
+
+        
+    <noscript>
+        <style>
+            .honkit-cloak {
+                display: block !important;
+            }
+        </style>
+    </noscript>
+    <script>
+        // Restore sidebar state as critical path for prevent layout shift
+        function __init__getSidebarState(defaultValue){
+            var baseKey = "";
+            var key = baseKey + ":sidebar";
+            try {
+                var value = localStorage[key];
+                if (value === undefined) {
+                    return defaultValue;
+                }
+                var parsed = JSON.parse(value);
+                return parsed == null ? defaultValue : parsed;
+            } catch (e) {
+                return defaultValue;
+            }
+        }
+        function __init__restoreLastSidebarState() {
+            var isMobile = window.matchMedia("(max-width: 600px)").matches;
+            if (isMobile) {
+                // Init last state if not mobile
+                return;
+            }
+            var sidebarState = __init__getSidebarState(true);
+            var book = document.querySelector(".book");
+            // Show sidebar if it enabled
+            if (sidebarState && book) {
+                book.classList.add("without-animation", "with-summary");
+            }
+        }
+
+        try {
+            __init__restoreLastSidebarState();
+        } finally {
+            var book = document.querySelector(".book");
+            book.classList.remove("honkit-cloak");
+        }
+    </script>
+    <script src="../../gitbook/gitbook.js"></script>
+    <script src="../../gitbook/theme.js"></script>
+    
+        
+        <script src="../../gitbook/gitbook-plugin-page-toc-button/plugin.js"></script>
+        
+    
+        
+        <script src="../../gitbook/gitbook-plugin-js-console/console-ui.js"></script>
+        
+    
+        
+        <script src="../../gitbook/gitbook-plugin-github-issue-feedback/plugin.js"></script>
+        
+    
+        
+        <script src="../../gitbook/honkit-plugin-sandpack/honkit-plugin-sandpack.js"></script>
+        
+    
+        
+        <script src="../../gitbook/@honkit/honkit-plugin-fontsettings/fontsettings.js"></script>
+        
+    
+
+    </body>
+</html>
+
